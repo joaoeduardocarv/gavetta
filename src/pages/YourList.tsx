@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { ContentCard } from "@/components/ContentCard";
+import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
-import { mockContent } from "@/lib/mockData";
+import { mockContent, type Content } from "@/lib/mockData";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Star, Heart, Clock } from "lucide-react";
@@ -10,6 +11,13 @@ import { Star, Heart, Clock } from "lucide-react";
 export default function YourList() {
   const [filter, setFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("recent");
+  const [selectedContent, setSelectedContent] = useState<Content | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const handleContentClick = (content: Content) => {
+    setSelectedContent(content);
+    setDialogOpen(true);
+  };
 
   const filteredContent = mockContent.filter((item) => {
     if (filter === "all") return true;
@@ -74,7 +82,11 @@ export default function YourList() {
           <TabsContent value="all" className="mt-0">
             <div className="space-y-2">
               {filteredContent.map((content) => (
-                <ContentCard key={content.id} content={content} />
+                <ContentCard 
+                  key={content.id} 
+                  content={content} 
+                  onClick={() => handleContentClick(content)}
+                />
               ))}
             </div>
           </TabsContent>
@@ -88,7 +100,11 @@ export default function YourList() {
             </div>
             <div className="space-y-2">
               {watchedContent.map((content) => (
-                <ContentCard key={content.id} content={content} />
+                <ContentCard 
+                  key={content.id} 
+                  content={content}
+                  onClick={() => handleContentClick(content)}
+                />
               ))}
             </div>
           </TabsContent>
@@ -102,7 +118,11 @@ export default function YourList() {
             </div>
             <div className="space-y-2">
               {favorites.map((content) => (
-                <ContentCard key={content.id} content={content} />
+                <ContentCard 
+                  key={content.id} 
+                  content={content}
+                  onClick={() => handleContentClick(content)}
+                />
               ))}
             </div>
           </TabsContent>
@@ -118,7 +138,8 @@ export default function YourList() {
               {ranking.map((content, index) => (
                 <div
                   key={content.id}
-                  className="flex items-center gap-3 rounded-lg bg-card border border-border p-4"
+                  onClick={() => handleContentClick(content)}
+                  className="flex items-center gap-3 rounded-lg bg-card border border-border p-4 cursor-pointer hover:bg-accent/5 hover:border-accent/50 transition-all duration-200 active:scale-[0.98]"
                 >
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 font-heading text-sm font-bold text-primary flex-shrink-0">
                     {index + 1}
@@ -143,6 +164,12 @@ export default function YourList() {
           </TabsContent>
         </Tabs>
       </main>
+
+      <ContentDetailDialog 
+        content={selectedContent}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+      />
 
       <BottomNav />
     </div>

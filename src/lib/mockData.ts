@@ -9,6 +9,8 @@ export interface Content {
   backdropUrl?: string;
   genres: string[];
   director?: string;
+  cast?: string[];
+  availableOn?: string[];
   rating?: number;
   status?: 'watched' | 'watching' | 'to_watch';
   isFavorite?: boolean;
@@ -27,6 +29,8 @@ export const mockContent: Content[] = [
     backdropUrl: 'https://image.tmdb.org/t/p/original/xOMo8BRK7PfcJv9JCnx7s5hj0PX.jpg',
     genres: ['Ficção Científica', 'Aventura'],
     director: 'Denis Villeneuve',
+    cast: ['Timothée Chalamet', 'Zendaya', 'Rebecca Ferguson', 'Javier Bardem'],
+    availableOn: ['Max', 'Prime Video'],
     rating: 9.5,
     status: 'watched',
     isFavorite: true,
@@ -41,6 +45,8 @@ export const mockContent: Content[] = [
     posterUrl: 'https://image.tmdb.org/t/p/w500/uKvVjHNqB5VmOrdxqAt2F7J78ED.jpg',
     backdropUrl: 'https://image.tmdb.org/t/p/original/uDgy6hyPd82kOHh6I95FLtLnj6p.jpg',
     genres: ['Drama', 'Ficção Científica'],
+    cast: ['Pedro Pascal', 'Bella Ramsey', 'Anna Torv'],
+    availableOn: ['Max'],
     rating: 9.0,
     status: 'watching',
     isFavorite: true,
@@ -55,6 +61,8 @@ export const mockContent: Content[] = [
     backdropUrl: 'https://image.tmdb.org/t/p/original/fm6KqXpk3M2HVveHwCrBSSBaO0V.jpg',
     genres: ['Drama', 'História'],
     director: 'Christopher Nolan',
+    cast: ['Cillian Murphy', 'Emily Blunt', 'Matt Damon', 'Robert Downey Jr.'],
+    availableOn: ['Prime Video', 'Apple TV'],
     rating: 8.5,
     status: 'watched',
     watchedDate: '2023-08-10',
