@@ -1,6 +1,6 @@
 import { Heart, Star, Film, Tv, Book, Mic, Theater } from "lucide-react";
 import { Badge } from "./ui/badge";
-import { Avatar, AvatarFallback } from "./ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { cn } from "@/lib/utils";
 import type { Content } from "@/lib/mockData";
 
@@ -24,14 +24,6 @@ const typeIcons = {
   short: Film,
 };
 
-const typeColors = {
-  movie: 'bg-blue-500/10 text-blue-500',
-  series: 'bg-purple-500/10 text-purple-500',
-  book: 'bg-green-500/10 text-green-500',
-  podcast: 'bg-orange-500/10 text-orange-500',
-  play: 'bg-pink-500/10 text-pink-500',
-  short: 'bg-cyan-500/10 text-cyan-500',
-};
 
 export function ContentCard({ content, onClick }: ContentCardProps) {
   const Icon = typeIcons[content.type];
@@ -41,9 +33,16 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
       onClick={onClick}
       className="flex items-center gap-4 p-4 bg-card rounded-lg border border-border transition-all duration-200 hover:bg-accent/5 hover:border-accent/50 active:scale-[0.98]"
     >
-      <Avatar className={cn("h-14 w-14 flex-shrink-0", typeColors[content.type])}>
-        <AvatarFallback>
-          <Icon className="h-7 w-7" />
+      <Avatar className="h-14 w-14 flex-shrink-0 rounded-lg">
+        {content.posterUrl && (
+          <AvatarImage 
+            src={content.posterUrl} 
+            alt={content.title}
+            className="object-cover"
+          />
+        )}
+        <AvatarFallback className="rounded-lg bg-muted">
+          <Icon className="h-7 w-7 text-muted-foreground" />
         </AvatarFallback>
       </Avatar>
 
