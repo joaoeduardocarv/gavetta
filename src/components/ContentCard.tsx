@@ -1,4 +1,4 @@
-import { Heart, Star, Film, Tv, Book, Mic, Theater } from "lucide-react";
+import { Heart, Star, Film, Tv, Book, Mic, Theater, Check, Clock, Play } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { cn } from "@/lib/utils";
@@ -9,10 +9,25 @@ interface ContentCardProps {
   onClick?: () => void;
 }
 
-const statusLabels = {
-  watched: 'Assistido',
-  watching: 'Assistindo',
-  to_watch: 'Para Assistir',
+const typeLabels = {
+  movie: 'Filme',
+  series: 'Série',
+  book: 'Livro',
+  podcast: 'Podcast',
+  play: 'Peça',
+  short: 'Curta',
+};
+
+const statusIcons = {
+  watched: Check,
+  watching: Play,
+  to_watch: Clock,
+};
+
+const statusColors = {
+  watched: 'text-green-500',
+  watching: 'text-blue-500',
+  to_watch: 'text-yellow-500',
 };
 
 const typeIcons = {
@@ -27,6 +42,7 @@ const typeIcons = {
 
 export function ContentCard({ content, onClick }: ContentCardProps) {
   const Icon = typeIcons[content.type];
+  const StatusIcon = content.status ? statusIcons[content.status] : null;
   
   return (
     <div
@@ -51,16 +67,20 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
           <h3 className="font-heading font-bold text-foreground line-clamp-1">
             {content.title}
           </h3>
-          {content.isFavorite && (
-            <Heart className="h-4 w-4 fill-accent text-accent flex-shrink-0" />
-          )}
+          <Heart className={cn(
+            "h-4 w-4 flex-shrink-0",
+            content.isFavorite 
+              ? "fill-accent text-accent" 
+              : "text-muted-foreground/40"
+          )} />
         </div>
         
         <div className="flex flex-wrap items-center gap-2 mt-1">
-          {content.status && (
-            <Badge variant="secondary" className="text-xs">
-              {statusLabels[content.status]}
-            </Badge>
+          <Badge variant="secondary" className="text-xs">
+            {typeLabels[content.type]}
+          </Badge>
+          {StatusIcon && (
+            <StatusIcon className={cn("h-3.5 w-3.5", content.status && statusColors[content.status])} />
           )}
           {content.rating && (
             <div className="flex items-center gap-1 text-accent">
