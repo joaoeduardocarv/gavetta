@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ContentCard } from "@/components/ContentCard";
 import { Header } from "@/components/Header";
+import { BottomNav } from "@/components/BottomNav";
 import { mockContent } from "@/lib/mockData";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,30 +23,30 @@ export default function YourList() {
     .sort((a, b) => (b.rating || 0) - (a.rating || 0));
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background pb-20">
       <Header />
       
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h2 className="font-heading text-4xl font-bold text-foreground mb-2">
+      <main className="container mx-auto px-4 py-6 max-w-lg">
+        <div className="mb-6">
+          <h2 className="font-heading text-3xl font-bold text-foreground mb-1">
             Sua Lista
           </h2>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Organize e avalie seu universo cultural
           </p>
         </div>
 
-        <Tabs defaultValue="all" className="mb-8">
-          <TabsList className="mb-6">
+        <Tabs defaultValue="all" className="mb-6">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="all">Todos</TabsTrigger>
             <TabsTrigger value="recent">Recentes</TabsTrigger>
             <TabsTrigger value="favorites">Favoritos</TabsTrigger>
-            <TabsTrigger value="ranking">Ranking</TabsTrigger>
+            <TabsTrigger value="ranking">Top</TabsTrigger>
           </TabsList>
 
-          <div className="mb-6 flex flex-wrap gap-4">
+          <div className="mb-4 flex flex-col gap-3">
             <Select value={filter} onValueChange={setFilter}>
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Tipo de conteúdo" />
               </SelectTrigger>
               <SelectContent>
@@ -58,7 +59,7 @@ export default function YourList() {
             </Select>
 
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[200px]">
+              <SelectTrigger className="w-full">
                 <SelectValue placeholder="Ordenar por" />
               </SelectTrigger>
               <SelectContent>
@@ -71,7 +72,7 @@ export default function YourList() {
           </div>
 
           <TabsContent value="all" className="mt-0">
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            <div className="space-y-2">
               {filteredContent.map((content) => (
                 <ContentCard key={content.id} content={content} />
               ))}
@@ -79,13 +80,13 @@ export default function YourList() {
           </TabsContent>
 
           <TabsContent value="recent" className="mt-0">
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-4">
+            <div className="mb-4">
+              <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-primary" />
-                <h3 className="font-heading text-2xl font-bold">Vistos Recentemente</h3>
+                <h3 className="font-heading text-xl font-bold">Vistos Recentemente</h3>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            <div className="space-y-2">
               {watchedContent.map((content) => (
                 <ContentCard key={content.id} content={content} />
               ))}
@@ -93,13 +94,13 @@ export default function YourList() {
           </TabsContent>
 
           <TabsContent value="favorites" className="mt-0">
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-4">
+            <div className="mb-4">
+              <div className="flex items-center gap-2">
                 <Heart className="h-5 w-5 text-accent" />
-                <h3 className="font-heading text-2xl font-bold">Seus Favoritos</h3>
+                <h3 className="font-heading text-xl font-bold">Seus Favoritos</h3>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            <div className="space-y-2">
               {favorites.map((content) => (
                 <ContentCard key={content.id} content={content} />
               ))}
@@ -107,37 +108,32 @@ export default function YourList() {
           </TabsContent>
 
           <TabsContent value="ranking" className="mt-0">
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-4">
+            <div className="mb-4">
+              <div className="flex items-center gap-2">
                 <Star className="h-5 w-5 text-accent fill-accent" />
-                <h3 className="font-heading text-2xl font-bold">Seu Ranking</h3>
+                <h3 className="font-heading text-xl font-bold">Seu Ranking</h3>
               </div>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-2">
               {ranking.map((content, index) => (
                 <div
                   key={content.id}
-                  className="flex items-center gap-4 rounded-lg bg-card p-4 transition-colors hover:bg-secondary"
+                  className="flex items-center gap-3 rounded-lg bg-card border border-border p-4"
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-heading text-lg font-bold text-primary">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 font-heading text-sm font-bold text-primary flex-shrink-0">
                     {index + 1}
                   </div>
-                  <img
-                    src={content.posterUrl}
-                    alt={content.title}
-                    className="h-20 w-14 rounded object-cover"
-                  />
-                  <div className="flex-1">
-                    <h4 className="font-heading font-bold text-foreground">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-heading font-bold text-foreground line-clamp-1">
                       {content.title}
                     </h4>
-                    <p className="text-sm text-muted-foreground">
-                      {content.genres.join(", ")}
+                    <p className="text-xs text-muted-foreground line-clamp-1">
+                      {content.genres.join(" • ")}
                     </p>
                   </div>
-                  <div className="flex items-center gap-1 text-accent">
-                    <Star className="h-5 w-5 fill-accent" />
-                    <span className="font-heading text-xl font-bold">
+                  <div className="flex items-center gap-1 text-accent flex-shrink-0">
+                    <Star className="h-4 w-4 fill-accent" />
+                    <span className="font-heading text-lg font-bold">
                       {content.rating?.toFixed(1)}
                     </span>
                   </div>
@@ -147,6 +143,8 @@ export default function YourList() {
           </TabsContent>
         </Tabs>
       </main>
+
+      <BottomNav />
     </div>
   );
 }

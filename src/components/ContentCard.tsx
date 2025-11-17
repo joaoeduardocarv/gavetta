@@ -1,5 +1,6 @@
-import { Heart, Star } from "lucide-react";
+import { Heart, Star, Film, Tv, Book, Mic, Theater } from "lucide-react";
 import { Badge } from "./ui/badge";
+import { Avatar, AvatarFallback } from "./ui/avatar";
 import { cn } from "@/lib/utils";
 import type { Content } from "@/lib/mockData";
 
@@ -14,29 +15,49 @@ const statusLabels = {
   to_watch: 'Para Assistir',
 };
 
+const typeIcons = {
+  movie: Film,
+  series: Tv,
+  book: Book,
+  podcast: Mic,
+  play: Theater,
+  short: Film,
+};
+
+const typeColors = {
+  movie: 'bg-blue-500/10 text-blue-500',
+  series: 'bg-purple-500/10 text-purple-500',
+  book: 'bg-green-500/10 text-green-500',
+  podcast: 'bg-orange-500/10 text-orange-500',
+  play: 'bg-pink-500/10 text-pink-500',
+  short: 'bg-cyan-500/10 text-cyan-500',
+};
+
 export function ContentCard({ content, onClick }: ContentCardProps) {
+  const Icon = typeIcons[content.type];
+  
   return (
     <div
       onClick={onClick}
-      className="group relative cursor-pointer overflow-hidden rounded-lg bg-gradient-card transition-all duration-300 hover:scale-105 hover:shadow-glow"
+      className="flex items-center gap-4 p-4 bg-card rounded-lg border border-border transition-all duration-200 hover:bg-accent/5 hover:border-accent/50 active:scale-[0.98]"
     >
-      <div className="aspect-[2/3] overflow-hidden">
-        <img
-          src={content.posterUrl}
-          alt={content.title}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-          loading="lazy"
-        />
-      </div>
-      
-      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-      
-      <div className="absolute bottom-0 left-0 right-0 translate-y-full p-4 transition-transform duration-300 group-hover:translate-y-0">
-        <h3 className="font-heading text-lg font-bold text-foreground line-clamp-2">
-          {content.title}
-        </h3>
+      <Avatar className={cn("h-14 w-14 flex-shrink-0", typeColors[content.type])}>
+        <AvatarFallback>
+          <Icon className="h-7 w-7" />
+        </AvatarFallback>
+      </Avatar>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="font-heading font-bold text-foreground line-clamp-1">
+            {content.title}
+          </h3>
+          {content.isFavorite && (
+            <Heart className="h-4 w-4 fill-accent text-accent flex-shrink-0" />
+          )}
+        </div>
         
-        <div className="mt-2 flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 mt-1">
           {content.status && (
             <Badge variant="secondary" className="text-xs">
               {statusLabels[content.status]}
@@ -44,26 +65,16 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
           )}
           {content.rating && (
             <div className="flex items-center gap-1 text-accent">
-              <Star className="h-4 w-4 fill-accent" />
-              <span className="text-sm font-semibold">{content.rating.toFixed(1)}</span>
+              <Star className="h-3 w-3 fill-accent" />
+              <span className="text-xs font-semibold">{content.rating.toFixed(1)}</span>
             </div>
           )}
         </div>
         
-        <div className="mt-1 flex flex-wrap gap-1">
-          {content.genres.slice(0, 2).map((genre) => (
-            <span key={genre} className="text-xs text-muted-foreground">
-              {genre}
-            </span>
-          ))}
-        </div>
+        <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+          {content.genres.join(" • ")}
+        </p>
       </div>
-      
-      {content.isFavorite && (
-        <div className="absolute right-2 top-2">
-          <Heart className="h-5 w-5 fill-accent text-accent drop-shadow-glow" />
-        </div>
-      )}
     </div>
   );
 }
