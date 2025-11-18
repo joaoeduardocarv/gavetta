@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Star, Heart, Clock } from "lucide-react";
 
-export default function YourList() {
+export default function MyDrawers() {
   const [filter, setFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("recent");
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
@@ -37,10 +37,10 @@ export default function YourList() {
       <main className="container mx-auto px-4 py-6 max-w-lg">
         <div className="mb-6">
           <h2 className="font-heading text-3xl font-bold text-foreground mb-1">
-            Sua Lista
+            Minhas Gavettas
           </h2>
           <p className="text-sm text-muted-foreground">
-            Organize e avalie seu universo cultural
+            Organize suas listas de filmes e séries
           </p>
         </div>
 
