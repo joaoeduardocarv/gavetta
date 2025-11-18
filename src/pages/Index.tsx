@@ -1,7 +1,7 @@
-import YourList from "./YourList";
+import Feed from "./Feed";
 
 const Index = () => {
-  return <YourList />;
+  return <Feed />;
 };
 
 export default Index;
