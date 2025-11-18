@@ -1,8 +1,11 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { Badge } from "./ui/badge";
-import { Star, Calendar, Film, Tv, Book, Mic, Theater } from "lucide-react";
+import { Star, Calendar, Film, Tv } from "lucide-react";
+import { Button } from "./ui/button";
 import type { Content } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import gavetaIcon from "@/assets/gaveta-icon.png";
 
 interface ContentDetailDialogProps {
   content: Content | null;
@@ -13,32 +16,48 @@ interface ContentDetailDialogProps {
 const typeLabels = {
   movie: 'Filme',
   series: 'Série',
-  book: 'Livro',
-  podcast: 'Podcast',
-  play: 'Peça',
-  short: 'Curta',
 };
 
 const typeIcons = {
   movie: Film,
   series: Tv,
-  book: Book,
-  podcast: Mic,
-  play: Theater,
-  short: Film,
 };
 
 export function ContentDetailDialog({ content, open, onOpenChange }: ContentDetailDialogProps) {
+  const [isInDrawer, setIsInDrawer] = useState(content?.isInDrawer || false);
+  
   if (!content) return null;
 
   const Icon = typeIcons[content.type];
   const year = new Date(content.releaseDate).getFullYear();
 
+  const toggleDrawer = () => {
+    setIsInDrawer(!isInDrawer);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        {/* Botão da Gaveta - Fixo no canto superior direito */}
+        <Button
+          onClick={toggleDrawer}
+          variant="ghost"
+          size="icon"
+          className={cn(
+            "absolute right-14 top-4 rounded-lg h-12 w-12 z-50",
+            isInDrawer ? "bg-primary/10 hover:bg-primary/20" : "bg-muted/50 hover:bg-muted"
+          )}
+          title={isInDrawer ? "Remover da gaveta" : "Adicionar à gaveta"}
+        >
+          <img 
+            src={gavetaIcon} 
+            alt="Gaveta" 
+            className={cn("h-7 w-7 transition-opacity", isInDrawer ? "opacity-100" : "opacity-40")}
+          />
+        </Button>
+
         <DialogHeader>
-          <DialogTitle className="flex items-start gap-3">
+          <DialogTitle className="flex items-start gap-3 pr-16">
             <div className="flex-shrink-0 mt-1">
               <Icon className="h-5 w-5 text-primary" />
             </div>
@@ -81,6 +100,18 @@ export function ContentDetailDialog({ content, open, onOpenChange }: ContentDeta
               </div>
             )}
           </div>
+
+          {/* Status */}
+          {content.status && (
+            <div>
+              <h3 className="font-semibold text-foreground mb-2">Status</h3>
+              <Badge variant="outline">
+                {content.status === 'watched' && 'Assistido'}
+                {content.status === 'watching' && 'Assistindo'}
+                {content.status === 'to_watch' && 'Para Assistir'}
+              </Badge>
+            </div>
+          )}
 
           {/* Genres */}
           <div>
@@ -128,11 +159,24 @@ export function ContentDetailDialog({ content, open, onOpenChange }: ContentDeta
               <h3 className="font-semibold text-foreground mb-2">Disponível em</h3>
               <div className="flex flex-wrap gap-2">
                 {content.availableOn.map((platform) => (
-                  <Badge key={platform} className="bg-primary/10 text-primary hover:bg-primary/20">
+                  <Badge key={platform} variant="secondary" className="text-xs">
                     {platform}
                   </Badge>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Drawer Comment */}
+          {isInDrawer && content.drawerComment && (
+            <div className="bg-muted/50 rounded-lg p-4 border border-border">
+              <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+                <img src={gavetaIcon} alt="Gaveta" className="h-4 w-4" />
+                Sua Nota da Gaveta
+              </h3>
+              <p className="text-sm text-muted-foreground italic">
+                "{content.drawerComment}"
+              </p>
             </div>
           )}
         </div>
