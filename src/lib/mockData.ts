@@ -1,6 +1,6 @@
 export interface Content {
   id: string;
-  type: 'movie' | 'series' | 'book' | 'play' | 'podcast' | 'short';
+  type: 'movie' | 'series';
   title: string;
   originalTitle?: string;
   releaseDate: string;
@@ -15,6 +15,8 @@ export interface Content {
   status?: 'watched' | 'watching' | 'to_watch';
   isFavorite?: boolean;
   watchedDate?: string;
+  isInDrawer?: boolean;
+  drawerComment?: string;
 }
 
 export const mockContent: Content[] = [
@@ -35,6 +37,8 @@ export const mockContent: Content[] = [
     status: 'watched',
     isFavorite: true,
     watchedDate: '2024-03-15',
+    isInDrawer: true,
+    drawerComment: 'Obra-prima visual absoluta! Denis Villeneuve é um gênio.',
   },
   {
     id: '2',
@@ -50,6 +54,8 @@ export const mockContent: Content[] = [
     rating: 9.0,
     status: 'watching',
     isFavorite: true,
+    isInDrawer: true,
+    drawerComment: 'Melhor adaptação de jogo que já vi!',
   },
   {
     id: '3',
@@ -68,18 +74,6 @@ export const mockContent: Content[] = [
     watchedDate: '2023-08-10',
   },
   {
-    id: '4',
-    type: 'book',
-    title: 'O Nome do Vento',
-    originalTitle: 'The Name of the Wind',
-    releaseDate: '2007-03-27',
-    synopsis: 'A história de Kvothe, um jovem prodígio que se torna o mais famoso músico, mágico e assassino de sua época.',
-    posterUrl: 'https://images-na.ssl-images-amazon.com/images/I/91b8oNwaLiL.jpg',
-    genres: ['Fantasia'],
-    rating: 8.0,
-    status: 'to_watch',
-  },
-  {
     id: '5',
     type: 'series',
     title: 'Breaking Bad',
@@ -92,6 +86,7 @@ export const mockContent: Content[] = [
     status: 'watched',
     isFavorite: true,
     watchedDate: '2023-05-20',
+    isInDrawer: true,
   },
   {
     id: '6',
@@ -108,6 +103,8 @@ export const mockContent: Content[] = [
     status: 'watched',
     isFavorite: true,
     watchedDate: '2023-11-05',
+    isInDrawer: true,
+    drawerComment: 'Cinema coreano no seu melhor. Obra-prima!',
   },
   {
     id: '7',
@@ -124,6 +121,7 @@ export const mockContent: Content[] = [
     status: 'watched',
     isFavorite: true,
     watchedDate: '2023-12-10',
+    isInDrawer: true,
   },
   {
     id: '8',

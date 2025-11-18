@@ -58,11 +58,9 @@ export default function YourList() {
                 <SelectValue placeholder="Tipo de conteúdo" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todos os tipos</SelectItem>
+                <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="movie">Filmes</SelectItem>
                 <SelectItem value="series">Séries</SelectItem>
-                <SelectItem value="book">Livros</SelectItem>
-                <SelectItem value="podcast">Podcasts</SelectItem>
               </SelectContent>
             </Select>
 

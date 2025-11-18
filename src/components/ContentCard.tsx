@@ -1,4 +1,4 @@
-import { Heart, Star, Film, Tv, Book, Mic, Theater, Check, Clock, Play } from "lucide-react";
+import { Heart, Star, Film, Tv, Check, Clock, Play } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { cn } from "@/lib/utils";
@@ -12,10 +12,6 @@ interface ContentCardProps {
 const typeLabels = {
   movie: 'Filme',
   series: 'Série',
-  book: 'Livro',
-  podcast: 'Podcast',
-  play: 'Peça',
-  short: 'Curta',
 };
 
 const statusIcons = {
@@ -33,10 +29,6 @@ const statusColors = {
 const typeIcons = {
   movie: Film,
   series: Tv,
-  book: Book,
-  podcast: Mic,
-  play: Theater,
-  short: Film,
 };
 
 
