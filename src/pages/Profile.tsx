@@ -1,0 +1,121 @@
+import { Header } from "@/components/Header";
+import { BottomNav } from "@/components/BottomNav";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { User, Mail, Calendar, Globe, Lock, Bell, Settings as SettingsIcon, Activity } from "lucide-react";
+
+export default function Profile() {
+  return (
+    <div className="min-h-screen bg-background pb-20">
+      <Header />
+      
+      <main className="container mx-auto px-4 py-6 max-w-lg">
+        <h2 className="font-heading text-3xl font-bold text-foreground mb-6">
+          Meu Perfil
+        </h2>
+
+        <div className="space-y-6">
+          {/* Perfil do Usuário */}
+          <div className="bg-card rounded-lg p-6 space-y-4">
+            <div className="flex items-center gap-4">
+              <Avatar className="h-20 w-20">
+                <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=user" />
+                <AvatarFallback>US</AvatarFallback>
+              </Avatar>
+              <div className="flex-1">
+                <h3 className="font-heading text-xl font-bold text-foreground">Seu Nome</h3>
+                <p className="text-sm text-muted-foreground">@username</p>
+              </div>
+            </div>
+            <Button variant="outline" className="w-full">
+              <User className="h-4 w-4 mr-2" />
+              Editar Perfil
+            </Button>
+          </div>
+
+          <Separator />
+
+          {/* Informações */}
+          <div className="bg-card rounded-lg p-6 space-y-4">
+            <h3 className="font-heading font-bold text-foreground mb-4">Informações</h3>
+            
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 text-sm">
+                <Mail className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">usuario@email.com</span>
+              </div>
+              
+              <div className="flex items-center gap-3 text-sm">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">01/01/1990</span>
+              </div>
+              
+              <div className="flex items-center gap-3 text-sm">
+                <Globe className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Brasil</span>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Tema */}
+          <div className="bg-card rounded-lg p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-base font-medium">Tema</Label>
+                <p className="text-sm text-muted-foreground">Alternar entre claro e escuro</p>
+              </div>
+              <ThemeToggle />
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Configurações */}
+          <div className="bg-card rounded-lg p-6 space-y-3">
+            <h3 className="font-heading font-bold text-foreground mb-4">Configurações</h3>
+            
+            <Button variant="ghost" className="w-full justify-start">
+              <Lock className="h-4 w-4 mr-3" />
+              Privacidade
+            </Button>
+            
+            <Button variant="ghost" className="w-full justify-start">
+              <Bell className="h-4 w-4 mr-3" />
+              Notificações
+            </Button>
+            
+            <Button variant="ghost" className="w-full justify-start">
+              <SettingsIcon className="h-4 w-4 mr-3" />
+              Preferências
+            </Button>
+          </div>
+
+          <Separator />
+
+          {/* Minhas Atividades */}
+          <div className="bg-card rounded-lg p-6">
+            <Button variant="outline" className="w-full">
+              <Activity className="h-4 w-4 mr-2" />
+              Minhas Atividades
+            </Button>
+          </div>
+
+          {/* Sobre */}
+          <div className="bg-card rounded-lg p-6 space-y-2">
+            <h3 className="font-heading font-bold text-foreground">Sobre</h3>
+            <p className="text-sm text-muted-foreground">
+              Versão 1.0.0
+            </p>
+          </div>
+        </div>
+      </main>
+
+      <BottomNav />
+    </div>
+  );
+}
