@@ -1,175 +1,156 @@
 import { useState } from "react";
-import { ContentCard } from "@/components/ContentCard";
-import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
-import { mockContent, type Content } from "@/lib/mockData";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Star, Heart, Clock } from "lucide-react";
+import { ContentCard } from "@/components/ContentCard";
+import { ContentDetailDialog } from "@/components/ContentDetailDialog";
+import { mockContent, Content } from "@/lib/mockData";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Play, Eye, CheckCircle, Star } from "lucide-react";
+
+const defaultDrawers = [
+  {
+    id: "to-watch",
+    name: "Para Assistir",
+    icon: Play,
+    color: "text-blue-500",
+    count: 8,
+  },
+  {
+    id: "watching",
+    name: "Assistindo",
+    icon: Eye,
+    color: "text-yellow-500",
+    count: 3,
+  },
+  {
+    id: "watched",
+    name: "Assistidos",
+    icon: CheckCircle,
+    color: "text-green-500",
+    count: 15,
+  },
+  {
+    id: "ranking",
+    name: "Ranking",
+    icon: Star,
+    color: "text-purple-500",
+    count: 12,
+  },
+];
 
 export default function MyDrawers() {
-  const [filter, setFilter] = useState<string>("all");
-  const [sortBy, setSortBy] = useState<string>("recent");
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedDrawer, setSelectedDrawer] = useState<string | null>(null);
 
-  const handleContentClick = (content: Content) => {
+  const handleCardClick = (content: Content) => {
     setSelectedContent(content);
-    setDialogOpen(true);
+    setIsDialogOpen(true);
   };
 
-  const filteredContent = mockContent.filter((item) => {
-    if (filter === "all") return true;
-    return item.type === filter;
-  });
-
-  const watchedContent = mockContent.filter((item) => item.status === "watched");
-  const favorites = mockContent.filter((item) => item.isFavorite);
-  const ranking = [...mockContent]
-    .filter((item) => item.rating)
-    .sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  const drawerContent = selectedDrawer ? mockContent.filter(item => item.isInDrawer) : [];
 
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header />
       
       <main className="container mx-auto px-4 py-6 max-w-lg">
-        <div className="mb-6">
-          <h2 className="font-heading text-3xl font-bold text-foreground mb-1">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="font-heading text-3xl font-bold text-foreground">
             Minhas Gavettas
           </h2>
-          <p className="text-sm text-muted-foreground">
-            Organize suas listas de filmes e séries
-          </p>
+          <Button size="sm" variant="outline">
+            <Plus className="h-4 w-4 mr-2" />
+            Nova
+          </Button>
         </div>
 
-        <Tabs defaultValue="all" className="mb-6">
-          <TabsList className="grid w-full grid-cols-4 mb-6">
-            <TabsTrigger value="all">Todos</TabsTrigger>
-            <TabsTrigger value="recent">Recentes</TabsTrigger>
-            <TabsTrigger value="favorites">Favoritos</TabsTrigger>
-            <TabsTrigger value="ranking">Top</TabsTrigger>
-          </TabsList>
-
-          <div className="mb-4 flex flex-col gap-3">
-            <Select value={filter} onValueChange={setFilter}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Tipo de conteúdo" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="movie">Filmes</SelectItem>
-                <SelectItem value="series">Séries</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Ordenar por" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="recent">Mais recentes</SelectItem>
-                <SelectItem value="oldest">Mais antigos</SelectItem>
-                <SelectItem value="rating">Melhor avaliados</SelectItem>
-                <SelectItem value="title">Título A-Z</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <TabsContent value="all" className="mt-0">
-            <div className="space-y-2">
-              {filteredContent.map((content) => (
-                <ContentCard 
-                  key={content.id} 
-                  content={content} 
-                  onClick={() => handleContentClick(content)}
-                />
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="recent" className="mt-0">
-            <div className="mb-4">
-              <div className="flex items-center gap-2">
-                <Clock className="h-5 w-5 text-primary" />
-                <h3 className="font-heading text-xl font-bold">Vistos Recentemente</h3>
-              </div>
-            </div>
-            <div className="space-y-2">
-              {watchedContent.map((content) => (
-                <ContentCard 
-                  key={content.id} 
-                  content={content}
-                  onClick={() => handleContentClick(content)}
-                />
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="favorites" className="mt-0">
-            <div className="mb-4">
-              <div className="flex items-center gap-2">
-                <Heart className="h-5 w-5 text-accent" />
-                <h3 className="font-heading text-xl font-bold">Seus Favoritos</h3>
-              </div>
-            </div>
-            <div className="space-y-2">
-              {favorites.map((content) => (
-                <ContentCard 
-                  key={content.id} 
-                  content={content}
-                  onClick={() => handleContentClick(content)}
-                />
-              ))}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="ranking" className="mt-0">
-            <div className="mb-4">
-              <div className="flex items-center gap-2">
-                <Star className="h-5 w-5 text-accent fill-accent" />
-                <h3 className="font-heading text-xl font-bold">Seu Ranking</h3>
-              </div>
-            </div>
-            <div className="space-y-2">
-              {ranking.map((content, index) => (
-                <div
-                  key={content.id}
-                  onClick={() => handleContentClick(content)}
-                  className="flex items-center gap-3 rounded-lg bg-card border border-border p-4 cursor-pointer hover:bg-accent/5 hover:border-accent/50 transition-all duration-200 active:scale-[0.98]"
+        {!selectedDrawer ? (
+          <div className="space-y-3">
+            <h3 className="font-heading text-lg font-semibold text-foreground mb-4">
+              Gavetas Padrão
+            </h3>
+            
+            {defaultDrawers.map((drawer) => {
+              const Icon = drawer.icon;
+              return (
+                <button
+                  key={drawer.id}
+                  onClick={() => setSelectedDrawer(drawer.id)}
+                  className="w-full flex items-center justify-between p-4 bg-card rounded-lg border border-border hover:bg-accent/5 hover:border-accent/50 transition-all duration-200"
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 font-heading text-sm font-bold text-primary flex-shrink-0">
-                    {index + 1}
+                  <div className="flex items-center gap-3">
+                    <Icon className={`h-6 w-6 ${drawer.color}`} />
+                    <div className="text-left">
+                      <h4 className="font-heading font-bold text-foreground">
+                        {drawer.name}
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        {drawer.count} {drawer.count === 1 ? 'item' : 'itens'}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-heading font-bold text-foreground line-clamp-1">
-                      {content.title}
-                    </h4>
-                    <p className="text-xs text-muted-foreground line-clamp-1">
-                      {content.genres.join(" • ")}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1 text-accent flex-shrink-0">
-                    <Star className="h-4 w-4 fill-accent" />
-                    <span className="font-heading text-lg font-bold">
-                      {content.rating?.toFixed(1)}
-                    </span>
-                  </div>
-                </div>
+                  <Badge variant="secondary">{drawer.count}</Badge>
+                </button>
+              );
+            })}
+
+            <div className="pt-6">
+              <h3 className="font-heading text-lg font-semibold text-foreground mb-4">
+                Gavetas Personalizadas
+              </h3>
+              
+              <button className="w-full flex items-center justify-center gap-2 p-6 bg-card rounded-lg border-2 border-dashed border-border hover:border-primary hover:bg-accent/5 transition-all duration-200">
+                <Plus className="h-5 w-5 text-muted-foreground" />
+                <span className="text-sm text-muted-foreground font-medium">
+                  Criar Gaveta Personalizada
+                </span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <Button 
+              variant="ghost" 
+              onClick={() => setSelectedDrawer(null)}
+              className="mb-2"
+            >
+              ← Voltar
+            </Button>
+            
+            <h3 className="font-heading text-xl font-bold text-foreground mb-4">
+              {defaultDrawers.find(d => d.id === selectedDrawer)?.name}
+            </h3>
+
+            <div className="grid grid-cols-2 gap-4">
+              {drawerContent.map((content) => (
+                <ContentCard
+                  key={content.id}
+                  content={content}
+                  onClick={() => handleCardClick(content)}
+                />
               ))}
             </div>
-          </TabsContent>
-        </Tabs>
+
+            {drawerContent.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">Nenhum conteúdo nesta gaveta</p>
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
-      <ContentDetailDialog 
-        content={selectedContent}
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-      />
-
       <BottomNav />
+
+      {selectedContent && (
+        <ContentDetailDialog
+          content={selectedContent}
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+        />
+      )}
     </div>
   );
 }
