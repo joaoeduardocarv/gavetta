@@ -123,7 +123,7 @@ export default function MyDrawers() {
               {defaultDrawers.find(d => d.id === selectedDrawer)?.name}
             </h3>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3">
               {drawerContent.map((content) => (
                 <ContentCard
                   key={content.id}
