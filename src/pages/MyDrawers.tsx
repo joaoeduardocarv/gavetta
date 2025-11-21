@@ -6,7 +6,24 @@ import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { mockContent, Content } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Play, Eye, CheckCircle, Star } from "lucide-react";
+import { Plus, Play, Eye, CheckCircle, Star, GripVertical } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 const defaultDrawers = [
   {
@@ -39,17 +56,79 @@ const defaultDrawers = [
   },
 ];
 
+interface SortableContentCardProps {
+  content: Content;
+  onClick: () => void;
+}
+
+function SortableContentCard({ content, onClick }: SortableContentCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: content.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative group">
+      <div
+        {...attributes}
+        {...listeners}
+        className="absolute left-2 top-1/2 -translate-y-1/2 z-10 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity touch-none"
+      >
+        <GripVertical className="h-5 w-5 text-muted-foreground" />
+      </div>
+      <div className="pl-8">
+        <ContentCard content={content} onClick={onClick} />
+      </div>
+    </div>
+  );
+}
+
 export default function MyDrawers() {
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedDrawer, setSelectedDrawer] = useState<string | null>(null);
+  const [drawerContent, setDrawerContent] = useState<Content[]>(
+    mockContent.filter(item => item.isInDrawer)
+  );
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        delay: 1000,
+        tolerance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const handleCardClick = (content: Content) => {
     setSelectedContent(content);
     setIsDialogOpen(true);
   };
 
-  const drawerContent = selectedDrawer ? mockContent.filter(item => item.isInDrawer) : [];
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setDrawerContent((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -110,35 +189,46 @@ export default function MyDrawers() {
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            <Button 
-              variant="ghost" 
-              onClick={() => setSelectedDrawer(null)}
-              className="mb-2"
-            >
-              ← Voltar
-            </Button>
-            
-            <h3 className="font-heading text-xl font-bold text-foreground mb-4">
-              {defaultDrawers.find(d => d.id === selectedDrawer)?.name}
-            </h3>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="space-y-4">
+              <Button 
+                variant="ghost" 
+                onClick={() => setSelectedDrawer(null)}
+                className="mb-2"
+              >
+                ← Voltar
+              </Button>
+              
+              <h3 className="font-heading text-xl font-bold text-foreground mb-4">
+                {defaultDrawers.find(d => d.id === selectedDrawer)?.name}
+              </h3>
 
-            <div className="space-y-3">
-              {drawerContent.map((content) => (
-                <ContentCard
-                  key={content.id}
-                  content={content}
-                  onClick={() => handleCardClick(content)}
-                />
-              ))}
+              <SortableContext
+                items={drawerContent.map(c => c.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-3">
+                  {drawerContent.map((content) => (
+                    <SortableContentCard
+                      key={content.id}
+                      content={content}
+                      onClick={() => handleCardClick(content)}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+
+              {drawerContent.length === 0 && (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">Nenhum conteúdo nesta gaveta</p>
+                </div>
+              )}
             </div>
-
-            {drawerContent.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground">Nenhum conteúdo nesta gaveta</p>
-              </div>
-            )}
-          </div>
+          </DndContext>
         )}
       </main>
 
