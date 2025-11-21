@@ -72,7 +72,7 @@ export default function Trending() {
                 Filmes com mais atividades nas últimas 20h
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3">
               {trendingMovies.map((content) => (
                 <ContentCard
                   key={content.id}
@@ -89,7 +89,7 @@ export default function Trending() {
                 Séries com mais atividades nas últimas 20h
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3">
               {trendingSeries.map((content) => (
                 <ContentCard
                   key={content.id}
