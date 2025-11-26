@@ -79,15 +79,17 @@ function SortableContentCard({ content, onClick }: SortableContentCardProps) {
 
   return (
     <div ref={setNodeRef} style={style} className="relative group">
-      <div
-        {...attributes}
-        {...listeners}
-        className="absolute left-2 top-1/2 -translate-y-1/2 z-10 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity touch-none"
-      >
-        <GripVertical className="h-5 w-5 text-muted-foreground" />
-      </div>
-      <div className="pl-8">
-        <ContentCard content={content} onClick={onClick} />
+      <div className="flex items-center gap-2">
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing p-2 hover:bg-accent/10 rounded transition-colors"
+        >
+          <GripVertical className="h-5 w-5 text-muted-foreground" />
+        </div>
+        <div className="flex-1">
+          <ContentCard content={content} onClick={onClick} />
+        </div>
       </div>
     </div>
   );
@@ -104,8 +106,7 @@ export default function MyDrawers() {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        delay: 1000,
-        tolerance: 5,
+        distance: 8,
       },
     }),
     useSensor(KeyboardSensor, {
