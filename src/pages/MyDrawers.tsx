@@ -3,10 +3,12 @@ import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { ContentCard } from "@/components/ContentCard";
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
+import { CreateDrawerDialog } from "@/components/CreateDrawerDialog";
 import { mockContent, Content } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Play, Eye, CheckCircle, Star, GripVertical } from "lucide-react";
+import { Plus, Play, Eye, CheckCircle, Star, GripVertical, Heart, Bookmark, Clock, Sparkles } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import {
   DndContext,
   closestCenter,
@@ -25,7 +27,15 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-const defaultDrawers = [
+interface Drawer {
+  id: string;
+  name: string;
+  icon: any;
+  color: string;
+  count: number;
+}
+
+const defaultDrawers: Drawer[] = [
   {
     id: "to-watch",
     name: "Para Assistir",
@@ -55,6 +65,17 @@ const defaultDrawers = [
     count: 12,
   },
 ];
+
+const iconMap: Record<string, any> = {
+  Play,
+  Eye,
+  CheckCircle,
+  Star,
+  Heart,
+  Bookmark,
+  Clock,
+  Sparkles,
+};
 
 interface SortableContentCardProps {
   content: Content;
@@ -96,9 +117,12 @@ function SortableContentCard({ content, onClick }: SortableContentCardProps) {
 }
 
 export default function MyDrawers() {
+  const { toast } = useToast();
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedDrawer, setSelectedDrawer] = useState<string | null>(null);
+  const [customDrawers, setCustomDrawers] = useState<Drawer[]>([]);
   const [drawerContent, setDrawerContent] = useState<Content[]>(
     mockContent.filter(item => item.isInDrawer)
   );
@@ -131,6 +155,24 @@ export default function MyDrawers() {
     }
   };
 
+  const handleCreateDrawer = (drawer: { name: string; icon: string; color: string; contentIds: string[] }) => {
+    const newDrawer: Drawer = {
+      id: `custom-${Date.now()}`,
+      name: drawer.name,
+      icon: iconMap[drawer.icon] || Star,
+      color: drawer.color,
+      count: drawer.contentIds.length,
+    };
+    
+    setCustomDrawers((prev) => [...prev, newDrawer]);
+    toast({
+      title: "Gavetta criada!",
+      description: `"${drawer.name}" foi criada com sucesso.`,
+    });
+  };
+
+  const allDrawers = [...defaultDrawers, ...customDrawers];
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header />
@@ -140,7 +182,7 @@ export default function MyDrawers() {
           <h2 className="font-heading text-3xl font-bold text-foreground">
             Minhas Gavettas
           </h2>
-          <Button size="sm" variant="outline">
+          <Button size="sm" variant="outline" onClick={() => setIsCreateDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Nova
           </Button>
@@ -176,18 +218,37 @@ export default function MyDrawers() {
               );
             })}
 
-            <div className="pt-6">
-              <h3 className="font-heading text-lg font-semibold text-foreground mb-4">
-                Gavetas Personalizadas
-              </h3>
-              
-              <button className="w-full flex items-center justify-center gap-2 p-6 bg-card rounded-lg border-2 border-dashed border-border hover:border-primary hover:bg-accent/5 transition-all duration-200">
-                <Plus className="h-5 w-5 text-muted-foreground" />
-                <span className="text-sm text-muted-foreground font-medium">
-                  Criar Gaveta Personalizada
-                </span>
-              </button>
-            </div>
+            {customDrawers.length > 0 && (
+              <div className="pt-6">
+                <h3 className="font-heading text-lg font-semibold text-foreground mb-4">
+                  Gavetas Personalizadas
+                </h3>
+                
+                {customDrawers.map((drawer) => {
+                  const Icon = drawer.icon;
+                  return (
+                    <button
+                      key={drawer.id}
+                      onClick={() => setSelectedDrawer(drawer.id)}
+                      className="w-full flex items-center justify-between p-4 bg-card rounded-lg border border-border hover:bg-accent/5 hover:border-accent/50 transition-all duration-200 mb-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon className={`h-6 w-6 ${drawer.color}`} />
+                        <div className="text-left">
+                          <h4 className="font-heading font-bold text-foreground">
+                            {drawer.name}
+                          </h4>
+                          <p className="text-xs text-muted-foreground">
+                            {drawer.count} {drawer.count === 1 ? 'item' : 'itens'}
+                          </p>
+                        </div>
+                      </div>
+                      <Badge variant="secondary">{drawer.count}</Badge>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
         ) : (
           <DndContext
@@ -205,7 +266,7 @@ export default function MyDrawers() {
               </Button>
               
               <h3 className="font-heading text-xl font-bold text-foreground mb-4">
-                {defaultDrawers.find(d => d.id === selectedDrawer)?.name}
+                {allDrawers.find(d => d.id === selectedDrawer)?.name}
               </h3>
 
               <SortableContext
@@ -242,6 +303,12 @@ export default function MyDrawers() {
           onOpenChange={setIsDialogOpen}
         />
       )}
+
+      <CreateDrawerDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onCreateDrawer={handleCreateDrawer}
+      />
     </div>
   );
 }
