@@ -7,10 +7,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Film, Tv, Calendar, Star, Share2, MessageCircle } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Film, Tv, Calendar, Star, Share2, MessageCircle, FolderOpen, Check } from "lucide-react";
 import { Content } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
-import gavetaIcon from "@/assets/gaveta-icon.png";
 
 interface ContentDetailDialogProps {
   content: Content | null;
@@ -29,43 +29,60 @@ const typeIcons = {
 };
 
 export function ContentDetailDialog({ content, open, onOpenChange }: ContentDetailDialogProps) {
-  const [isInDrawer, setIsInDrawer] = useState(content?.isInDrawer || false);
+  const [selectedDrawer, setSelectedDrawer] = useState<string | null>(null);
   const [userRating, setUserRating] = useState(0);
   const [userStatus, setUserStatus] = useState("");
   const [comment, setComment] = useState("");
 
   if (!content) return null;
 
-  const handleAddToDrawer = () => {
-    setIsInDrawer(true);
+  // Gavetas disponíveis (podem vir de props ou contexto no futuro)
+  const availableDrawers = [
+    { id: 'assistindo', name: 'Assistindo', icon: '👀' },
+    { id: 'para-assistir', name: 'Para Assistir', icon: '📌' },
+    { id: 'assistido', name: 'Assistido', icon: '✓' },
+  ];
+
+  const handleSelectDrawer = (drawerId: string) => {
+    setSelectedDrawer(drawerId);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
         <div className="relative">
-          {/* Botão Gaveta - FIXADO no Canto Superior Direito */}
+          {/* Botão Adicionar à Gavetta - FIXADO no Canto Superior Direito */}
           <div className="absolute top-4 right-4 z-50">
-            <Button
-              variant="ghost"
-              size="icon"
-              className={cn(
-                "rounded-full shadow-lg",
-                isInDrawer 
-                  ? "bg-gradient-to-br from-[#4ADE80] via-[#3B82F6] to-[#FBBF24]" 
-                  : "bg-card/90 backdrop-blur-sm border-2 border-border"
-              )}
-              onClick={handleAddToDrawer}
-            >
-              <img
-                src={gavetaIcon}
-                alt="Gaveta"
-                className={cn(
-                  "h-5 w-5",
-                  isInDrawer ? "brightness-0 invert" : "opacity-40"
-                )}
-              />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant={selectedDrawer ? "default" : "outline"}
+                  size="sm"
+                  className={cn(
+                    "shadow-lg gap-2",
+                    selectedDrawer && "bg-gradient-to-r from-primary to-primary/80"
+                  )}
+                >
+                  <FolderOpen className="h-4 w-4" />
+                  {selectedDrawer ? availableDrawers.find(d => d.id === selectedDrawer)?.name : 'Adicionar à Gavetta'}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {availableDrawers.map((drawer) => (
+                  <DropdownMenuItem
+                    key={drawer.id}
+                    onClick={() => handleSelectDrawer(drawer.id)}
+                    className="cursor-pointer"
+                  >
+                    <span className="mr-2">{drawer.icon}</span>
+                    <span className="flex-1">{drawer.name}</span>
+                    {selectedDrawer === drawer.id && (
+                      <Check className="h-4 w-4 text-primary" />
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
           {/* Backdrop Image */}
@@ -209,7 +226,7 @@ export function ContentDetailDialog({ content, open, onOpenChange }: ContentDeta
             )}
 
             {/* Comentário (quando na gaveta) */}
-            {isInDrawer && (
+            {selectedDrawer && (
               <div className="space-y-4">
                 <Label className="text-sm font-semibold">Comentário (opcional)</Label>
                 <Textarea
