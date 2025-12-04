@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Play, Eye, CheckCircle, Star, GripVertical, Heart, Bookmark, Clock, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useDrawers, DefaultDrawerId } from "@/contexts/DrawerContext";
 import {
   DndContext,
   closestCenter,
@@ -32,7 +33,6 @@ interface Drawer {
   name: string;
   icon: any;
   color: string;
-  count: number;
 }
 
 const defaultDrawers: Drawer[] = [
@@ -41,28 +41,18 @@ const defaultDrawers: Drawer[] = [
     name: "Para Assistir",
     icon: Play,
     color: "text-blue-500",
-    count: 8,
   },
   {
     id: "watching",
     name: "Assistindo",
     icon: Eye,
     color: "text-yellow-500",
-    count: 3,
   },
   {
     id: "watched",
     name: "Assistidos",
     icon: CheckCircle,
     color: "text-green-500",
-    count: 15,
-  },
-  {
-    id: "ranking",
-    name: "Ranking",
-    icon: Star,
-    color: "text-purple-500",
-    count: 12,
   },
 ];
 
@@ -118,14 +108,13 @@ function SortableContentCard({ content, onClick }: SortableContentCardProps) {
 
 export default function MyDrawers() {
   const { toast } = useToast();
+  const { customDrawers, addCustomDrawer, addToCustomDrawer, getDrawerContents, isDefaultDrawer } = useDrawers();
+  
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedDrawer, setSelectedDrawer] = useState<string | null>(null);
-  const [customDrawers, setCustomDrawers] = useState<Drawer[]>([]);
-  const [drawerContent, setDrawerContent] = useState<Content[]>(
-    mockContent.filter(item => item.isInDrawer)
-  );
+  const [drawerContentOrder, setDrawerContentOrder] = useState<string[]>([]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -143,35 +132,68 @@ export default function MyDrawers() {
     setIsDialogOpen(true);
   };
 
+  const handleSelectDrawer = (drawerId: string) => {
+    setSelectedDrawer(drawerId);
+    // Inicializar ordem com os IDs do conteúdo
+    const contentIds = getDrawerContents(drawerId);
+    setDrawerContentOrder(contentIds);
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      setDrawerContent((items) => {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
+      setDrawerContentOrder((items) => {
+        const oldIndex = items.findIndex((id) => id === active.id);
+        const newIndex = items.findIndex((id) => id === over.id);
         return arrayMove(items, oldIndex, newIndex);
       });
     }
   };
 
   const handleCreateDrawer = (drawer: { name: string; icon: string; color: string; contentIds: string[] }) => {
-    const newDrawer: Drawer = {
-      id: `custom-${Date.now()}`,
+    const newDrawer = addCustomDrawer({
       name: drawer.name,
-      icon: iconMap[drawer.icon] || Star,
+      icon: drawer.icon,
       color: drawer.color,
-      count: drawer.contentIds.length,
-    };
+    });
     
-    setCustomDrawers((prev) => [...prev, newDrawer]);
+    // Adicionar os conteúdos selecionados à nova gaveta
+    drawer.contentIds.forEach(contentId => {
+      addToCustomDrawer(contentId, newDrawer.id);
+    });
+    
     toast({
       title: "Gavetta criada!",
-      description: `"${drawer.name}" foi criada com sucesso.`,
+      description: `"${drawer.name}" foi criada com ${drawer.contentIds.length} item(s).`,
     });
   };
 
-  const allDrawers = [...defaultDrawers, ...customDrawers];
+  // Obter contagem de cada gaveta
+  const getDrawerCount = (drawerId: string): number => {
+    return getDrawerContents(drawerId).length;
+  };
+
+  // Obter conteúdo da gaveta selecionada
+  const getSelectedDrawerContent = (): Content[] => {
+    if (!selectedDrawer) return [];
+    const contentIds = drawerContentOrder.length > 0 ? drawerContentOrder : getDrawerContents(selectedDrawer);
+    return contentIds
+      .map(id => mockContent.find(c => c.id === id))
+      .filter((c): c is Content => c !== undefined);
+  };
+
+  const allDrawers = [
+    ...defaultDrawers,
+    ...customDrawers.map(d => ({
+      id: d.id,
+      name: d.name,
+      icon: iconMap[d.icon] || Star,
+      color: d.color,
+    }))
+  ];
+
+  const drawerContent = getSelectedDrawerContent();
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -193,13 +215,17 @@ export default function MyDrawers() {
             <h3 className="font-heading text-lg font-semibold text-foreground mb-4">
               Gavetas Padrão
             </h3>
+            <p className="text-xs text-muted-foreground mb-4">
+              Um conteúdo só pode estar em uma destas gavetas por vez.
+            </p>
             
             {defaultDrawers.map((drawer) => {
               const Icon = drawer.icon;
+              const count = getDrawerCount(drawer.id);
               return (
                 <button
                   key={drawer.id}
-                  onClick={() => setSelectedDrawer(drawer.id)}
+                  onClick={() => handleSelectDrawer(drawer.id)}
                   className="w-full flex items-center justify-between p-4 bg-card rounded-lg border border-border hover:bg-accent/5 hover:border-accent/50 transition-all duration-200"
                 >
                   <div className="flex items-center gap-3">
@@ -209,11 +235,11 @@ export default function MyDrawers() {
                         {drawer.name}
                       </h4>
                       <p className="text-xs text-muted-foreground">
-                        {drawer.count} {drawer.count === 1 ? 'item' : 'itens'}
+                        {count} {count === 1 ? 'item' : 'itens'}
                       </p>
                     </div>
                   </div>
-                  <Badge variant="secondary">{drawer.count}</Badge>
+                  <Badge variant="secondary">{count}</Badge>
                 </button>
               );
             })}
@@ -223,13 +249,17 @@ export default function MyDrawers() {
                 <h3 className="font-heading text-lg font-semibold text-foreground mb-4">
                   Gavetas Personalizadas
                 </h3>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Um conteúdo pode estar em várias destas gavetas.
+                </p>
                 
                 {customDrawers.map((drawer) => {
-                  const Icon = drawer.icon;
+                  const Icon = iconMap[drawer.icon] || Star;
+                  const count = getDrawerCount(drawer.id);
                   return (
                     <button
                       key={drawer.id}
-                      onClick={() => setSelectedDrawer(drawer.id)}
+                      onClick={() => handleSelectDrawer(drawer.id)}
                       className="w-full flex items-center justify-between p-4 bg-card rounded-lg border border-border hover:bg-accent/5 hover:border-accent/50 transition-all duration-200 mb-3"
                     >
                       <div className="flex items-center gap-3">
@@ -239,11 +269,11 @@ export default function MyDrawers() {
                             {drawer.name}
                           </h4>
                           <p className="text-xs text-muted-foreground">
-                            {drawer.count} {drawer.count === 1 ? 'item' : 'itens'}
+                            {count} {count === 1 ? 'item' : 'itens'}
                           </p>
                         </div>
                       </div>
-                      <Badge variant="secondary">{drawer.count}</Badge>
+                      <Badge variant="secondary">{count}</Badge>
                     </button>
                   );
                 })}
@@ -287,6 +317,9 @@ export default function MyDrawers() {
               {drawerContent.length === 0 && (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground">Nenhum conteúdo nesta gaveta</p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Adicione conteúdo clicando no botão "Adicionar à Gavetta" nos detalhes do filme/série
+                  </p>
                 </div>
               )}
             </div>
