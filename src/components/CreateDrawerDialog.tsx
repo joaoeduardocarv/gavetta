@@ -5,9 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
-import { mockContent, Content } from "@/lib/mockData";
-import { ContentCard } from "@/components/ContentCard";
+import { mockContent } from "@/lib/mockData";
 import { Play, Eye, CheckCircle, Star, Heart, Bookmark, Clock, Sparkles } from "lucide-react";
+import { useDrawers } from "@/contexts/DrawerContext";
 
 interface CreateDrawerDialogProps {
   open: boolean;
@@ -38,6 +38,7 @@ const colorOptions = [
 ];
 
 export function CreateDrawerDialog({ open, onOpenChange, onCreateDrawer }: CreateDrawerDialogProps) {
+  const { addToCustomDrawer } = useDrawers();
   const [drawerName, setDrawerName] = useState("");
   const [selectedIcon, setSelectedIcon] = useState("Star");
   const [selectedColor, setSelectedColor] = useState("text-purple-500");
@@ -53,12 +54,14 @@ export function CreateDrawerDialog({ open, onOpenChange, onCreateDrawer }: Creat
 
   const handleCreate = () => {
     if (drawerName.trim()) {
+      // Criar a gaveta primeiro
       onCreateDrawer({
         name: drawerName,
         icon: selectedIcon,
         color: selectedColor,
         contentIds: selectedContentIds,
       });
+      
       // Reset form
       setDrawerName("");
       setSelectedIcon("Star");

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -7,10 +7,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Film, Tv, Calendar, Star, Share2, MessageCircle, FolderOpen, Check } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Film, Tv, Calendar, Star, Share2, MessageCircle, FolderOpen, Check, Play, Eye, CheckCircle } from "lucide-react";
 import { Content } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
+import { useDrawers, DEFAULT_DRAWER_IDS, DefaultDrawerId } from "@/contexts/DrawerContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface ContentDetailDialogProps {
   content: Content | null;
@@ -28,59 +30,174 @@ const typeIcons = {
   series: <Tv className="h-3.5 w-3.5" />,
 };
 
+const defaultDrawerInfo = [
+  { id: 'to-watch' as DefaultDrawerId, name: 'Para Assistir', icon: Play, emoji: '📌' },
+  { id: 'watching' as DefaultDrawerId, name: 'Assistindo', icon: Eye, emoji: '👀' },
+  { id: 'watched' as DefaultDrawerId, name: 'Assistido', icon: CheckCircle, emoji: '✓' },
+];
+
 export function ContentDetailDialog({ content, open, onOpenChange }: ContentDetailDialogProps) {
-  const [selectedDrawer, setSelectedDrawer] = useState<string | null>(null);
+  const { toast } = useToast();
+  const { 
+    customDrawers, 
+    getContentDrawers, 
+    setDefaultDrawer, 
+    addToCustomDrawer, 
+    removeFromCustomDrawer,
+    isInCustomDrawer 
+  } = useDrawers();
+  
   const [userRating, setUserRating] = useState(0);
   const [userStatus, setUserStatus] = useState("");
   const [comment, setComment] = useState("");
 
+  // Obter gavetas atuais do conteúdo
+  const contentDrawers = content ? getContentDrawers(content.id) : { defaultDrawer: null, customDrawers: [] };
+
   if (!content) return null;
 
-  // Gavetas disponíveis (podem vir de props ou contexto no futuro)
-  const availableDrawers = [
-    { id: 'assistindo', name: 'Assistindo', icon: '👀' },
-    { id: 'para-assistir', name: 'Para Assistir', icon: '📌' },
-    { id: 'assistido', name: 'Assistido', icon: '✓' },
-  ];
-
-  const handleSelectDrawer = (drawerId: string) => {
-    setSelectedDrawer(drawerId);
+  const handleSelectDefaultDrawer = (drawerId: DefaultDrawerId) => {
+    const previousDrawer = contentDrawers.defaultDrawer;
+    const drawerName = defaultDrawerInfo.find(d => d.id === drawerId)?.name;
+    
+    if (previousDrawer === drawerId) {
+      // Remover da gaveta padrão
+      setDefaultDrawer(content.id, null);
+      toast({
+        title: "Removido da gaveta",
+        description: `"${content.title}" foi removido de "${drawerName}".`,
+      });
+    } else {
+      // Mover para nova gaveta padrão (remove automaticamente da anterior)
+      setDefaultDrawer(content.id, drawerId);
+      
+      if (previousDrawer) {
+        const previousName = defaultDrawerInfo.find(d => d.id === previousDrawer)?.name;
+        toast({
+          title: "Gaveta alterada",
+          description: `"${content.title}" foi movido de "${previousName}" para "${drawerName}".`,
+        });
+      } else {
+        toast({
+          title: "Adicionado à gaveta",
+          description: `"${content.title}" foi adicionado a "${drawerName}".`,
+        });
+      }
+    }
   };
+
+  const handleToggleCustomDrawer = (drawerId: string) => {
+    const drawer = customDrawers.find(d => d.id === drawerId);
+    if (!drawer) return;
+
+    if (isInCustomDrawer(content.id, drawerId)) {
+      removeFromCustomDrawer(content.id, drawerId);
+      toast({
+        title: "Removido da gaveta",
+        description: `"${content.title}" foi removido de "${drawer.name}".`,
+      });
+    } else {
+      addToCustomDrawer(content.id, drawerId);
+      toast({
+        title: "Adicionado à gaveta",
+        description: `"${content.title}" foi adicionado a "${drawer.name}".`,
+      });
+    }
+  };
+
+  const getButtonLabel = () => {
+    const parts: string[] = [];
+    
+    if (contentDrawers.defaultDrawer) {
+      const drawer = defaultDrawerInfo.find(d => d.id === contentDrawers.defaultDrawer);
+      if (drawer) parts.push(drawer.name);
+    }
+    
+    const customCount = contentDrawers.customDrawers.length;
+    if (customCount > 0) {
+      parts.push(`+${customCount} personalizada${customCount > 1 ? 's' : ''}`);
+    }
+    
+    return parts.length > 0 ? parts.join(' • ') : 'Adicionar à Gavetta';
+  };
+
+  const hasAnyDrawer = contentDrawers.defaultDrawer || contentDrawers.customDrawers.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
         <div className="relative">
-          {/* Botão Adicionar à Gavetta - FIXADO no Canto Superior Direito */}
+          {/* Botão Adicionar à Gavetta */}
           <div className="absolute top-4 right-4 z-50">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
-                  variant={selectedDrawer ? "default" : "outline"}
+                  variant={hasAnyDrawer ? "default" : "outline"}
                   size="sm"
                   className={cn(
-                    "shadow-lg gap-2",
-                    selectedDrawer && "bg-gradient-to-r from-primary to-primary/80"
+                    "shadow-lg gap-2 max-w-[200px]",
+                    hasAnyDrawer && "bg-gradient-to-r from-primary to-primary/80"
                   )}
                 >
-                  <FolderOpen className="h-4 w-4" />
-                  {selectedDrawer ? availableDrawers.find(d => d.id === selectedDrawer)?.name : 'Adicionar à Gavetta'}
+                  <FolderOpen className="h-4 w-4 flex-shrink-0" />
+                  <span className="truncate text-xs">{getButtonLabel()}</span>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                {availableDrawers.map((drawer) => (
-                  <DropdownMenuItem
-                    key={drawer.id}
-                    onClick={() => handleSelectDrawer(drawer.id)}
-                    className="cursor-pointer"
-                  >
-                    <span className="mr-2">{drawer.icon}</span>
-                    <span className="flex-1">{drawer.name}</span>
-                    {selectedDrawer === drawer.id && (
-                      <Check className="h-4 w-4 text-primary" />
-                    )}
-                  </DropdownMenuItem>
-                ))}
+              <DropdownMenuContent align="end" className="w-64">
+                {/* Gavetas Padrão - Mutuamente Exclusivas */}
+                <div className="px-2 py-1.5">
+                  <p className="text-xs font-semibold text-muted-foreground">
+                    Gavetas Padrão (escolha uma)
+                  </p>
+                </div>
+                {defaultDrawerInfo.map((drawer) => {
+                  const Icon = drawer.icon;
+                  const isSelected = contentDrawers.defaultDrawer === drawer.id;
+                  return (
+                    <DropdownMenuItem
+                      key={drawer.id}
+                      onClick={() => handleSelectDefaultDrawer(drawer.id)}
+                      className="cursor-pointer"
+                    >
+                      <Icon className={cn(
+                        "h-4 w-4 mr-2",
+                        isSelected && "text-primary"
+                      )} />
+                      <span className="flex-1">{drawer.name}</span>
+                      {isSelected && (
+                        <Check className="h-4 w-4 text-primary" />
+                      )}
+                    </DropdownMenuItem>
+                  );
+                })}
+
+                {/* Gavetas Personalizadas - Múltipla Seleção */}
+                {customDrawers.length > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <div className="px-2 py-1.5">
+                      <p className="text-xs font-semibold text-muted-foreground">
+                        Gavetas Personalizadas (múltiplas)
+                      </p>
+                    </div>
+                    {customDrawers.map((drawer) => {
+                      const isSelected = isInCustomDrawer(content.id, drawer.id);
+                      return (
+                        <DropdownMenuItem
+                          key={drawer.id}
+                          onClick={() => handleToggleCustomDrawer(drawer.id)}
+                          className="cursor-pointer"
+                        >
+                          <span className="mr-2">{drawer.icon}</span>
+                          <span className="flex-1">{drawer.name}</span>
+                          {isSelected && (
+                            <Check className="h-4 w-4 text-primary" />
+                          )}
+                        </DropdownMenuItem>
+                      );
+                    })}
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -225,8 +342,8 @@ export function ContentDetailDialog({ content, open, onOpenChange }: ContentDeta
               </div>
             )}
 
-            {/* Comentário (quando na gaveta) */}
-            {selectedDrawer && (
+            {/* Comentário (quando em alguma gaveta) */}
+            {hasAnyDrawer && (
               <div className="space-y-4">
                 <Label className="text-sm font-semibold">Comentário (opcional)</Label>
                 <Textarea
