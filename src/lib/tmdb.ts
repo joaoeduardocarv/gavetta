@@ -1,5 +1,12 @@
 const TMDB_TOKEN = "eyJhbGciOiJIUzI1NiJ9.eyJhdWQiOiJlMGZjMWEzNTUxNGIxYWM2YTlkZGNjY2VlYzg0YTk2MyIsIm5iZiI6MTc2NDg3MzM1My4zMDksInN1YiI6IjY5MzFkNDg5ZjIyYzJiYmU0ZTY5YjliZCIsInNjb3BlcyI6WyJhcGlfcmVhZCJdLCJ2ZXJzaW9uIjoxfQ.KWCojutvNgsTGcdtnIFEJVPsEdINVBi0jUN838-EswE";
 
+const TMDB_HEADERS = {
+  "Authorization": `Bearer ${TMDB_TOKEN}`,
+  "Accept": "application/json"
+};
+
+// =============== TIPOS ===============
+
 export interface TMDBMovie {
   id: number;
   title: string;
@@ -11,24 +18,95 @@ export interface TMDBMovie {
   genre_ids: number[];
 }
 
-export interface TMDBSearchResponse {
-  page: number;
-  results: TMDBMovie[];
-  total_pages: number;
-  total_results: number;
+export interface TMDBMovieDetails extends TMDBMovie {
+  runtime: number;
+  genres: { id: number; name: string }[];
+  tagline: string;
+  status: string;
+  budget: number;
+  revenue: number;
+  production_companies: { id: number; name: string; logo_path: string | null }[];
 }
 
-export async function searchMovies(query: string): Promise<TMDBMovie[]> {
-  if (!query.trim()) return [];
+export interface TMDBTVShow {
+  id: number;
+  name: string;
+  overview: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  first_air_date: string;
+  vote_average: number;
+  genre_ids: number[];
+}
+
+export interface TMDBTVDetails extends TMDBTVShow {
+  number_of_seasons: number;
+  number_of_episodes: number;
+  seasons: TMDBSeason[];
+  genres: { id: number; name: string }[];
+  status: string;
+  created_by: { id: number; name: string }[];
+}
+
+export interface TMDBSeason {
+  id: number;
+  season_number: number;
+  episode_count: number;
+  air_date: string;
+  poster_path: string | null;
+  name: string;
+  overview: string;
+}
+
+export interface TMDBEpisode {
+  id: number;
+  name: string;
+  overview: string;
+  still_path: string | null;
+  episode_number: number;
+  season_number: number;
+  air_date: string;
+  vote_average: number;
+  runtime: number;
+}
+
+export interface TMDBCastMember {
+  id: number;
+  name: string;
+  character: string;
+  profile_path: string | null;
+  order: number;
+}
+
+export interface TMDBCrewMember {
+  id: number;
+  name: string;
+  job: string;
+  department: string;
+  profile_path: string | null;
+}
+
+// =============== UTILITÁRIOS DE IMAGEM ===============
+
+export function getTMDBImageUrl(path: string | null, size: 'w200' | 'w300' | 'w500' | 'original' = 'w500'): string {
+  if (!path) return '/placeholder.svg';
+  return `https://image.tmdb.org/t/p/${size}${path}`;
+}
+
+export function getTMDBProfileUrl(path: string | null): string {
+  return getTMDBImageUrl(path, 'w300');
+}
+
+// =============== ACTION 1 — BUSCAR FILMES ===============
+
+export async function searchMovies(termoBusca: string): Promise<TMDBMovie[]> {
+  if (!termoBusca.trim()) return [];
 
   const response = await fetch(
-    `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(query)}`,
+    `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(termoBusca)}`,
     {
       method: "GET",
-      headers: {
-        "Authorization": `Bearer ${TMDB_TOKEN}`,
-        "Accept": "application/json"
-      }
+      headers: TMDB_HEADERS
     }
   );
 
@@ -36,11 +114,121 @@ export async function searchMovies(query: string): Promise<TMDBMovie[]> {
     throw new Error(`TMDB API error: ${response.status}`);
   }
 
-  const data: TMDBSearchResponse = await response.json();
+  const data = await response.json();
   return data.results;
 }
 
-export function getTMDBImageUrl(path: string | null, size: 'w200' | 'w500' | 'original' = 'w500'): string {
-  if (!path) return '/placeholder.svg';
-  return `https://image.tmdb.org/t/p/${size}${path}`;
+// =============== ACTION 2 — BUSCAR SÉRIES ===============
+
+export async function searchTVShows(termoBusca: string): Promise<TMDBTVShow[]> {
+  if (!termoBusca.trim()) return [];
+
+  const response = await fetch(
+    `https://api.themoviedb.org/3/search/tv?query=${encodeURIComponent(termoBusca)}`,
+    {
+      method: "GET",
+      headers: TMDB_HEADERS
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`TMDB API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.results;
+}
+
+// =============== ACTION 3 — DETALHES DO FILME ===============
+
+export async function getMovieDetails(movieId: number): Promise<TMDBMovieDetails> {
+  const response = await fetch(
+    `https://api.themoviedb.org/3/movie/${movieId}`,
+    {
+      method: "GET",
+      headers: TMDB_HEADERS
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`TMDB API error: ${response.status}`);
+  }
+
+  return await response.json();
+}
+
+// =============== ACTION 4 — ELENCO DO FILME ===============
+
+export async function getMovieCredits(movieId: number): Promise<{ cast: TMDBCastMember[]; crew: TMDBCrewMember[] }> {
+  const response = await fetch(
+    `https://api.themoviedb.org/3/movie/${movieId}/credits`,
+    {
+      method: "GET",
+      headers: TMDB_HEADERS
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`TMDB API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return { cast: data.cast, crew: data.crew };
+}
+
+// =============== ACTION 5 — DETALHES DA SÉRIE ===============
+
+export async function getTVDetails(tvId: number): Promise<TMDBTVDetails> {
+  const response = await fetch(
+    `https://api.themoviedb.org/3/tv/${tvId}`,
+    {
+      method: "GET",
+      headers: TMDB_HEADERS
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`TMDB API error: ${response.status}`);
+  }
+
+  return await response.json();
+}
+
+// =============== ACTION 6 — TEMPORADAS DA SÉRIE ===============
+
+export async function getTVSeasons(tvId: number): Promise<TMDBSeason[]> {
+  const details = await getTVDetails(tvId);
+  return details.seasons;
+}
+
+// =============== ACTION 7 — EPISÓDIOS DE UMA TEMPORADA ===============
+
+export async function getSeasonEpisodes(tvId: number, seasonNumber: number): Promise<TMDBEpisode[]> {
+  const response = await fetch(
+    `https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNumber}`,
+    {
+      method: "GET",
+      headers: TMDB_HEADERS
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`TMDB API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.episodes;
+}
+
+// =============== BUSCA COMBINADA (FILMES + SÉRIES) ===============
+
+export async function searchAll(termoBusca: string): Promise<{ movies: TMDBMovie[]; tvShows: TMDBTVShow[] }> {
+  if (!termoBusca.trim()) return { movies: [], tvShows: [] };
+
+  const [movies, tvShows] = await Promise.all([
+    searchMovies(termoBusca),
+    searchTVShows(termoBusca)
+  ]);
+
+  return { movies, tvShows };
 }
