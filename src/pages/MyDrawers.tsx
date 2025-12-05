@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { ContentCard } from "@/components/ContentCard";
@@ -134,10 +134,17 @@ export default function MyDrawers() {
 
   const handleSelectDrawer = (drawerId: string) => {
     setSelectedDrawer(drawerId);
-    // Inicializar ordem com os IDs do conteúdo
-    const contentIds = getDrawerContents(drawerId);
-    setDrawerContentOrder(contentIds);
   };
+
+  // Sincronizar drawerContentOrder com o contexto quando a gaveta selecionada muda
+  // ou quando o conteúdo da gaveta muda no contexto
+  const currentDrawerContentIds = selectedDrawer ? getDrawerContents(selectedDrawer) : [];
+  
+  useEffect(() => {
+    if (selectedDrawer) {
+      setDrawerContentOrder(currentDrawerContentIds);
+    }
+  }, [selectedDrawer, currentDrawerContentIds.join(',')]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
