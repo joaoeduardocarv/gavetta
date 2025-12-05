@@ -1,32 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { ContentCard } from "@/components/ContentCard";
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { CreateDrawerDialog } from "@/components/CreateDrawerDialog";
-import { mockContent, Content } from "@/lib/mockData";
+import { Content } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Play, Eye, CheckCircle, Star, GripVertical, Heart, Bookmark, Clock, Sparkles } from "lucide-react";
+import { Plus, Play, Eye, CheckCircle, Star, Heart, Bookmark, Clock, Sparkles } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useDrawers, DefaultDrawerId } from "@/contexts/DrawerContext";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { useDrawers } from "@/contexts/DrawerContext";
 
 interface Drawer {
   id: string;
@@ -67,65 +50,14 @@ const iconMap: Record<string, any> = {
   Sparkles,
 };
 
-interface SortableContentCardProps {
-  content: Content;
-  onClick: () => void;
-}
-
-function SortableContentCard({ content, onClick }: SortableContentCardProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: content.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} className="relative group">
-      <div className="flex items-center gap-2">
-        <div
-          {...attributes}
-          {...listeners}
-          className="cursor-grab active:cursor-grabbing p-2 hover:bg-accent/10 rounded transition-colors"
-        >
-          <GripVertical className="h-5 w-5 text-muted-foreground" />
-        </div>
-        <div className="flex-1">
-          <ContentCard content={content} onClick={onClick} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function MyDrawers() {
   const { toast } = useToast();
-  const { customDrawers, addCustomDrawer, addToCustomDrawer, getDrawerContents, isDefaultDrawer } = useDrawers();
+  const { customDrawers, addCustomDrawer, getDrawerContents } = useDrawers();
   
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedDrawer, setSelectedDrawer] = useState<string | null>(null);
-  const [drawerContentOrder, setDrawerContentOrder] = useState<string[]>([]);
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 8,
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
 
   const handleCardClick = (content: Content) => {
     setSelectedContent(content);
@@ -136,28 +68,6 @@ export default function MyDrawers() {
     setSelectedDrawer(drawerId);
   };
 
-  // Sincronizar drawerContentOrder com o contexto quando a gaveta selecionada muda
-  // ou quando o conteúdo da gaveta muda no contexto
-  const currentDrawerContentIds = selectedDrawer ? getDrawerContents(selectedDrawer) : [];
-  
-  useEffect(() => {
-    if (selectedDrawer) {
-      setDrawerContentOrder(currentDrawerContentIds);
-    }
-  }, [selectedDrawer, currentDrawerContentIds.join(',')]);
-
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-
-    if (over && active.id !== over.id) {
-      setDrawerContentOrder((items) => {
-        const oldIndex = items.findIndex((id) => id === active.id);
-        const newIndex = items.findIndex((id) => id === over.id);
-        return arrayMove(items, oldIndex, newIndex);
-      });
-    }
-  };
-
   const handleCreateDrawer = (drawer: { name: string; icon: string; color: string; contentIds: string[] }) => {
     const newDrawer = addCustomDrawer({
       name: drawer.name,
@@ -165,14 +75,9 @@ export default function MyDrawers() {
       color: drawer.color,
     });
     
-    // Adicionar os conteúdos selecionados à nova gaveta
-    drawer.contentIds.forEach(contentId => {
-      addToCustomDrawer(contentId, newDrawer.id);
-    });
-    
     toast({
       title: "Gavetta criada!",
-      description: `"${drawer.name}" foi criada com ${drawer.contentIds.length} item(s).`,
+      description: `"${drawer.name}" foi criada.`,
     });
   };
 
@@ -181,13 +86,10 @@ export default function MyDrawers() {
     return getDrawerContents(drawerId).length;
   };
 
-  // Obter conteúdo da gaveta selecionada
+  // Obter conteúdo da gaveta selecionada diretamente do contexto
   const getSelectedDrawerContent = (): Content[] => {
     if (!selectedDrawer) return [];
-    const contentIds = drawerContentOrder.length > 0 ? drawerContentOrder : getDrawerContents(selectedDrawer);
-    return contentIds
-      .map(id => mockContent.find(c => c.id === id))
-      .filter((c): c is Content => c !== undefined);
+    return getDrawerContents(selectedDrawer);
   };
 
   const allDrawers = [
@@ -288,49 +190,38 @@ export default function MyDrawers() {
             )}
           </div>
         ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <div className="space-y-4">
-              <Button 
-                variant="ghost" 
-                onClick={() => setSelectedDrawer(null)}
-                className="mb-2"
-              >
-                ← Voltar
-              </Button>
-              
-              <h3 className="font-heading text-xl font-bold text-foreground mb-4">
-                {allDrawers.find(d => d.id === selectedDrawer)?.name}
-              </h3>
+          <div className="space-y-4">
+            <Button 
+              variant="ghost" 
+              onClick={() => setSelectedDrawer(null)}
+              className="mb-2"
+            >
+              ← Voltar
+            </Button>
+            
+            <h3 className="font-heading text-xl font-bold text-foreground mb-4">
+              {allDrawers.find(d => d.id === selectedDrawer)?.name}
+            </h3>
 
-              <SortableContext
-                items={drawerContent.map(c => c.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="space-y-3">
-                  {drawerContent.map((content) => (
-                    <SortableContentCard
-                      key={content.id}
-                      content={content}
-                      onClick={() => handleCardClick(content)}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-
-              {drawerContent.length === 0 && (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground">Nenhum conteúdo nesta gaveta</p>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Adicione conteúdo clicando no botão "Adicionar à Gavetta" nos detalhes do filme/série
-                  </p>
-                </div>
-              )}
+            <div className="space-y-3">
+              {drawerContent.map((content) => (
+                <ContentCard
+                  key={content.id}
+                  content={content}
+                  onClick={() => handleCardClick(content)}
+                />
+              ))}
             </div>
-          </DndContext>
+
+            {drawerContent.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-muted-foreground">Nenhum conteúdo nesta gaveta</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Adicione conteúdo clicando no botão "Adicionar à Gavetta" nos detalhes do filme/série
+                </p>
+              </div>
+            )}
+          </div>
         )}
       </main>
 
