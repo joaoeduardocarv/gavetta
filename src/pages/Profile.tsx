@@ -1,13 +1,20 @@
+import { useState } from "react";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { User, Mail, Calendar, Globe, Lock, Bell, Settings as SettingsIcon, Activity } from "lucide-react";
+import { User, Mail, Calendar, Globe, Lock, Bell, Settings as SettingsIcon, Activity, Camera } from "lucide-react";
+import { AvatarPickerDialog, getAvatarStyle } from "@/components/AvatarPickerDialog";
 
 export default function Profile() {
+  const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
+  const [selectedAvatar, setSelectedAvatar] = useState<string>("joker");
+
+  const avatarStyle = getAvatarStyle(selectedAvatar);
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header />
@@ -21,10 +28,24 @@ export default function Profile() {
           {/* Perfil do Usuário */}
           <div className="bg-card rounded-lg p-6 space-y-4">
             <div className="flex items-center gap-4">
-              <Avatar className="h-20 w-20">
-                <AvatarImage src="https://api.dicebear.com/7.x/avataaars/svg?seed=user" />
-                <AvatarFallback>US</AvatarFallback>
-              </Avatar>
+              <button
+                onClick={() => setIsAvatarPickerOpen(true)}
+                className="relative group"
+              >
+                <Avatar className="h-20 w-20 cursor-pointer transition-all duration-200 group-hover:ring-2 group-hover:ring-primary/50">
+                  {avatarStyle ? (
+                    <div 
+                      className="w-full h-full rounded-full"
+                      style={avatarStyle}
+                    />
+                  ) : (
+                    <AvatarFallback>US</AvatarFallback>
+                  )}
+                </Avatar>
+                <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <Camera className="h-6 w-6 text-white" />
+                </div>
+              </button>
               <div className="flex-1">
                 <h3 className="font-heading text-xl font-bold text-foreground">Seu Nome</h3>
                 <p className="text-sm text-muted-foreground">@username</p>
@@ -116,6 +137,13 @@ export default function Profile() {
       </main>
 
       <BottomNav />
+
+      <AvatarPickerDialog
+        open={isAvatarPickerOpen}
+        onOpenChange={setIsAvatarPickerOpen}
+        currentAvatar={selectedAvatar}
+        onSelectAvatar={setSelectedAvatar}
+      />
     </div>
   );
 }
