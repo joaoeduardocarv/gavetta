@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, ReactNode } from "react";
+import { Content } from "@/lib/mockData";
 
 // IDs das gavetas padrão mutuamente exclusivas
 export const DEFAULT_DRAWER_IDS = ['to-watch', 'watching', 'watched'] as const;
@@ -13,8 +14,9 @@ export interface CustomDrawer {
 
 export interface ContentDrawerAssignment {
   contentId: string;
-  defaultDrawer: DefaultDrawerId | null; // Só pode estar em UMA gaveta padrão
-  customDrawers: string[]; // Pode estar em MÚLTIPLAS gavetas personalizadas
+  content: Content; // Armazenar o conteúdo completo
+  defaultDrawer: DefaultDrawerId | null;
+  customDrawers: string[];
 }
 
 interface DrawerContextType {
@@ -27,17 +29,17 @@ interface DrawerContextType {
   assignments: ContentDrawerAssignment[];
   
   // Adicionar/remover de gaveta padrão (exclusivo)
-  setDefaultDrawer: (contentId: string, drawerId: DefaultDrawerId | null) => void;
+  setDefaultDrawer: (content: Content, drawerId: DefaultDrawerId | null) => void;
   getDefaultDrawer: (contentId: string) => DefaultDrawerId | null;
   
   // Adicionar/remover de gavetas personalizadas (múltiplas)
-  addToCustomDrawer: (contentId: string, drawerId: string) => void;
+  addToCustomDrawer: (content: Content, drawerId: string) => void;
   removeFromCustomDrawer: (contentId: string, drawerId: string) => void;
   isInCustomDrawer: (contentId: string, drawerId: string) => boolean;
   
   // Utilitários
   getContentDrawers: (contentId: string) => { defaultDrawer: DefaultDrawerId | null; customDrawers: string[] };
-  getDrawerContents: (drawerId: string) => string[];
+  getDrawerContents: (drawerId: string) => Content[];
   isDefaultDrawer: (drawerId: string) => boolean;
 }
 
@@ -51,23 +53,24 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
     return DEFAULT_DRAWER_IDS.includes(drawerId as DefaultDrawerId);
   };
 
-  const findOrCreateAssignment = (contentId: string): ContentDrawerAssignment => {
-    const existing = assignments.find(a => a.contentId === contentId);
-    if (existing) return existing;
-    return { contentId, defaultDrawer: null, customDrawers: [] };
-  };
-
-  const setDefaultDrawer = (contentId: string, drawerId: DefaultDrawerId | null) => {
+  const setDefaultDrawer = (content: Content, drawerId: DefaultDrawerId | null) => {
     setAssignments(prev => {
-      const existing = prev.find(a => a.contentId === contentId);
+      const existing = prev.find(a => a.contentId === content.id);
       if (existing) {
+        if (drawerId === null) {
+          // Se não tem mais gavetas personalizadas, remover a atribuição
+          if (existing.customDrawers.length === 0) {
+            return prev.filter(a => a.contentId !== content.id);
+          }
+        }
         return prev.map(a => 
-          a.contentId === contentId 
-            ? { ...a, defaultDrawer: drawerId }
+          a.contentId === content.id 
+            ? { ...a, defaultDrawer: drawerId, content }
             : a
         );
       }
-      return [...prev, { contentId, defaultDrawer: drawerId, customDrawers: [] }];
+      if (drawerId === null) return prev;
+      return [...prev, { contentId: content.id, content, defaultDrawer: drawerId, customDrawers: [] }];
     });
   };
 
@@ -75,18 +78,18 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
     return assignments.find(a => a.contentId === contentId)?.defaultDrawer || null;
   };
 
-  const addToCustomDrawer = (contentId: string, drawerId: string) => {
+  const addToCustomDrawer = (content: Content, drawerId: string) => {
     setAssignments(prev => {
-      const existing = prev.find(a => a.contentId === contentId);
+      const existing = prev.find(a => a.contentId === content.id);
       if (existing) {
         if (existing.customDrawers.includes(drawerId)) return prev;
         return prev.map(a => 
-          a.contentId === contentId 
-            ? { ...a, customDrawers: [...a.customDrawers, drawerId] }
+          a.contentId === content.id 
+            ? { ...a, customDrawers: [...a.customDrawers, drawerId], content }
             : a
         );
       }
-      return [...prev, { contentId, defaultDrawer: null, customDrawers: [drawerId] }];
+      return [...prev, { contentId: content.id, content, defaultDrawer: null, customDrawers: [drawerId] }];
     });
   };
 
@@ -96,7 +99,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
         a.contentId === contentId 
           ? { ...a, customDrawers: a.customDrawers.filter(id => id !== drawerId) }
           : a
-      )
+      ).filter(a => a.defaultDrawer !== null || a.customDrawers.length > 0)
     );
   };
 
@@ -105,22 +108,22 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
   };
 
   const getContentDrawers = (contentId: string) => {
-    const assignment = findOrCreateAssignment(contentId);
+    const assignment = assignments.find(a => a.contentId === contentId);
     return {
-      defaultDrawer: assignment.defaultDrawer,
-      customDrawers: assignment.customDrawers
+      defaultDrawer: assignment?.defaultDrawer || null,
+      customDrawers: assignment?.customDrawers || []
     };
   };
 
-  const getDrawerContents = (drawerId: string): string[] => {
+  const getDrawerContents = (drawerId: string): Content[] => {
     if (isDefaultDrawer(drawerId)) {
       return assignments
         .filter(a => a.defaultDrawer === drawerId)
-        .map(a => a.contentId);
+        .map(a => a.content);
     }
     return assignments
       .filter(a => a.customDrawers.includes(drawerId))
-      .map(a => a.contentId);
+      .map(a => a.content);
   };
 
   const addCustomDrawer = (drawer: Omit<CustomDrawer, 'id'>): CustomDrawer => {
@@ -134,12 +137,11 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
 
   const removeCustomDrawer = (drawerId: string) => {
     setCustomDrawers(prev => prev.filter(d => d.id !== drawerId));
-    // Remover atribuições dessa gaveta
     setAssignments(prev => 
       prev.map(a => ({
         ...a,
         customDrawers: a.customDrawers.filter(id => id !== drawerId)
-      }))
+      })).filter(a => a.defaultDrawer !== null || a.customDrawers.length > 0)
     );
   };
 
