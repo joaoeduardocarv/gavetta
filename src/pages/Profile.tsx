@@ -32,10 +32,10 @@ export default function Profile() {
                 onClick={() => setIsAvatarPickerOpen(true)}
                 className="relative group"
               >
-                <Avatar className="h-20 w-20 cursor-pointer transition-all duration-200 group-hover:ring-2 group-hover:ring-primary/50">
+                <Avatar className="h-20 w-20 aspect-square cursor-pointer transition-all duration-200 group-hover:ring-2 group-hover:ring-primary/50">
                   {avatarStyle ? (
                     <div 
-                      className="w-full h-full rounded-full"
+                      className="w-20 h-20 aspect-square rounded-full"
                       style={avatarStyle}
                     />
                   ) : (
