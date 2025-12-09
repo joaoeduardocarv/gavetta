@@ -6,14 +6,26 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { User, Mail, Calendar, Globe, Lock, Bell, Settings as SettingsIcon, Activity, Camera } from "lucide-react";
+import { User, Mail, Calendar, Globe, Lock, Bell, Settings as SettingsIcon, Activity, Camera, LogOut } from "lucide-react";
 import { AvatarPickerDialog, getAvatarStyle } from "@/components/AvatarPickerDialog";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Profile() {
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState<string>("joker");
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
 
   const avatarStyle = getAvatarStyle(selectedAvatar);
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: "Até logo!",
+      description: "Você saiu da sua conta.",
+    });
+  };
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -39,7 +51,9 @@ export default function Profile() {
                       style={avatarStyle}
                     />
                   ) : (
-                    <AvatarFallback>US</AvatarFallback>
+                    <AvatarFallback>
+                      {user?.email?.charAt(0).toUpperCase() || "U"}
+                    </AvatarFallback>
                   )}
                 </Avatar>
                 <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -47,8 +61,10 @@ export default function Profile() {
                 </div>
               </button>
               <div className="flex-1">
-                <h3 className="font-heading text-xl font-bold text-foreground">Seu Nome</h3>
-                <p className="text-sm text-muted-foreground">@username</p>
+                <h3 className="font-heading text-xl font-bold text-foreground">
+                  {user?.user_metadata?.username || "Usuário"}
+                </h3>
+                <p className="text-sm text-muted-foreground">{user?.email}</p>
               </div>
             </div>
             <Button variant="outline" className="w-full">
@@ -66,12 +82,14 @@ export default function Profile() {
             <div className="space-y-3">
               <div className="flex items-center gap-3 text-sm">
                 <Mail className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">usuario@email.com</span>
+                <span className="text-muted-foreground">{user?.email}</span>
               </div>
               
               <div className="flex items-center gap-3 text-sm">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">01/01/1990</span>
+                <span className="text-muted-foreground">
+                  Membro desde {user?.created_at ? new Date(user.created_at).toLocaleDateString('pt-BR') : '-'}
+                </span>
               </div>
               
               <div className="flex items-center gap-3 text-sm">
@@ -123,6 +141,14 @@ export default function Profile() {
             <Button variant="outline" className="w-full">
               <Activity className="h-4 w-4 mr-2" />
               Minhas Atividades
+            </Button>
+          </div>
+
+          {/* Sair */}
+          <div className="bg-card rounded-lg p-6">
+            <Button variant="destructive" className="w-full" onClick={handleSignOut}>
+              <LogOut className="h-4 w-4 mr-2" />
+              Sair da Conta
             </Button>
           </div>
 
