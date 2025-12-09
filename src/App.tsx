@@ -5,7 +5,6 @@ import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DrawerProvider } from "@/contexts/DrawerContext";
-import Feed from "./pages/Feed";
 import MyDrawers from "./pages/MyDrawers";
 import Friends from "./pages/Friends";
 import Search from "./pages/Search";
@@ -24,7 +23,7 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Feed />} />
+              <Route path="/" element={<MyDrawers />} />
               <Route path="/my-drawers" element={<MyDrawers />} />
               <Route path="/friends" element={<Friends />} />
               <Route path="/search" element={<Search />} />
