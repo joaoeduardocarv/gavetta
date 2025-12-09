@@ -7,7 +7,7 @@ export function BottomNav() {
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto px-1">
         {/* Minhas Gavettas */}
         <NavLink
-          to="/my-drawers"
+          to="/"
           className="flex flex-col items-center justify-center gap-0.5 px-2 py-2 rounded-lg text-muted-foreground transition-colors"
           activeClassName="text-primary"
         >
