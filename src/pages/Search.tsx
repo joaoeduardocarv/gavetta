@@ -7,7 +7,15 @@ import { Search as SearchIcon, Film, Tv, Globe, Palette, Radio, Loader2 } from "
 import { ContentCard } from "@/components/ContentCard";
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { Content } from "@/lib/mockData";
-import { searchAll, getTMDBImageUrl, TMDBMovie, TMDBTVShow } from "@/lib/tmdb";
+import { 
+  searchAll, 
+  getTMDBImageUrl, 
+  TMDBMovie, 
+  TMDBTVShow,
+  getMovieWatchProviders,
+  getTVWatchProviders,
+  extractStreamingNames
+} from "@/lib/tmdb";
 
 const clusters = [
   { id: "movies", label: "Filmes", icon: Film },
@@ -55,6 +63,7 @@ export default function Search() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<Content[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingProviders, setIsLoadingProviders] = useState(false);
 
   // Debounced search
   useEffect(() => {
@@ -81,9 +90,33 @@ export default function Search() {
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
-  const handleCardClick = (content: Content) => {
+  const handleCardClick = async (content: Content) => {
+    // Buscar watch providers
+    setIsLoadingProviders(true);
     setSelectedContent(content);
     setIsDialogOpen(true);
+
+    try {
+      const tmdbId = parseInt(content.id.split('-')[1]);
+      let providers;
+      
+      if (content.type === 'movie') {
+        providers = await getMovieWatchProviders(tmdbId);
+      } else {
+        providers = await getTVWatchProviders(tmdbId);
+      }
+      
+      const streamingNames = extractStreamingNames(providers);
+      
+      setSelectedContent({
+        ...content,
+        availableOn: streamingNames.length > 0 ? streamingNames : undefined
+      });
+    } catch (error) {
+      console.error('Erro ao buscar provedores:', error);
+    } finally {
+      setIsLoadingProviders(false);
+    }
   };
 
   return (

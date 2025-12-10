@@ -86,6 +86,19 @@ export interface TMDBCrewMember {
   profile_path: string | null;
 }
 
+export interface TMDBWatchProvider {
+  logo_path: string;
+  provider_id: number;
+  provider_name: string;
+  display_priority: number;
+}
+
+export interface TMDBWatchProvidersResult {
+  flatrate?: TMDBWatchProvider[];
+  rent?: TMDBWatchProvider[];
+  buy?: TMDBWatchProvider[];
+}
+
 // =============== UTILITÁRIOS DE IMAGEM ===============
 
 export function getTMDBImageUrl(path: string | null, size: 'w200' | 'w300' | 'w500' | 'original' = 'w500'): string {
@@ -231,4 +244,56 @@ export async function searchAll(termoBusca: string): Promise<{ movies: TMDBMovie
   ]);
 
   return { movies, tvShows };
+}
+
+// =============== ACTION 8 — WATCH PROVIDERS (STREAMINGS) ===============
+
+export async function getMovieWatchProviders(movieId: number): Promise<TMDBWatchProvidersResult | null> {
+  const response = await fetch(
+    `https://api.themoviedb.org/3/movie/${movieId}/watch/providers`,
+    {
+      method: "GET",
+      headers: TMDB_HEADERS
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`TMDB API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  // Retorna os provedores do Brasil (BR), ou null se não disponível
+  return data.results?.BR || null;
+}
+
+export async function getTVWatchProviders(tvId: number): Promise<TMDBWatchProvidersResult | null> {
+  const response = await fetch(
+    `https://api.themoviedb.org/3/tv/${tvId}/watch/providers`,
+    {
+      method: "GET",
+      headers: TMDB_HEADERS
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`TMDB API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  // Retorna os provedores do Brasil (BR), ou null se não disponível
+  return data.results?.BR || null;
+}
+
+// Função auxiliar para extrair nomes de streaming
+export function extractStreamingNames(providers: TMDBWatchProvidersResult | null): string[] {
+  if (!providers) return [];
+  
+  const names = new Set<string>();
+  
+  // Prioriza flatrate (assinatura) mas também inclui aluguel/compra
+  providers.flatrate?.forEach(p => names.add(p.provider_name));
+  providers.rent?.forEach(p => names.add(p.provider_name));
+  providers.buy?.forEach(p => names.add(p.provider_name));
+  
+  return Array.from(names);
 }
