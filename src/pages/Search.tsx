@@ -7,7 +7,7 @@ import { Search as SearchIcon, Film, Tv, Globe, Palette, Radio, Loader2 } from "
 import { ContentCard } from "@/components/ContentCard";
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { Content } from "@/lib/mockData";
-import { searchMovies, getTMDBImageUrl, TMDBMovie } from "@/lib/tmdb";
+import { searchAll, getTMDBImageUrl, TMDBMovie, TMDBTVShow } from "@/lib/tmdb";
 
 const clusters = [
   { id: "movies", label: "Filmes", icon: Film },
@@ -17,18 +17,34 @@ const clusters = [
   { id: "streaming", label: "Streamings", icon: Radio },
 ];
 
-// Converter resultado TMDB para o formato Content
-function tmdbToContent(movie: TMDBMovie): Content {
+// Converter resultado TMDB Movie para o formato Content
+function tmdbMovieToContent(movie: TMDBMovie): Content {
   return {
-    id: movie.id.toString(),
+    id: `movie-${movie.id}`,
     title: movie.title,
     type: 'movie',
     posterUrl: getTMDBImageUrl(movie.poster_path),
     backdropUrl: movie.backdrop_path ? getTMDBImageUrl(movie.backdrop_path, 'original') : undefined,
     rating: movie.vote_average,
     releaseDate: movie.release_date || '',
-    genres: [], // TMDB retorna genre_ids, seria necessário mapear
+    genres: [],
     synopsis: movie.overview,
+    isInDrawer: false,
+  };
+}
+
+// Converter resultado TMDB TV Show para o formato Content
+function tmdbTVToContent(tvShow: TMDBTVShow): Content {
+  return {
+    id: `tv-${tvShow.id}`,
+    title: tvShow.name,
+    type: 'series',
+    posterUrl: getTMDBImageUrl(tvShow.poster_path),
+    backdropUrl: tvShow.backdrop_path ? getTMDBImageUrl(tvShow.backdrop_path, 'original') : undefined,
+    rating: tvShow.vote_average,
+    releaseDate: tvShow.first_air_date || '',
+    genres: [],
+    synopsis: tvShow.overview,
     isInDrawer: false,
   };
 }
@@ -50,10 +66,12 @@ export default function Search() {
     const timeoutId = setTimeout(async () => {
       setIsLoading(true);
       try {
-        const results = await searchMovies(searchQuery);
-        setSearchResults(results.map(tmdbToContent));
+        const { movies, tvShows } = await searchAll(searchQuery);
+        const movieResults = movies.map(tmdbMovieToContent);
+        const tvResults = tvShows.map(tmdbTVToContent);
+        setSearchResults([...movieResults, ...tvResults]);
       } catch (error) {
-        console.error('Erro ao buscar filmes:', error);
+        console.error('Erro ao buscar conteúdo:', error);
         setSearchResults([]);
       } finally {
         setIsLoading(false);
