@@ -103,7 +103,7 @@ export async function searchMovies(termoBusca: string): Promise<TMDBMovie[]> {
   if (!termoBusca.trim()) return [];
 
   const response = await fetch(
-    `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(termoBusca)}`,
+    `https://api.themoviedb.org/3/search/movie?query=${encodeURIComponent(termoBusca)}&language=pt-BR`,
     {
       method: "GET",
       headers: TMDB_HEADERS
@@ -124,7 +124,7 @@ export async function searchTVShows(termoBusca: string): Promise<TMDBTVShow[]> {
   if (!termoBusca.trim()) return [];
 
   const response = await fetch(
-    `https://api.themoviedb.org/3/search/tv?query=${encodeURIComponent(termoBusca)}`,
+    `https://api.themoviedb.org/3/search/tv?query=${encodeURIComponent(termoBusca)}&language=pt-BR`,
     {
       method: "GET",
       headers: TMDB_HEADERS
@@ -143,7 +143,7 @@ export async function searchTVShows(termoBusca: string): Promise<TMDBTVShow[]> {
 
 export async function getMovieDetails(movieId: number): Promise<TMDBMovieDetails> {
   const response = await fetch(
-    `https://api.themoviedb.org/3/movie/${movieId}`,
+    `https://api.themoviedb.org/3/movie/${movieId}?language=pt-BR`,
     {
       method: "GET",
       headers: TMDB_HEADERS
@@ -161,7 +161,7 @@ export async function getMovieDetails(movieId: number): Promise<TMDBMovieDetails
 
 export async function getMovieCredits(movieId: number): Promise<{ cast: TMDBCastMember[]; crew: TMDBCrewMember[] }> {
   const response = await fetch(
-    `https://api.themoviedb.org/3/movie/${movieId}/credits`,
+    `https://api.themoviedb.org/3/movie/${movieId}/credits?language=pt-BR`,
     {
       method: "GET",
       headers: TMDB_HEADERS
@@ -180,7 +180,7 @@ export async function getMovieCredits(movieId: number): Promise<{ cast: TMDBCast
 
 export async function getTVDetails(tvId: number): Promise<TMDBTVDetails> {
   const response = await fetch(
-    `https://api.themoviedb.org/3/tv/${tvId}`,
+    `https://api.themoviedb.org/3/tv/${tvId}?language=pt-BR`,
     {
       method: "GET",
       headers: TMDB_HEADERS
@@ -205,7 +205,7 @@ export async function getTVSeasons(tvId: number): Promise<TMDBSeason[]> {
 
 export async function getSeasonEpisodes(tvId: number, seasonNumber: number): Promise<TMDBEpisode[]> {
   const response = await fetch(
-    `https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNumber}`,
+    `https://api.themoviedb.org/3/tv/${tvId}/season/${seasonNumber}?language=pt-BR`,
     {
       method: "GET",
       headers: TMDB_HEADERS
