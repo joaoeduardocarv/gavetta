@@ -122,10 +122,10 @@ export default function MyDrawers() {
         {!selectedDrawer ? (
           <div className="space-y-3">
             <h3 className="font-heading text-lg font-semibold text-foreground mb-4">
-              Gavetas Padrão
+              Gavettas Padrão
             </h3>
             <p className="text-xs text-muted-foreground mb-4">
-              Um conteúdo só pode estar em uma destas gavetas por vez.
+              Um conteúdo só pode estar em uma destas gavettas por vez.
             </p>
             
             {defaultDrawers.map((drawer) => {
@@ -156,10 +156,10 @@ export default function MyDrawers() {
             {customDrawers.length > 0 && (
               <div className="pt-6">
                 <h3 className="font-heading text-lg font-semibold text-foreground mb-4">
-                  Gavetas Personalizadas
+                  Gavettas Personalizadas
                 </h3>
                 <p className="text-xs text-muted-foreground mb-4">
-                  Um conteúdo pode estar em várias destas gavetas.
+                  Um conteúdo pode estar em várias destas gavettas.
                 </p>
                 
                 {customDrawers.map((drawer) => {
@@ -215,7 +215,7 @@ export default function MyDrawers() {
 
             {drawerContent.length === 0 && (
               <div className="text-center py-12">
-                <p className="text-muted-foreground">Nenhum conteúdo nesta gaveta</p>
+                <p className="text-muted-foreground">Nenhum conteúdo nesta gavetta</p>
                 <p className="text-xs text-muted-foreground mt-2">
                   Adicione conteúdo clicando no botão "Adicionar à Gavetta" nos detalhes do filme/série
                 </p>
