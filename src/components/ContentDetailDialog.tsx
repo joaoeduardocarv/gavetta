@@ -61,7 +61,7 @@ export function ContentDetailDialog({ content, open, onOpenChange }: ContentDeta
     const drawerName = defaultDrawerInfo.find(d => d.id === drawerId)?.name;
     
     if (previousDrawer === drawerId) {
-      // Remover da gaveta padrão
+      // Remover da gaveta padrão - não fecha o dialog
       setDefaultDrawer(content, null);
       toast({
         title: "Removido da gaveta",
@@ -83,6 +83,8 @@ export function ContentDetailDialog({ content, open, onOpenChange }: ContentDeta
           description: `"${content.title}" foi adicionado a "${drawerName}".`,
         });
       }
+      // Fechar o dialog ao adicionar
+      onOpenChange(false);
     }
   };
 
@@ -102,6 +104,8 @@ export function ContentDetailDialog({ content, open, onOpenChange }: ContentDeta
         title: "Adicionado à gaveta",
         description: `"${content.title}" foi adicionado a "${drawer.name}".`,
       });
+      // Fechar o dialog ao adicionar
+      onOpenChange(false);
     }
   };
 
