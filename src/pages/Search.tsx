@@ -176,7 +176,7 @@ export default function Search() {
             <h3 className="font-heading text-lg font-semibold text-foreground mb-4">
               Resultados ({searchResults.length})
             </h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-3">
               {searchResults.map((content) => (
                 <ContentCard
                   key={content.id}
