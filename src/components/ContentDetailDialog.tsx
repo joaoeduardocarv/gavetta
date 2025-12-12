@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Film, Tv, Calendar, Star, Share2, MessageCircle, FolderOpen, Check, Play, Eye, CheckCircle } from "lucide-react";
+import { RecommendDialog } from "./RecommendDialog";
 import { Content } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 import { useDrawers, DEFAULT_DRAWER_IDS, DefaultDrawerId } from "@/contexts/DrawerContext";
@@ -50,6 +51,7 @@ export function ContentDetailDialog({ content, open, onOpenChange }: ContentDeta
   const [userRating, setUserRating] = useState(0);
   const [userStatus, setUserStatus] = useState("");
   const [comment, setComment] = useState("");
+  const [isRecommendDialogOpen, setIsRecommendDialogOpen] = useState(false);
 
   // Obter gavetas atuais do conteúdo
   const contentDrawers = content ? getContentDrawers(content.id) : { defaultDrawer: null, customDrawers: [] };
@@ -362,7 +364,11 @@ export function ContentDetailDialog({ content, open, onOpenChange }: ContentDeta
 
             {/* Ações */}
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1 gap-2">
+              <Button 
+                variant="outline" 
+                className="flex-1 gap-2"
+                onClick={() => setIsRecommendDialogOpen(true)}
+              >
                 <MessageCircle className="h-4 w-4" />
                 Indicar para Amigo
               </Button>
@@ -373,6 +379,13 @@ export function ContentDetailDialog({ content, open, onOpenChange }: ContentDeta
             </div>
           </div>
         </div>
+
+        {/* Dialog de Indicação */}
+        <RecommendDialog
+          content={content}
+          open={isRecommendDialogOpen}
+          onOpenChange={setIsRecommendDialogOpen}
+        />
       </DialogContent>
     </Dialog>
   );
