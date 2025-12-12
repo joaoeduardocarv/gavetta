@@ -6,7 +6,6 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Film, Tv, Calendar, Star, Share2, MessageCircle, FolderOpen, Check, Play, Eye, CheckCircle } from "lucide-react";
 import { RecommendDialog } from "./RecommendDialog";
@@ -49,7 +48,6 @@ export function ContentDetailDialog({ content, open, onOpenChange }: ContentDeta
   } = useDrawers();
   
   const [userRating, setUserRating] = useState(0);
-  const [userStatus, setUserStatus] = useState("");
   const [comment, setComment] = useState("");
   const [isRecommendDialogOpen, setIsRecommendDialogOpen] = useState(false);
 
@@ -308,25 +306,10 @@ export function ContentDetailDialog({ content, open, onOpenChange }: ContentDeta
 
             <Separator />
 
-            {/* Status do Usuário */}
-            <div className="space-y-4">
-              <Label className="text-sm font-semibold">Status</Label>
-              <Select value={userStatus} onValueChange={setUserStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="to-watch">Para Assistir</SelectItem>
-                  <SelectItem value="watching">Assistindo</SelectItem>
-                  <SelectItem value="watched">Assistido</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Avaliação (só se assistido) */}
-            {userStatus === "watched" && (
+            {/* Avaliação (só se na gaveta "Assistido") */}
+            {contentDrawers.defaultDrawer === 'watched' && (
               <div className="space-y-4">
-                <Label className="text-sm font-semibold">Sua Nota (0-10)</Label>
+                <Label className="text-sm font-semibold">Sua Nota (0-10) <span className="text-destructive">*</span></Label>
                 <div className="flex gap-1">
                   {[...Array(10)].map((_, i) => (
                     <button
@@ -341,6 +324,11 @@ export function ContentDetailDialog({ content, open, onOpenChange }: ContentDeta
                     </button>
                   ))}
                 </div>
+                {userRating === 0 && (
+                  <p className="text-xs text-destructive">
+                    Selecione uma nota para este conteúdo
+                  </p>
+                )}
               </div>
             )}
 
