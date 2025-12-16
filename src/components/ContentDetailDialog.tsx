@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -6,13 +6,16 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Film, Tv, Calendar, Star, Share2, MessageCircle, FolderOpen, Check, Play, Eye, CheckCircle } from "lucide-react";
 import { RecommendDialog } from "./RecommendDialog";
+import { PersonDetailDialog } from "./PersonDetailDialog";
 import { Content } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 import { useDrawers, DEFAULT_DRAWER_IDS, DefaultDrawerId } from "@/contexts/DrawerContext";
 import { useToast } from "@/hooks/use-toast";
+import { searchPerson, getTMDBProfileUrl, TMDBPersonCredit } from "@/lib/tmdb";
 
 interface ContentDetailDialogProps {
   content: Content | null;
@@ -36,6 +39,12 @@ const defaultDrawerInfo = [
   { id: 'watched' as DefaultDrawerId, name: 'Assistido', icon: CheckCircle, emoji: '✓' },
 ];
 
+interface PersonInfo {
+  id: number;
+  name: string;
+  profile_path: string | null;
+}
+
 export function ContentDetailDialog({ content, open, onOpenChange }: ContentDetailDialogProps) {
   const { toast } = useToast();
   const { 
@@ -50,11 +59,56 @@ export function ContentDetailDialog({ content, open, onOpenChange }: ContentDeta
   const [userRating, setUserRating] = useState(0);
   const [comment, setComment] = useState("");
   const [isRecommendDialogOpen, setIsRecommendDialogOpen] = useState(false);
+  
+  // Estado para pessoa selecionada
+  const [selectedPerson, setSelectedPerson] = useState<{ id: number; name: string } | null>(null);
+  const [isPersonDialogOpen, setIsPersonDialogOpen] = useState(false);
+  
+  // Estado para fotos de diretor e elenco
+  const [directorInfo, setDirectorInfo] = useState<PersonInfo | null>(null);
+  const [castInfo, setCastInfo] = useState<PersonInfo[]>([]);
+
+  // Buscar informações de diretor e elenco quando o conteúdo mudar
+  useEffect(() => {
+    if (content && open) {
+      // Buscar diretor
+      if (content.director) {
+        searchPerson(content.director)
+          .then(results => {
+            if (results.length > 0) {
+              setDirectorInfo(results[0]);
+            }
+          })
+          .catch(console.error);
+      }
+      
+      // Buscar elenco (primeiros 10)
+      if (content.cast && content.cast.length > 0) {
+        Promise.all(
+          content.cast.slice(0, 10).map(name => 
+            searchPerson(name).then(results => results[0] || { id: 0, name, profile_path: null })
+          )
+        )
+          .then(results => setCastInfo(results.filter(r => r)))
+          .catch(console.error);
+      }
+    } else {
+      setDirectorInfo(null);
+      setCastInfo([]);
+    }
+  }, [content, open]);
 
   // Obter gavetas atuais do conteúdo
   const contentDrawers = content ? getContentDrawers(content.id) : { defaultDrawer: null, customDrawers: [] };
 
   if (!content) return null;
+
+  const handlePersonClick = (person: PersonInfo) => {
+    if (person.id) {
+      setSelectedPerson({ id: person.id, name: person.name });
+      setIsPersonDialogOpen(true);
+    }
+  };
 
   const handleSelectDefaultDrawer = (drawerId: DefaultDrawerId) => {
     const previousDrawer = contentDrawers.defaultDrawer;
@@ -263,14 +317,53 @@ export function ContentDetailDialog({ content, open, onOpenChange }: ContentDeta
               {content.director && (
                 <div>
                   <Label className="text-sm font-semibold">Diretor</Label>
-                  <p className="text-sm text-muted-foreground">{content.director}</p>
+                  <div className="mt-2">
+                    <button
+                      onClick={() => directorInfo && handlePersonClick(directorInfo)}
+                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors text-left"
+                    >
+                      <Avatar className="h-12 w-12 rounded-full">
+                        <AvatarImage 
+                          src={directorInfo?.profile_path ? getTMDBProfileUrl(directorInfo.profile_path) : undefined}
+                          alt={content.director}
+                          className="object-cover"
+                        />
+                        <AvatarFallback>{content.director.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <span className="text-sm font-medium">{content.director}</span>
+                    </button>
+                  </div>
                 </div>
               )}
 
               {content.cast && content.cast.length > 0 && (
                 <div>
                   <Label className="text-sm font-semibold">Elenco</Label>
-                  <p className="text-sm text-muted-foreground">{content.cast.join(", ")}</p>
+                  <ScrollArea className="w-full mt-2">
+                    <div className="flex gap-3 pb-2">
+                      {content.cast.slice(0, 10).map((actor, index) => {
+                        const actorInfo = castInfo[index];
+                        return (
+                          <button
+                            key={actor}
+                            onClick={() => actorInfo && handlePersonClick(actorInfo)}
+                            className="flex flex-col items-center gap-2 p-2 rounded-lg hover:bg-accent/50 transition-colors min-w-[80px]"
+                          >
+                            <Avatar className="h-14 w-14 rounded-full">
+                              <AvatarImage 
+                                src={actorInfo?.profile_path ? getTMDBProfileUrl(actorInfo.profile_path) : undefined}
+                                alt={actor}
+                                className="object-cover"
+                              />
+                              <AvatarFallback>{actor.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <span className="text-xs text-center line-clamp-2 max-w-[70px]">{actor}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <ScrollBar orientation="horizontal" />
+                  </ScrollArea>
                 </div>
               )}
 
@@ -377,6 +470,14 @@ export function ContentDetailDialog({ content, open, onOpenChange }: ContentDeta
           content={content}
           open={isRecommendDialogOpen}
           onOpenChange={setIsRecommendDialogOpen}
+        />
+
+        {/* Dialog de Pessoa */}
+        <PersonDetailDialog
+          personId={selectedPerson?.id || null}
+          personName={selectedPerson?.name || ''}
+          open={isPersonDialogOpen}
+          onOpenChange={setIsPersonDialogOpen}
         />
       </DialogContent>
     </Dialog>

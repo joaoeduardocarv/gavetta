@@ -297,3 +297,110 @@ export function extractStreamingNames(providers: TMDBWatchProvidersResult | null
   
   return Array.from(names);
 }
+
+// =============== TIPOS DE PESSOA ===============
+
+export interface TMDBPerson {
+  id: number;
+  name: string;
+  profile_path: string | null;
+  known_for_department: string;
+  biography: string;
+  birthday: string | null;
+  place_of_birth: string | null;
+}
+
+export interface TMDBPersonCredit {
+  id: number;
+  title?: string;
+  name?: string;
+  poster_path: string | null;
+  release_date?: string;
+  first_air_date?: string;
+  vote_average: number;
+  media_type: 'movie' | 'tv';
+  character?: string;
+  job?: string;
+}
+
+// =============== ACTION 9 — DETALHES DE PESSOA ===============
+
+export async function getPersonDetails(personId: number): Promise<TMDBPerson> {
+  const response = await fetch(
+    `https://api.themoviedb.org/3/person/${personId}?language=pt-BR`,
+    {
+      method: "GET",
+      headers: TMDB_HEADERS
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`TMDB API error: ${response.status}`);
+  }
+
+  return await response.json();
+}
+
+// =============== ACTION 10 — FILMOGRAFIA DE PESSOA ===============
+
+export async function getPersonCredits(personId: number): Promise<TMDBPersonCredit[]> {
+  const response = await fetch(
+    `https://api.themoviedb.org/3/person/${personId}/combined_credits?language=pt-BR`,
+    {
+      method: "GET",
+      headers: TMDB_HEADERS
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`TMDB API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  
+  // Combina cast e crew, removendo duplicatas e ordenando por popularidade
+  const allCredits: TMDBPersonCredit[] = [
+    ...data.cast.map((c: any) => ({ ...c, media_type: c.media_type })),
+    ...data.crew.filter((c: any) => c.job === 'Director').map((c: any) => ({ ...c, media_type: c.media_type }))
+  ];
+  
+  // Remove duplicatas por ID
+  const uniqueCredits = allCredits.reduce((acc: TMDBPersonCredit[], curr) => {
+    if (!acc.find(c => c.id === curr.id && c.media_type === curr.media_type)) {
+      acc.push(curr);
+    }
+    return acc;
+  }, []);
+  
+  // Ordena por data de lançamento (mais recente primeiro)
+  return uniqueCredits.sort((a, b) => {
+    const dateA = a.release_date || a.first_air_date || '';
+    const dateB = b.release_date || b.first_air_date || '';
+    return dateB.localeCompare(dateA);
+  });
+}
+
+// =============== ACTION 11 — BUSCAR PESSOA POR NOME ===============
+
+export async function searchPerson(name: string): Promise<{ id: number; name: string; profile_path: string | null }[]> {
+  if (!name.trim()) return [];
+
+  const response = await fetch(
+    `https://api.themoviedb.org/3/search/person?query=${encodeURIComponent(name)}&language=pt-BR`,
+    {
+      method: "GET",
+      headers: TMDB_HEADERS
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`TMDB API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.results.slice(0, 5).map((p: any) => ({
+    id: p.id,
+    name: p.name,
+    profile_path: p.profile_path
+  }));
+}
