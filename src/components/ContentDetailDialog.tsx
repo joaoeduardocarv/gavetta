@@ -266,8 +266,19 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
 
   const hasAnyDrawer = contentDrawers.defaultDrawer || contentDrawers.customDrawers.length > 0;
 
+  // Resetar estados quando o dialog principal fecha
+  const handleMainDialogChange = (open: boolean) => {
+    if (!open) {
+      setIsPersonDialogOpen(false);
+      setSelectedPerson(null);
+      setIsRecommendDialogOpen(false);
+    }
+    onOpenChange(open);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+  <>
+    <Dialog open={open} onOpenChange={handleMainDialogChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
         <div className="relative">
           {/* Botão Adicionar à Gavetta */}
@@ -557,15 +568,21 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
           onOpenChange={setIsRecommendDialogOpen}
         />
       </DialogContent>
-
-      {/* Dialog de Pessoa - fora do DialogContent para evitar conflitos de z-index */}
-      <PersonDetailDialog
-        personId={selectedPerson?.id || null}
-        personName={selectedPerson?.name || ''}
-        open={isPersonDialogOpen}
-        onOpenChange={setIsPersonDialogOpen}
-        onSelectContent={handleSelectCredit}
-      />
     </Dialog>
+
+    {/* Dialog de Pessoa - totalmente fora do Dialog principal para evitar conflitos */}
+    <PersonDetailDialog
+      personId={selectedPerson?.id || null}
+      personName={selectedPerson?.name || ''}
+      open={isPersonDialogOpen}
+      onOpenChange={(open) => {
+        setIsPersonDialogOpen(open);
+        if (!open) {
+          setSelectedPerson(null);
+        }
+      }}
+      onSelectContent={handleSelectCredit}
+    />
+  </>
   );
 }
