@@ -57,8 +57,8 @@ export function PersonDetailDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden p-0">
+    <Dialog open={open} onOpenChange={onOpenChange} modal>
+      <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden p-0 z-[60]">
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
