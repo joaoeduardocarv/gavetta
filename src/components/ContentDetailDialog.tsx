@@ -471,15 +471,15 @@ export function ContentDetailDialog({ content, open, onOpenChange }: ContentDeta
           open={isRecommendDialogOpen}
           onOpenChange={setIsRecommendDialogOpen}
         />
-
-        {/* Dialog de Pessoa */}
-        <PersonDetailDialog
-          personId={selectedPerson?.id || null}
-          personName={selectedPerson?.name || ''}
-          open={isPersonDialogOpen}
-          onOpenChange={setIsPersonDialogOpen}
-        />
       </DialogContent>
+
+      {/* Dialog de Pessoa - fora do DialogContent para evitar conflitos de z-index */}
+      <PersonDetailDialog
+        personId={selectedPerson?.id || null}
+        personName={selectedPerson?.name || ''}
+        open={isPersonDialogOpen}
+        onOpenChange={setIsPersonDialogOpen}
+      />
     </Dialog>
   );
 }
