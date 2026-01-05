@@ -15,12 +15,13 @@ import { Content } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 import { useDrawers, DEFAULT_DRAWER_IDS, DefaultDrawerId } from "@/contexts/DrawerContext";
 import { useToast } from "@/hooks/use-toast";
-import { searchPerson, getTMDBProfileUrl, TMDBPersonCredit } from "@/lib/tmdb";
+import { searchPerson, getTMDBProfileUrl, TMDBPersonCredit, getMovieDetails, getTVDetails, getMovieCredits, getMovieWatchProviders, getTVWatchProviders, extractStreamingNames, getTMDBImageUrl } from "@/lib/tmdb";
 
 interface ContentDetailDialogProps {
   content: Content | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onContentChange?: (content: Content) => void;
 }
 
 const typeLabels = {
@@ -45,7 +46,7 @@ interface PersonInfo {
   profile_path: string | null;
 }
 
-export function ContentDetailDialog({ content, open, onOpenChange }: ContentDetailDialogProps) {
+export function ContentDetailDialog({ content, open, onOpenChange, onContentChange }: ContentDetailDialogProps) {
   const { toast } = useToast();
   const { 
     customDrawers, 
@@ -67,6 +68,7 @@ export function ContentDetailDialog({ content, open, onOpenChange }: ContentDeta
   // Estado para fotos de diretor e elenco
   const [directorInfo, setDirectorInfo] = useState<PersonInfo | null>(null);
   const [castInfo, setCastInfo] = useState<PersonInfo[]>([]);
+  const [isLoadingCredit, setIsLoadingCredit] = useState(false);
 
   // Buscar informações de diretor e elenco quando o conteúdo mudar
   useEffect(() => {
@@ -107,6 +109,89 @@ export function ContentDetailDialog({ content, open, onOpenChange }: ContentDeta
     if (person.id) {
       setSelectedPerson({ id: person.id, name: person.name });
       setIsPersonDialogOpen(true);
+    }
+  };
+
+  // Handler para quando um crédito da filmografia for selecionado
+  const handleSelectCredit = async (credit: TMDBPersonCredit) => {
+    setIsLoadingCredit(true);
+    try {
+      if (credit.media_type === 'movie') {
+        const [details, creditsData, providers] = await Promise.all([
+          getMovieDetails(credit.id),
+          getMovieCredits(credit.id),
+          getMovieWatchProviders(credit.id)
+        ]);
+        
+        const director = creditsData.crew.find(c => c.job === 'Director');
+        const newContent: Content = {
+          id: `tmdb-movie-${details.id}`,
+          type: 'movie',
+          title: details.title,
+          originalTitle: details.title,
+          releaseDate: details.release_date,
+          synopsis: details.overview,
+          posterUrl: getTMDBImageUrl(details.poster_path),
+          backdropUrl: details.backdrop_path ? getTMDBImageUrl(details.backdrop_path, 'original') : undefined,
+          genres: details.genres.map(g => g.name),
+          director: director?.name,
+          cast: creditsData.cast.slice(0, 10).map(c => c.name),
+          availableOn: extractStreamingNames(providers),
+          rating: Math.round(details.vote_average * 10) / 10,
+        };
+        
+        // Atualizar o conteúdo atual com os novos dados
+        setDirectorInfo(null);
+        setCastInfo([]);
+        onOpenChange(false);
+        setTimeout(() => {
+          setSelectedPerson(null);
+          // Reabrir com novo conteúdo via callback
+          if (onContentChange) {
+            onContentChange(newContent);
+          }
+        }, 100);
+      } else {
+        const [details, providers] = await Promise.all([
+          getTVDetails(credit.id),
+          getTVWatchProviders(credit.id)
+        ]);
+        
+        const newContent: Content = {
+          id: `tmdb-tv-${details.id}`,
+          type: 'series',
+          title: details.name,
+          originalTitle: details.name,
+          releaseDate: details.first_air_date,
+          synopsis: details.overview,
+          posterUrl: getTMDBImageUrl(details.poster_path),
+          backdropUrl: details.backdrop_path ? getTMDBImageUrl(details.backdrop_path, 'original') : undefined,
+          genres: details.genres.map(g => g.name),
+          director: details.created_by?.[0]?.name,
+          cast: [], // TV shows need separate credits call
+          availableOn: extractStreamingNames(providers),
+          rating: Math.round(details.vote_average * 10) / 10,
+        };
+        
+        setDirectorInfo(null);
+        setCastInfo([]);
+        onOpenChange(false);
+        setTimeout(() => {
+          setSelectedPerson(null);
+          if (onContentChange) {
+            onContentChange(newContent);
+          }
+        }, 100);
+      }
+    } catch (error) {
+      console.error('Error fetching credit details:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os detalhes.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingCredit(false);
     }
   };
 
@@ -479,6 +564,7 @@ export function ContentDetailDialog({ content, open, onOpenChange }: ContentDeta
         personName={selectedPerson?.name || ''}
         open={isPersonDialogOpen}
         onOpenChange={setIsPersonDialogOpen}
+        onSelectContent={handleSelectCredit}
       />
     </Dialog>
   );

@@ -119,6 +119,11 @@ export default function Search() {
     }
   };
 
+  const handleContentChange = (newContent: Content) => {
+    setSelectedContent(newContent);
+    setIsDialogOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header />
@@ -202,6 +207,7 @@ export default function Search() {
           content={selectedContent}
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
+          onContentChange={handleContentChange}
         />
       )}
     </div>

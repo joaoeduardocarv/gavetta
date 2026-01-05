@@ -41,6 +41,11 @@ export default function Trending() {
     setIsDialogOpen(true);
   };
 
+  const handleContentChange = (newContent: Content) => {
+    setSelectedContent(newContent);
+    setIsDialogOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header />
@@ -126,6 +131,7 @@ export default function Trending() {
           content={selectedContent}
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
+          onContentChange={handleContentChange}
         />
       )}
     </div>

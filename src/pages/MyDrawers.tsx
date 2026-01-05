@@ -64,6 +64,11 @@ export default function MyDrawers() {
     setIsDialogOpen(true);
   };
 
+  const handleContentChange = (newContent: Content) => {
+    setSelectedContent(newContent);
+    setIsDialogOpen(true);
+  };
+
   const handleSelectDrawer = (drawerId: string) => {
     setSelectedDrawer(drawerId);
   };
@@ -232,6 +237,7 @@ export default function MyDrawers() {
           content={selectedContent}
           open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
+          onContentChange={handleContentChange}
         />
       )}
 
