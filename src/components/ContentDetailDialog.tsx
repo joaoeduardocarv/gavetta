@@ -60,6 +60,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
   const [userRating, setUserRating] = useState(0);
   const [comment, setComment] = useState("");
   const [isRecommendDialogOpen, setIsRecommendDialogOpen] = useState(false);
+  const [isDrawerMenuOpen, setIsDrawerMenuOpen] = useState(false);
   
   // Estado para pessoa selecionada
   const [selectedPerson, setSelectedPerson] = useState<{ id: number; name: string } | null>(null);
@@ -206,6 +207,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
         title: "Removido da gaveta",
         description: `"${content.title}" foi removido de "${drawerName}".`,
       });
+      setIsDrawerMenuOpen(false);
     } else {
       // Mover para nova gaveta padrão (remove automaticamente da anterior)
       setDefaultDrawer(content, drawerId);
@@ -222,8 +224,10 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
           description: `"${content.title}" foi adicionado a "${drawerName}".`,
         });
       }
-      // Fechar o dialog ao adicionar
-      onOpenChange(false);
+
+      // Importante: fechar o dropdown antes de fechar o Dialog para evitar overlay preso
+      setIsDrawerMenuOpen(false);
+      setTimeout(() => onOpenChange(false), 0);
     }
   };
 
@@ -237,14 +241,16 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
         title: "Removido da gaveta",
         description: `"${content.title}" foi removido de "${drawer.name}".`,
       });
+      setIsDrawerMenuOpen(false);
     } else {
       addToCustomDrawer(content, drawerId);
       toast({
         title: "Adicionado à gaveta",
         description: `"${content.title}" foi adicionado a "${drawer.name}".`,
       });
-      // Fechar o dialog ao adicionar
-      onOpenChange(false);
+      // Importante: fechar o dropdown antes de fechar o Dialog para evitar overlay preso
+      setIsDrawerMenuOpen(false);
+      setTimeout(() => onOpenChange(false), 0);
     }
   };
 
@@ -269,6 +275,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
   // Resetar estados quando o dialog principal fecha
   const handleMainDialogChange = (open: boolean) => {
     if (!open) {
+      setIsDrawerMenuOpen(false);
       setIsPersonDialogOpen(false);
       setSelectedPerson(null);
       setIsRecommendDialogOpen(false);
@@ -283,7 +290,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
         <div className="relative">
           {/* Botão Adicionar à Gavetta */}
           <div className="absolute top-4 right-4 z-50">
-            <DropdownMenu>
+            <DropdownMenu open={isDrawerMenuOpen} onOpenChange={setIsDrawerMenuOpen}>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant={hasAnyDrawer ? "default" : "outline"}
