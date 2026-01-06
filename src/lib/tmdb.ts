@@ -207,6 +207,25 @@ export async function getTVDetails(tvId: number): Promise<TMDBTVDetails> {
   return await response.json();
 }
 
+// =============== ACTION 4b — ELENCO DA SÉRIE ===============
+
+export async function getTVCredits(tvId: number): Promise<{ cast: TMDBCastMember[]; crew: TMDBCrewMember[] }> {
+  const response = await fetch(
+    `https://api.themoviedb.org/3/tv/${tvId}/credits?language=pt-BR`,
+    {
+      method: "GET",
+      headers: TMDB_HEADERS
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`TMDB API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return { cast: data.cast, crew: data.crew };
+}
+
 // =============== ACTION 6 — TEMPORADAS DA SÉRIE ===============
 
 export async function getTVSeasons(tvId: number): Promise<TMDBSeason[]> {

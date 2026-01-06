@@ -14,7 +14,11 @@ import {
   TMDBTVShow,
   getMovieWatchProviders,
   getTVWatchProviders,
-  extractStreamingNames
+  extractStreamingNames,
+  getMovieDetails,
+  getTVDetails,
+  getMovieCredits,
+  getTVCredits
 } from "@/lib/tmdb";
 
 const clusters = [
@@ -91,29 +95,50 @@ export default function Search() {
   }, [searchQuery]);
 
   const handleCardClick = async (content: Content) => {
-    // Buscar watch providers
+    // Buscar detalhes completos, créditos e watch providers
     setIsLoadingProviders(true);
     setSelectedContent(content);
     setIsDialogOpen(true);
 
     try {
       const tmdbId = parseInt(content.id.split('-')[1]);
-      let providers;
       
       if (content.type === 'movie') {
-        providers = await getMovieWatchProviders(tmdbId);
+        const [details, credits, providers] = await Promise.all([
+          getMovieDetails(tmdbId),
+          getMovieCredits(tmdbId),
+          getMovieWatchProviders(tmdbId)
+        ]);
+        
+        const director = credits.crew.find(c => c.job === 'Director');
+        const streamingNames = extractStreamingNames(providers);
+        
+        setSelectedContent({
+          ...content,
+          genres: details.genres.map(g => g.name),
+          director: director?.name,
+          cast: credits.cast.slice(0, 10).map(c => c.name),
+          availableOn: streamingNames.length > 0 ? streamingNames : undefined
+        });
       } else {
-        providers = await getTVWatchProviders(tmdbId);
+        const [details, credits, providers] = await Promise.all([
+          getTVDetails(tmdbId),
+          getTVCredits(tmdbId),
+          getTVWatchProviders(tmdbId)
+        ]);
+        
+        const streamingNames = extractStreamingNames(providers);
+        
+        setSelectedContent({
+          ...content,
+          genres: details.genres.map(g => g.name),
+          director: details.created_by?.[0]?.name,
+          cast: credits.cast.slice(0, 10).map(c => c.name),
+          availableOn: streamingNames.length > 0 ? streamingNames : undefined
+        });
       }
-      
-      const streamingNames = extractStreamingNames(providers);
-      
-      setSelectedContent({
-        ...content,
-        availableOn: streamingNames.length > 0 ? streamingNames : undefined
-      });
     } catch (error) {
-      console.error('Erro ao buscar provedores:', error);
+      console.error('Erro ao buscar detalhes:', error);
     } finally {
       setIsLoadingProviders(false);
     }
