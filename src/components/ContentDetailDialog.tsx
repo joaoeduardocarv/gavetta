@@ -286,7 +286,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
   return (
   <>
     <Dialog open={open} onOpenChange={handleMainDialogChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-0">
         <div className="relative">
           {/* Botão Adicionar à Gavetta */}
           <div className="absolute top-4 right-4 z-50">
