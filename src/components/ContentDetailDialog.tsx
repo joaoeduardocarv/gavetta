@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -227,7 +227,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
 
       // Importante: fechar o dropdown antes de fechar o Dialog para evitar overlay preso
       setIsDrawerMenuOpen(false);
-      setTimeout(() => onOpenChange(false), 0);
+      window.requestAnimationFrame(() => onOpenChange(false));
     }
   };
 
@@ -250,7 +250,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
       });
       // Importante: fechar o dropdown antes de fechar o Dialog para evitar overlay preso
       setIsDrawerMenuOpen(false);
-      setTimeout(() => onOpenChange(false), 0);
+      window.requestAnimationFrame(() => onOpenChange(false));
     }
   };
 
@@ -287,6 +287,10 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
   <>
     <Dialog open={open} onOpenChange={handleMainDialogChange}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-0">
+        <DialogTitle className="sr-only">Detalhes do conteúdo</DialogTitle>
+        <DialogDescription className="sr-only">
+          Veja informações, elenco e opções para adicionar o conteúdo às suas gavettas.
+        </DialogDescription>
         <div className="relative">
           {/* Botão Adicionar à Gavetta */}
           <div className="absolute top-4 right-4 z-50">
