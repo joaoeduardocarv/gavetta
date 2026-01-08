@@ -423,3 +423,101 @@ export async function searchPerson(name: string): Promise<{ id: number; name: st
     profile_path: p.profile_path
   }));
 }
+
+// =============== ACTION 12 — DISCOVER (FILMES POR GÊNERO/FILTROS) ===============
+
+export async function discoverMovies(options: { genreId?: number; page?: number } = {}): Promise<TMDBMovie[]> {
+  const params = new URLSearchParams({
+    language: 'pt-BR',
+    sort_by: 'popularity.desc',
+    page: String(options.page || 1)
+  });
+  
+  if (options.genreId) {
+    params.append('with_genres', String(options.genreId));
+  }
+
+  const response = await fetch(
+    `https://api.themoviedb.org/3/discover/movie?${params}`,
+    {
+      method: "GET",
+      headers: TMDB_HEADERS
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`TMDB API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.results;
+}
+
+export async function discoverTVShows(options: { genreId?: number; page?: number } = {}): Promise<TMDBTVShow[]> {
+  const params = new URLSearchParams({
+    language: 'pt-BR',
+    sort_by: 'popularity.desc',
+    page: String(options.page || 1)
+  });
+  
+  if (options.genreId) {
+    params.append('with_genres', String(options.genreId));
+  }
+
+  const response = await fetch(
+    `https://api.themoviedb.org/3/discover/tv?${params}`,
+    {
+      method: "GET",
+      headers: TMDB_HEADERS
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`TMDB API error: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.results;
+}
+
+// =============== GENRE IDS (PT-BR) ===============
+
+export const MOVIE_GENRES = [
+  { id: 28, name: 'Ação' },
+  { id: 12, name: 'Aventura' },
+  { id: 16, name: 'Animação' },
+  { id: 35, name: 'Comédia' },
+  { id: 80, name: 'Crime' },
+  { id: 99, name: 'Documentário' },
+  { id: 18, name: 'Drama' },
+  { id: 10751, name: 'Família' },
+  { id: 14, name: 'Fantasia' },
+  { id: 36, name: 'História' },
+  { id: 27, name: 'Terror' },
+  { id: 10402, name: 'Música' },
+  { id: 9648, name: 'Mistério' },
+  { id: 10749, name: 'Romance' },
+  { id: 878, name: 'Ficção Científica' },
+  { id: 53, name: 'Thriller' },
+  { id: 10752, name: 'Guerra' },
+  { id: 37, name: 'Faroeste' }
+];
+
+export const TV_GENRES = [
+  { id: 10759, name: 'Ação & Aventura' },
+  { id: 16, name: 'Animação' },
+  { id: 35, name: 'Comédia' },
+  { id: 80, name: 'Crime' },
+  { id: 99, name: 'Documentário' },
+  { id: 18, name: 'Drama' },
+  { id: 10751, name: 'Família' },
+  { id: 10762, name: 'Kids' },
+  { id: 9648, name: 'Mistério' },
+  { id: 10763, name: 'News' },
+  { id: 10764, name: 'Reality' },
+  { id: 10765, name: 'Ficção Científica & Fantasia' },
+  { id: 10766, name: 'Soap' },
+  { id: 10767, name: 'Talk' },
+  { id: 10768, name: 'Guerra & Política' },
+  { id: 37, name: 'Faroeste' }
+];

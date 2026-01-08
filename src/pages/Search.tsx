@@ -3,7 +3,7 @@ import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search as SearchIcon, Film, Tv, Globe, Palette, Radio, Loader2 } from "lucide-react";
+import { Search as SearchIcon, Film, Tv, Loader2, X } from "lucide-react";
 import { ContentCard } from "@/components/ContentCard";
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { Content } from "@/lib/mockData";
@@ -18,16 +18,19 @@ import {
   getMovieDetails,
   getTVDetails,
   getMovieCredits,
-  getTVCredits
+  getTVCredits,
+  discoverMovies,
+  discoverTVShows,
+  MOVIE_GENRES
 } from "@/lib/tmdb";
 
-const clusters = [
-  { id: "movies", label: "Filmes", icon: Film },
-  { id: "series", label: "Séries", icon: Tv },
-  { id: "genres", label: "Gêneros", icon: Palette },
-  { id: "countries", label: "Países", icon: Globe },
-  { id: "streaming", label: "Streamings", icon: Radio },
-];
+type FilterType = 'all' | 'movies' | 'series' | 'genre';
+
+interface ActiveFilter {
+  type: FilterType;
+  genreId?: number;
+  genreName?: string;
+}
 
 // Converter resultado TMDB Movie para o formato Content
 function tmdbMovieToContent(movie: TMDBMovie): Content {
@@ -68,11 +71,16 @@ export default function Search() {
   const [searchResults, setSearchResults] = useState<Content[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingProviders, setIsLoadingProviders] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter | null>(null);
+  const [showGenres, setShowGenres] = useState(false);
 
   // Debounced search
   useEffect(() => {
     if (!searchQuery.trim()) {
-      setSearchResults([]);
+      // Se não há busca mas há filtro ativo, mantém os resultados do filtro
+      if (!activeFilter) {
+        setSearchResults([]);
+      }
       return;
     }
 
@@ -80,9 +88,17 @@ export default function Search() {
       setIsLoading(true);
       try {
         const { movies, tvShows } = await searchAll(searchQuery);
-        const movieResults = movies.map(tmdbMovieToContent);
-        const tvResults = tvShows.map(tmdbTVToContent);
-        setSearchResults([...movieResults, ...tvResults]);
+        let movieResults = movies.map(tmdbMovieToContent);
+        let tvResults = tvShows.map(tmdbTVToContent);
+        
+        // Aplica filtro de tipo se ativo
+        if (activeFilter?.type === 'movies') {
+          setSearchResults(movieResults);
+        } else if (activeFilter?.type === 'series') {
+          setSearchResults(tvResults);
+        } else {
+          setSearchResults([...movieResults, ...tvResults]);
+        }
       } catch (error) {
         console.error('Erro ao buscar conteúdo:', error);
         setSearchResults([]);
@@ -92,7 +108,77 @@ export default function Search() {
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery]);
+  }, [searchQuery, activeFilter]);
+
+  // Carregar conteúdo quando filtro muda (sem busca)
+  useEffect(() => {
+    if (searchQuery.trim()) return; // Se há busca, ignora
+    
+    if (!activeFilter) {
+      setSearchResults([]);
+      return;
+    }
+
+    const loadFilteredContent = async () => {
+      setIsLoading(true);
+      try {
+        if (activeFilter.type === 'movies') {
+          const movies = await discoverMovies();
+          setSearchResults(movies.map(tmdbMovieToContent));
+        } else if (activeFilter.type === 'series') {
+          const tvShows = await discoverTVShows();
+          setSearchResults(tvShows.map(tmdbTVToContent));
+        } else if (activeFilter.type === 'genre' && activeFilter.genreId) {
+          const [movies, tvShows] = await Promise.all([
+            discoverMovies({ genreId: activeFilter.genreId }),
+            discoverTVShows({ genreId: activeFilter.genreId })
+          ]);
+          const movieResults = movies.map(tmdbMovieToContent);
+          const tvResults = tvShows.map(tmdbTVToContent);
+          // Intercala filmes e séries para variedade
+          const combined: Content[] = [];
+          const maxLen = Math.max(movieResults.length, tvResults.length);
+          for (let i = 0; i < maxLen; i++) {
+            if (movieResults[i]) combined.push(movieResults[i]);
+            if (tvResults[i]) combined.push(tvResults[i]);
+          }
+          setSearchResults(combined);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar conteúdo filtrado:', error);
+        setSearchResults([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadFilteredContent();
+  }, [activeFilter, searchQuery]);
+
+  const handleFilterClick = (type: FilterType, genreId?: number, genreName?: string) => {
+    if (type === 'genre' && !genreId) {
+      // Toggle mostrar gêneros
+      setShowGenres(!showGenres);
+      return;
+    }
+    
+    // Se clicar no mesmo filtro, desativa
+    if (activeFilter?.type === type && 
+        (type !== 'genre' || activeFilter.genreId === genreId)) {
+      setActiveFilter(null);
+      setShowGenres(false);
+    } else {
+      setActiveFilter({ type, genreId, genreName });
+      if (type === 'genre') {
+        setShowGenres(false);
+      }
+    }
+  };
+
+  const clearFilter = () => {
+    setActiveFilter(null);
+    setShowGenres(false);
+  };
 
   const handleCardClick = async (content: Content) => {
     // Buscar detalhes completos, créditos e watch providers
@@ -149,6 +235,14 @@ export default function Search() {
     setIsDialogOpen(true);
   };
 
+  const isFilterActive = (type: FilterType, genreId?: number) => {
+    if (!activeFilter) return false;
+    if (type === 'genre') {
+      return activeFilter.type === 'genre' && activeFilter.genreId === genreId;
+    }
+    return activeFilter.type === type;
+  };
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <Header />
@@ -169,29 +263,64 @@ export default function Search() {
           />
         </div>
 
-        {/* Clusters */}
-        {!searchQuery && (
-          <div className="mb-8">
-            <h3 className="font-heading text-lg font-semibold text-foreground mb-4">
-              Navegação Rápida
-            </h3>
-            <div className="flex flex-wrap gap-2">
-              {clusters.map((cluster) => {
-                const Icon = cluster.icon;
-                return (
-                  <Badge
-                    key={cluster.id}
-                    variant="outline"
-                    className="px-4 py-2 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
-                  >
-                    <Icon className="h-4 w-4 mr-2" />
-                    {cluster.label}
-                  </Badge>
-                );
-              })}
-            </div>
+        {/* Filtro ativo */}
+        {activeFilter && (
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-sm text-muted-foreground">Filtrando por:</span>
+            <Badge 
+              variant="default"
+              className="px-3 py-1 cursor-pointer flex items-center gap-1"
+              onClick={clearFilter}
+            >
+              {activeFilter.type === 'movies' && 'Filmes'}
+              {activeFilter.type === 'series' && 'Séries'}
+              {activeFilter.type === 'genre' && activeFilter.genreName}
+              <X className="h-3 w-3" />
+            </Badge>
           </div>
         )}
+
+        {/* Navegação Rápida */}
+        <div className="mb-6">
+          <h3 className="font-heading text-lg font-semibold text-foreground mb-4">
+            Navegação Rápida
+          </h3>
+          <div className="flex flex-wrap gap-2">
+            <Badge
+              variant={isFilterActive('movies') ? 'default' : 'outline'}
+              className="px-4 py-2 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+              onClick={() => handleFilterClick('movies')}
+            >
+              <Film className="h-4 w-4 mr-2" />
+              Filmes
+            </Badge>
+            <Badge
+              variant={isFilterActive('series') ? 'default' : 'outline'}
+              className="px-4 py-2 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+              onClick={() => handleFilterClick('series')}
+            >
+              <Tv className="h-4 w-4 mr-2" />
+              Séries
+            </Badge>
+          </div>
+          
+          {/* Gêneros expandidos */}
+          <div className="mt-4">
+            <h4 className="text-sm font-medium text-muted-foreground mb-2">Gêneros</h4>
+            <div className="flex flex-wrap gap-2">
+              {MOVIE_GENRES.map((genre) => (
+                <Badge
+                  key={genre.id}
+                  variant={isFilterActive('genre', genre.id) ? 'default' : 'outline'}
+                  className="px-3 py-1.5 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors text-xs"
+                  onClick={() => handleFilterClick('genre', genre.id, genre.name)}
+                >
+                  {genre.name}
+                </Badge>
+              ))}
+            </div>
+          </div>
+        </div>
 
         {/* Loading */}
         {isLoading && (
@@ -201,10 +330,10 @@ export default function Search() {
         )}
 
         {/* Resultados */}
-        {searchQuery && !isLoading && searchResults.length > 0 && (
+        {!isLoading && searchResults.length > 0 && (
           <div>
             <h3 className="font-heading text-lg font-semibold text-foreground mb-4">
-              Resultados ({searchResults.length})
+              {searchQuery ? `Resultados (${searchResults.length})` : `Populares (${searchResults.length})`}
             </h3>
             <div className="space-y-3">
               {searchResults.map((content) => (
@@ -218,7 +347,7 @@ export default function Search() {
           </div>
         )}
 
-        {searchQuery && !isLoading && searchResults.length === 0 && (
+        {!isLoading && searchResults.length === 0 && (searchQuery || activeFilter) && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">Nenhum resultado encontrado</p>
           </div>
