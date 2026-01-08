@@ -1,4 +1,4 @@
-import { Heart, Star, Film, Tv, Check, Clock, Play } from "lucide-react";
+import { Archive, Star, Film, Tv, Check, Clock, Play } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { cn } from "@/lib/utils";
@@ -59,9 +59,9 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
           <h3 className="font-heading font-bold text-foreground line-clamp-1">
             {content.title}
           </h3>
-          <Heart className={cn(
+          <Archive className={cn(
             "h-4 w-4 flex-shrink-0",
-            content.isFavorite 
+            content.isInDrawer 
               ? "fill-accent text-accent" 
               : "text-muted-foreground/40"
           )} />
