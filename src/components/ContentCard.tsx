@@ -3,6 +3,8 @@ import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { cn } from "@/lib/utils";
 import type { Content } from "@/lib/mockData";
+import { DrawerPickerPopover } from "./DrawerPickerPopover";
+import { useDrawers } from "@/contexts/DrawerContext";
 
 interface ContentCardProps {
   content: Content;
@@ -35,6 +37,10 @@ const typeIcons = {
 export function ContentCard({ content, onClick }: ContentCardProps) {
   const Icon = typeIcons[content.type];
   const StatusIcon = content.status ? statusIcons[content.status] : null;
+  const { getContentDrawers } = useDrawers();
+  
+  const { defaultDrawer, customDrawers } = getContentDrawers(content.id);
+  const isInAnyDrawer = defaultDrawer !== null || customDrawers.length > 0;
   
   return (
     <div
@@ -59,12 +65,19 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
           <h3 className="font-heading font-bold text-foreground line-clamp-1">
             {content.title}
           </h3>
-          <Archive className={cn(
-            "h-4 w-4 flex-shrink-0",
-            content.isInDrawer 
-              ? "fill-accent text-accent" 
-              : "text-muted-foreground/40"
-          )} />
+          <DrawerPickerPopover content={content}>
+            <button 
+              className="p-1 -m-1 hover:bg-accent/10 rounded transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Archive className={cn(
+                "h-4 w-4 flex-shrink-0",
+                isInAnyDrawer 
+                  ? "fill-accent text-accent" 
+                  : "text-muted-foreground/40"
+              )} />
+            </button>
+          </DrawerPickerPopover>
         </div>
         
         <div className="flex flex-wrap items-center gap-2 mt-1">
