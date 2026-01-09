@@ -7,7 +7,7 @@ import { CreateDrawerDialog } from "@/components/CreateDrawerDialog";
 import { Content } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Play, Eye, CheckCircle, Star, Heart, Bookmark, Clock, Sparkles } from "lucide-react";
+import { Plus, Play, Eye, CheckCircle, Star, Heart, Bookmark, Clock, Sparkles, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useDrawers } from "@/contexts/DrawerContext";
 
@@ -52,7 +52,7 @@ const iconMap: Record<string, any> = {
 
 export default function MyDrawers() {
   const { toast } = useToast();
-  const { customDrawers, addCustomDrawer, getDrawerContents } = useDrawers();
+  const { customDrawers, addCustomDrawer, getDrawerContents, isLoading } = useDrawers();
   
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -73,17 +73,25 @@ export default function MyDrawers() {
     setSelectedDrawer(drawerId);
   };
 
-  const handleCreateDrawer = (drawer: { name: string; icon: string; color: string; contentIds: string[] }) => {
-    const newDrawer = addCustomDrawer({
-      name: drawer.name,
-      icon: drawer.icon,
-      color: drawer.color,
-    });
-    
-    toast({
-      title: "Gavetta criada!",
-      description: `"${drawer.name}" foi criada.`,
-    });
+  const handleCreateDrawer = async (drawer: { name: string; icon: string; color: string; contentIds: string[] }) => {
+    try {
+      await addCustomDrawer({
+        name: drawer.name,
+        icon: drawer.icon,
+        color: drawer.color,
+      });
+      
+      toast({
+        title: "Gavetta criada!",
+        description: `"${drawer.name}" foi criada.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível criar a gavetta.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Obter contagem de cada gaveta
@@ -124,7 +132,11 @@ export default function MyDrawers() {
           </Button>
         </div>
 
-        {!selectedDrawer ? (
+        {isLoading ? (
+          <div className="flex justify-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : !selectedDrawer ? (
           <div className="space-y-3">
             <h3 className="font-heading text-lg font-semibold text-foreground mb-4">
               Gavettas Padrão

@@ -38,6 +38,60 @@ export type Database = {
         }
         Relationships: []
       }
+      user_custom_drawers: {
+        Row: {
+          created_at: string
+          icon: string
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_drawer_assignments: {
+        Row: {
+          created_at: string
+          drawer_id: string
+          id: string
+          production_data: Json
+          production_id: string
+          production_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          drawer_id: string
+          id?: string
+          production_data: Json
+          production_id: string
+          production_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          drawer_id?: string
+          id?: string
+          production_data?: Json
+          production_id?: string
+          production_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

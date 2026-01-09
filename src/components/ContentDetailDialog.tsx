@@ -196,13 +196,15 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
     }
   };
 
-  const handleSelectDefaultDrawer = (drawerId: DefaultDrawerId) => {
+  const handleSelectDefaultDrawer = async (drawerId: DefaultDrawerId) => {
+    if (!content) return;
+    
     const previousDrawer = contentDrawers.defaultDrawer;
     const drawerName = defaultDrawerInfo.find(d => d.id === drawerId)?.name;
     
     if (previousDrawer === drawerId) {
       // Remover da gaveta padrão - não fecha o dialog
-      setDefaultDrawer(content, null);
+      await setDefaultDrawer(content, null);
       toast({
         title: "Removido da gaveta",
         description: `"${content.title}" foi removido de "${drawerName}".`,
@@ -210,7 +212,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
       setIsDrawerMenuOpen(false);
     } else {
       // Mover para nova gaveta padrão (remove automaticamente da anterior)
-      setDefaultDrawer(content, drawerId);
+      await setDefaultDrawer(content, drawerId);
       
       if (previousDrawer) {
         const previousName = defaultDrawerInfo.find(d => d.id === previousDrawer)?.name;
@@ -231,19 +233,19 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
     }
   };
 
-  const handleToggleCustomDrawer = (drawerId: string) => {
+  const handleToggleCustomDrawer = async (drawerId: string) => {
     const drawer = customDrawers.find(d => d.id === drawerId);
-    if (!drawer) return;
+    if (!drawer || !content) return;
 
     if (isInCustomDrawer(content.id, drawerId)) {
-      removeFromCustomDrawer(content.id, drawerId);
+      await removeFromCustomDrawer(content.id, drawerId);
       toast({
         title: "Removido da gaveta",
         description: `"${content.title}" foi removido de "${drawer.name}".`,
       });
       setIsDrawerMenuOpen(false);
     } else {
-      addToCustomDrawer(content, drawerId);
+      await addToCustomDrawer(content, drawerId);
       toast({
         title: "Adicionado à gaveta",
         description: `"${content.title}" foi adicionado a "${drawer.name}".`,
