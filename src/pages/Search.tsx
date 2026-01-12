@@ -286,47 +286,49 @@ export default function Search() {
           </div>
         )}
 
-        {/* Navegação Rápida */}
-        <div className="mb-6">
-          <h3 className="font-heading text-lg font-semibold text-foreground mb-4">
-            Navegação Rápida
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            <Badge
-              variant={isFilterActive('movies') ? 'default' : 'outline'}
-              className="px-4 py-2 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
-              onClick={() => handleFilterClick('movies')}
-            >
-              <Film className="h-4 w-4 mr-2" />
-              Filmes
-            </Badge>
-            <Badge
-              variant={isFilterActive('series') ? 'default' : 'outline'}
-              className="px-4 py-2 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
-              onClick={() => handleFilterClick('series')}
-            >
-              <Tv className="h-4 w-4 mr-2" />
-              Séries
-            </Badge>
-          </div>
-          
-          {/* Gêneros expandidos */}
-          <div className="mt-4">
-            <h4 className="text-sm font-medium text-muted-foreground mb-2">Gêneros</h4>
+        {/* Navegação Rápida - esconde quando há busca ativa */}
+        {!searchQuery.trim() && (
+          <div className="mb-6">
+            <h3 className="font-heading text-lg font-semibold text-foreground mb-4">
+              Navegação Rápida
+            </h3>
             <div className="flex flex-wrap gap-2">
-              {MOVIE_GENRES.map((genre) => (
-                <Badge
-                  key={genre.id}
-                  variant={isFilterActive('genre', genre.id) ? 'default' : 'outline'}
-                  className="px-3 py-1.5 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors text-xs"
-                  onClick={() => handleFilterClick('genre', genre.id, genre.name)}
-                >
-                  {genre.name}
-                </Badge>
-              ))}
+              <Badge
+                variant={isFilterActive('movies') ? 'default' : 'outline'}
+                className="px-4 py-2 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                onClick={() => handleFilterClick('movies')}
+              >
+                <Film className="h-4 w-4 mr-2" />
+                Filmes
+              </Badge>
+              <Badge
+                variant={isFilterActive('series') ? 'default' : 'outline'}
+                className="px-4 py-2 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors"
+                onClick={() => handleFilterClick('series')}
+              >
+                <Tv className="h-4 w-4 mr-2" />
+                Séries
+              </Badge>
+            </div>
+            
+            {/* Gêneros expandidos */}
+            <div className="mt-4">
+              <h4 className="text-sm font-medium text-muted-foreground mb-2">Gêneros</h4>
+              <div className="flex flex-wrap gap-2">
+                {MOVIE_GENRES.map((genre) => (
+                  <Badge
+                    key={genre.id}
+                    variant={isFilterActive('genre', genre.id) ? 'default' : 'outline'}
+                    className="px-3 py-1.5 cursor-pointer hover:bg-primary hover:text-primary-foreground transition-colors text-xs"
+                    onClick={() => handleFilterClick('genre', genre.id, genre.name)}
+                  >
+                    {genre.name}
+                  </Badge>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Loading */}
         {isLoading && (
