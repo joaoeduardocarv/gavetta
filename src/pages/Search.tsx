@@ -32,8 +32,8 @@ interface ActiveFilter {
   genreName?: string;
 }
 
-// Converter resultado TMDB Movie para o formato Content
-function tmdbMovieToContent(movie: TMDBMovie): Content {
+// Converter resultado TMDB Movie para o formato Content (com popularity para ordenação)
+function tmdbMovieToContent(movie: TMDBMovie): Content & { popularity: number } {
   return {
     id: `movie-${movie.id}`,
     title: movie.title,
@@ -45,11 +45,12 @@ function tmdbMovieToContent(movie: TMDBMovie): Content {
     genres: [],
     synopsis: movie.overview,
     isInDrawer: false,
+    popularity: movie.popularity,
   };
 }
 
-// Converter resultado TMDB TV Show para o formato Content
-function tmdbTVToContent(tvShow: TMDBTVShow): Content {
+// Converter resultado TMDB TV Show para o formato Content (com popularity para ordenação)
+function tmdbTVToContent(tvShow: TMDBTVShow): Content & { popularity: number } {
   return {
     id: `tv-${tvShow.id}`,
     title: tvShow.name,
@@ -61,6 +62,7 @@ function tmdbTVToContent(tvShow: TMDBTVShow): Content {
     genres: [],
     synopsis: tvShow.overview,
     isInDrawer: false,
+    popularity: tvShow.popularity,
   };
 }
 
@@ -93,11 +95,15 @@ export default function Search() {
         
         // Aplica filtro de tipo se ativo
         if (activeFilter?.type === 'movies') {
-          setSearchResults(movieResults);
+          // Ordena por popularidade (maior primeiro)
+          setSearchResults(movieResults.sort((a, b) => b.popularity - a.popularity));
         } else if (activeFilter?.type === 'series') {
-          setSearchResults(tvResults);
+          // Ordena por popularidade (maior primeiro)
+          setSearchResults(tvResults.sort((a, b) => b.popularity - a.popularity));
         } else {
-          setSearchResults([...movieResults, ...tvResults]);
+          // Combina e ordena por popularidade (maior primeiro)
+          const combined = [...movieResults, ...tvResults].sort((a, b) => b.popularity - a.popularity);
+          setSearchResults(combined);
         }
       } catch (error) {
         console.error('Erro ao buscar conteúdo:', error);
