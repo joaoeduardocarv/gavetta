@@ -10,6 +10,16 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Play, Eye, CheckCircle, Star, Heart, Bookmark, Clock, Sparkles, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useDrawers } from "@/contexts/DrawerContext";
+import { 
+  getMovieDetails, 
+  getTVDetails, 
+  getMovieCredits, 
+  getTVCredits,
+  getMovieWatchProviders, 
+  getTVWatchProviders, 
+  extractStreamingNames, 
+  getTMDBImageUrl 
+} from "@/lib/tmdb";
 
 interface Drawer {
   id: string;
@@ -58,10 +68,88 @@ export default function MyDrawers() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedDrawer, setSelectedDrawer] = useState<string | null>(null);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
 
-  const handleCardClick = (content: Content) => {
-    setSelectedContent(content);
-    setIsDialogOpen(true);
+  const handleCardClick = async (content: Content) => {
+    setIsLoadingDetails(true);
+    
+    try {
+      // Extrair o ID numérico do TMDB do content.id (formato: "tmdb-movie-123" ou "tmdb-tv-123")
+      const idMatch = content.id.match(/tmdb-(movie|tv)-(\d+)/);
+      
+      if (idMatch) {
+        const [, mediaType, tmdbId] = idMatch;
+        const numericId = parseInt(tmdbId, 10);
+        
+        if (mediaType === 'movie') {
+          const [details, creditsData, providers] = await Promise.all([
+            getMovieDetails(numericId),
+            getMovieCredits(numericId),
+            getMovieWatchProviders(numericId)
+          ]);
+          
+          const director = creditsData.crew.find(c => c.job === 'Director');
+          const enrichedContent: Content = {
+            id: content.id,
+            type: 'movie',
+            title: details.title,
+            originalTitle: details.title,
+            releaseDate: details.release_date,
+            synopsis: details.overview,
+            posterUrl: getTMDBImageUrl(details.poster_path),
+            backdropUrl: details.backdrop_path ? getTMDBImageUrl(details.backdrop_path, 'original') : undefined,
+            genres: details.genres.map(g => g.name),
+            director: director?.name,
+            cast: creditsData.cast.slice(0, 10).map(c => c.name),
+            availableOn: extractStreamingNames(providers),
+            rating: Math.round(details.vote_average * 10) / 10,
+          };
+          
+          setSelectedContent(enrichedContent);
+        } else {
+          const [details, creditsData, providers] = await Promise.all([
+            getTVDetails(numericId),
+            getTVCredits(numericId),
+            getTVWatchProviders(numericId)
+          ]);
+          
+          const enrichedContent: Content = {
+            id: content.id,
+            type: 'series',
+            title: details.name,
+            originalTitle: details.name,
+            releaseDate: details.first_air_date,
+            synopsis: details.overview,
+            posterUrl: getTMDBImageUrl(details.poster_path),
+            backdropUrl: details.backdrop_path ? getTMDBImageUrl(details.backdrop_path, 'original') : undefined,
+            genres: details.genres.map(g => g.name),
+            director: details.created_by?.[0]?.name,
+            cast: creditsData.cast.slice(0, 10).map(c => c.name),
+            availableOn: extractStreamingNames(providers),
+            rating: Math.round(details.vote_average * 10) / 10,
+          };
+          
+          setSelectedContent(enrichedContent);
+        }
+      } else {
+        // Fallback para conteúdo sem ID do TMDB
+        setSelectedContent(content);
+      }
+      
+      setIsDialogOpen(true);
+    } catch (error) {
+      console.error('Error fetching content details:', error);
+      // Em caso de erro, usar o conteúdo armazenado
+      setSelectedContent(content);
+      setIsDialogOpen(true);
+      toast({
+        title: "Aviso",
+        description: "Algumas informações podem estar incompletas.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingDetails(false);
+    }
   };
 
   const handleContentChange = (newContent: Content) => {
@@ -221,6 +309,11 @@ export default function MyDrawers() {
             </h3>
 
             <div className="space-y-3">
+              {isLoadingDetails && (
+                <div className="fixed inset-0 bg-background/50 flex items-center justify-center z-50">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              )}
               {drawerContent.map((content) => (
                 <ContentCard
                   key={content.id}
