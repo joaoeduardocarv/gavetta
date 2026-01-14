@@ -6,7 +6,6 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Film, Tv, Calendar, Star, Share2, MessageCircle, FolderOpen, Check, Play, Eye, CheckCircle } from "lucide-react";
 import { RecommendDialog } from "./RecommendDialog";
@@ -288,28 +287,28 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
   return (
   <>
     <Dialog open={open} onOpenChange={handleMainDialogChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-lg sm:max-w-lg max-w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto overflow-x-hidden p-0">
         <DialogTitle className="sr-only">Detalhes do conteúdo</DialogTitle>
         <DialogDescription className="sr-only">
           Veja informações, elenco e opções para adicionar o conteúdo às suas gavettas.
         </DialogDescription>
-        <div className="relative">
-          {/* Botão Adicionar à Gavetta */}
-          <div className="absolute top-4 right-4 z-50">
-            <DropdownMenu open={isDrawerMenuOpen} onOpenChange={setIsDrawerMenuOpen}>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant={hasAnyDrawer ? "default" : "outline"}
-                  size="sm"
-                  className={cn(
-                    "shadow-lg gap-2 max-w-[200px]",
-                    hasAnyDrawer && "bg-gradient-to-r from-primary to-primary/80"
-                  )}
-                >
-                  <FolderOpen className="h-4 w-4 flex-shrink-0" />
-                  <span className="truncate text-xs">{getButtonLabel()}</span>
-                </Button>
-              </DropdownMenuTrigger>
+        
+        {/* Botão Adicionar à Gavetta - fixo no topo */}
+        <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b p-3 flex justify-end">
+          <DropdownMenu open={isDrawerMenuOpen} onOpenChange={setIsDrawerMenuOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant={hasAnyDrawer ? "default" : "outline"}
+                size="default"
+                className={cn(
+                  "shadow-lg gap-2 w-full sm:w-auto",
+                  hasAnyDrawer && "bg-gradient-to-r from-primary to-primary/80"
+                )}
+              >
+                <FolderOpen className="h-4 w-4 flex-shrink-0" />
+                <span className="truncate">{getButtonLabel()}</span>
+              </Button>
+            </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64">
                 {/* Gavetas Padrão - Mutuamente Exclusivas */}
                 <div className="px-2 py-1.5">
@@ -367,8 +366,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                 )}
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
-
+        </div>
           {/* Backdrop Image */}
           {content.backdropUrl && (
             <div className="relative h-64 w-full overflow-hidden">
@@ -382,7 +380,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
           )}
 
           {/* Content */}
-          <div className="p-6 space-y-6">
+          <div className="p-6 space-y-6 overflow-x-hidden">
             {/* Header com Poster e Info Básica */}
             <div className="flex gap-4">
               <Avatar className="h-32 w-24 rounded-lg flex-shrink-0">
@@ -390,8 +388,8 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                 <AvatarFallback>{content.title[0]}</AvatarFallback>
               </Avatar>
 
-              <div className="flex-1 space-y-2">
-                <h2 className="font-heading text-2xl font-bold text-foreground">
+              <div className="flex-1 min-w-0 space-y-2">
+                <h2 className="font-heading text-xl sm:text-2xl font-bold text-foreground break-words">
                   {content.title}
                 </h2>
                 {content.originalTitle && (
@@ -446,17 +444,18 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
               )}
 
               {content.cast && content.cast.length > 0 && (
-                <div>
+                <div className="overflow-hidden">
                   <Label className="text-sm font-semibold">Elenco</Label>
-                  <ScrollArea className="w-full mt-2">
-                    <div className="flex gap-3 pb-2">
+                  <div className="mt-2 -mx-6 px-6">
+                    <div className="flex gap-3 pb-2 overflow-x-auto scrollbar-thin scrollbar-thumb-muted">
                       {content.cast.slice(0, 10).map((actor, index) => {
                         const actorInfo = castInfo[index];
                         return (
                           <button
                             key={actor}
                             onClick={() => actorInfo && handlePersonClick(actorInfo)}
-                            className="flex flex-col items-center gap-2 p-2 rounded-lg hover:bg-accent/50 transition-colors min-w-[80px]"
+                            className="flex flex-col items-center gap-2 p-2 rounded-lg hover:bg-accent/50 transition-colors flex-shrink-0"
+                            style={{ width: '80px' }}
                           >
                             <Avatar className="h-14 w-14 rounded-full">
                               <AvatarImage 
@@ -466,13 +465,12 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                               />
                               <AvatarFallback>{actor.charAt(0)}</AvatarFallback>
                             </Avatar>
-                            <span className="text-xs text-center line-clamp-2 max-w-[70px]">{actor}</span>
+                            <span className="text-xs text-center line-clamp-2 w-full">{actor}</span>
                           </button>
                         );
                       })}
                     </div>
-                    <ScrollBar orientation="horizontal" />
-                  </ScrollArea>
+                  </div>
                 </div>
               )}
 
@@ -489,9 +487,9 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                 </div>
               )}
 
-              <div>
+              <div className="overflow-hidden">
                 <Label className="text-sm font-semibold">Sinopse</Label>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <p className="text-sm text-muted-foreground leading-relaxed break-words whitespace-pre-wrap">
                   {content.synopsis}
                 </p>
               </div>
@@ -572,8 +570,6 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
               </Button>
             </div>
           </div>
-        </div>
-
         {/* Dialog de Indicação */}
         <RecommendDialog
           content={content}
