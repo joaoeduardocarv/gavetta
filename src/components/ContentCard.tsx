@@ -1,4 +1,4 @@
-import { Archive, Star, Film, Tv, Check, Clock, Play } from "lucide-react";
+import { Archive, Star, Film, Tv, Check, Clock, Play, Monitor } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { cn } from "@/lib/utils";
@@ -98,6 +98,17 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
         <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
           {content.genres.join(" • ")}
         </p>
+
+        {/* Plataformas de streaming */}
+        {content.availableOn && content.availableOn.length > 0 && (
+          <div className="flex items-center gap-1.5 mt-1.5">
+            <Monitor className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+            <p className="text-xs text-muted-foreground line-clamp-1">
+              {content.availableOn.slice(0, 3).join(" • ")}
+              {content.availableOn.length > 3 && ` +${content.availableOn.length - 3}`}
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
