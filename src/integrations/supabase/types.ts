@@ -64,30 +64,36 @@ export type Database = {
       }
       user_drawer_assignments: {
         Row: {
+          comment: string | null
           created_at: string
           drawer_id: string
           id: string
           production_data: Json
           production_id: string
           production_type: string
+          rating: number | null
           user_id: string
         }
         Insert: {
+          comment?: string | null
           created_at?: string
           drawer_id: string
           id?: string
           production_data: Json
           production_id: string
           production_type: string
+          rating?: number | null
           user_id: string
         }
         Update: {
+          comment?: string | null
           created_at?: string
           drawer_id?: string
           id?: string
           production_data?: Json
           production_id?: string
           production_type?: string
+          rating?: number | null
           user_id?: string
         }
         Relationships: []
