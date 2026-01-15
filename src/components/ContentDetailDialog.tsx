@@ -53,10 +53,11 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
     setDefaultDrawer, 
     addToCustomDrawer, 
     removeFromCustomDrawer,
-    isInCustomDrawer 
+    isInCustomDrawer,
+    setContentRating,
+    setContentComment
   } = useDrawers();
   
-  const [userRating, setUserRating] = useState(0);
   const [comment, setComment] = useState("");
   const [isRecommendDialogOpen, setIsRecommendDialogOpen] = useState(false);
   const [isDrawerMenuOpen, setIsDrawerMenuOpen] = useState(false);
@@ -69,6 +70,16 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
   const [directorInfo, setDirectorInfo] = useState<PersonInfo | null>(null);
   const [castInfo, setCastInfo] = useState<PersonInfo[]>([]);
   const [isLoadingCredit, setIsLoadingCredit] = useState(false);
+  
+  // Obter gavetas e rating atuais do conteúdo
+  const contentDrawers = content ? getContentDrawers(content.id) : { defaultDrawer: null, customDrawers: [], rating: null, comment: null };
+  
+  // Sincronizar comentário local com o do contexto quando o conteúdo mudar
+  useEffect(() => {
+    if (content && open) {
+      setComment(contentDrawers.comment || "");
+    }
+  }, [content?.id, open]);
 
   // Buscar informações de diretor e elenco quando o conteúdo mudar
   useEffect(() => {
@@ -99,9 +110,6 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
       setCastInfo([]);
     }
   }, [content, open]);
-
-  // Obter gavetas atuais do conteúdo
-  const contentDrawers = content ? getContentDrawers(content.id) : { defaultDrawer: null, customDrawers: [] };
 
   if (!content) return null;
 
@@ -511,24 +519,28 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
             <Separator />
 
             {/* Avaliação (só se na gaveta "Assistido") */}
-            {contentDrawers.defaultDrawer === 'watched' && (
+            {contentDrawers.defaultDrawer === 'watched' && content && (
               <div className="space-y-4">
-                <Label className="text-sm font-semibold">Sua Nota (0-10) <span className="text-destructive">*</span></Label>
+                <Label className="text-sm font-semibold">Sua Nota (1-10) <span className="text-destructive">*</span></Label>
                 <div className="flex gap-1">
-                  {[...Array(10)].map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setUserRating(i + 1)}
-                      className={cn(
-                        "p-1 transition-colors",
-                        i < userRating ? "text-yellow-500" : "text-muted-foreground"
-                      )}
-                    >
-                      <Star className={cn("h-6 w-6", i < userRating && "fill-yellow-500")} />
-                    </button>
-                  ))}
+                  {[...Array(10)].map((_, i) => {
+                    const starValue = i + 1;
+                    const currentRating = contentDrawers.rating || 0;
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => setContentRating(content.id, starValue)}
+                        className={cn(
+                          "p-1 transition-colors",
+                          i < currentRating ? "text-yellow-500" : "text-muted-foreground"
+                        )}
+                      >
+                        <Star className={cn("h-6 w-6", i < currentRating && "fill-yellow-500")} />
+                      </button>
+                    );
+                  })}
                 </div>
-                {userRating === 0 && (
+                {!contentDrawers.rating && (
                   <p className="text-xs text-destructive">
                     Selecione uma nota para este conteúdo
                   </p>
@@ -537,13 +549,18 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
             )}
 
             {/* Comentário (quando em alguma gaveta) */}
-            {hasAnyDrawer && (
+            {hasAnyDrawer && content && (
               <div className="space-y-4">
                 <Label className="text-sm font-semibold">Comentário (opcional)</Label>
                 <Textarea
                   placeholder="Adicione um comentário sobre este conteúdo..."
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
+                  onBlur={() => {
+                    if (content && comment !== contentDrawers.comment) {
+                      setContentComment(content.id, comment);
+                    }
+                  }}
                   rows={3}
                 />
                 <p className="text-xs text-muted-foreground">
