@@ -2,6 +2,15 @@ import { createContext, useContext, useState, useEffect, ReactNode, useCallback 
 import { Content } from "@/lib/mockData";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  getMovieDetails,
+  getMovieCredits,
+  getMovieWatchProviders,
+  getTVDetails,
+  getTVCredits,
+  getTVWatchProviders,
+  extractStreamingNames
+} from "@/lib/tmdb";
 
 // IDs das gavetas padrão mutuamente exclusivas
 export const DEFAULT_DRAWER_IDS = ['to-watch', 'watching', 'watched'] as const;
@@ -150,11 +159,65 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
     return DEFAULT_DRAWER_IDS.includes(drawerId as DefaultDrawerId);
   };
 
+  // Helper function to enrich content with full TMDB data
+  const enrichContent = async (content: Content): Promise<Content> => {
+    // Check if content already has complete data
+    const needsEnrichment = !content.genres?.length || !content.director || !content.availableOn?.length;
+    if (!needsEnrichment) return content;
+
+    // Extract TMDB ID from content.id (format: "tmdb-movie-123" or "tmdb-tv-456")
+    const idMatch = content.id.match(/tmdb-(movie|tv)-(\d+)/);
+    if (!idMatch) return content;
+
+    const [, mediaType, tmdbId] = idMatch;
+    const numericId = parseInt(tmdbId, 10);
+
+    try {
+      if (mediaType === 'movie') {
+        const [details, credits, providers] = await Promise.all([
+          getMovieDetails(numericId),
+          getMovieCredits(numericId),
+          getMovieWatchProviders(numericId)
+        ]);
+
+        const director = credits.crew.find(c => c.job === 'Director');
+
+        return {
+          ...content,
+          genres: details.genres.map(g => g.name),
+          director: director?.name || content.director,
+          cast: credits.cast.slice(0, 10).map(c => c.name),
+          availableOn: extractStreamingNames(providers),
+        };
+      } else {
+        const [details, credits, providers] = await Promise.all([
+          getTVDetails(numericId),
+          getTVCredits(numericId),
+          getTVWatchProviders(numericId)
+        ]);
+
+        return {
+          ...content,
+          genres: details.genres.map(g => g.name),
+          director: details.created_by?.[0]?.name || content.director,
+          cast: credits.cast.slice(0, 10).map(c => c.name),
+          availableOn: extractStreamingNames(providers),
+        };
+      }
+    } catch (error) {
+      console.error('Error enriching content:', error);
+      return content;
+    }
+  };
+
   const setDefaultDrawer = useCallback(async (content: Content, drawerId: DefaultDrawerId | null) => {
     if (!user) return;
 
     const productionType = content.type === 'movie' ? 'movie' : 'tv';
     const productionId = content.id;
+
+    // Enrich content before saving
+    const enrichedContent = drawerId ? await enrichContent(content) : content;
 
     try {
       // First, remove any existing default drawer assignment for this content
@@ -177,7 +240,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
             drawer_id: drawerId,
             production_id: productionId,
             production_type: productionType,
-            production_data: content as unknown as Record<string, unknown>
+            production_data: enrichedContent as unknown as Record<string, unknown>
           } as any);
 
         if (error) throw error;
@@ -194,12 +257,12 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
           }
           return prev.map(a => 
             a.contentId === content.id 
-              ? { ...a, defaultDrawer: drawerId, content, rating: drawerId === 'watched' ? a.rating : null }
+              ? { ...a, defaultDrawer: drawerId, content: enrichedContent, rating: drawerId === 'watched' ? a.rating : null }
               : a
           );
         }
         if (drawerId === null) return prev;
-        return [...prev, { contentId: content.id, content, defaultDrawer: drawerId, customDrawers: [], rating: null, comment: null }];
+        return [...prev, { contentId: content.id, content: enrichedContent, defaultDrawer: drawerId, customDrawers: [], rating: null, comment: null }];
       });
     } catch (error) {
       console.error('Error setting default drawer:', error);
@@ -216,6 +279,9 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
     const productionType = content.type === 'movie' ? 'movie' : 'tv';
     const productionId = content.id;
 
+    // Enrich content before saving
+    const enrichedContent = await enrichContent(content);
+
     try {
       const { error } = await supabase
         .from('user_drawer_assignments')
@@ -224,7 +290,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
           drawer_id: drawerId,
           production_id: productionId,
           production_type: productionType,
-          production_data: content as unknown as Record<string, unknown>
+          production_data: enrichedContent as unknown as Record<string, unknown>
         } as any);
 
       if (error) throw error;
@@ -236,11 +302,11 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
           if (existing.customDrawers.includes(drawerId)) return prev;
           return prev.map(a => 
             a.contentId === content.id 
-              ? { ...a, customDrawers: [...a.customDrawers, drawerId], content }
+              ? { ...a, customDrawers: [...a.customDrawers, drawerId], content: enrichedContent }
               : a
           );
         }
-        return [...prev, { contentId: content.id, content, defaultDrawer: null, customDrawers: [drawerId], rating: null, comment: null }];
+        return [...prev, { contentId: content.id, content: enrichedContent, defaultDrawer: null, customDrawers: [drawerId], rating: null, comment: null }];
       });
     } catch (error) {
       console.error('Error adding to custom drawer:', error);
