@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DrawerProvider } from "@/contexts/DrawerContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { useMigrateIncompleteContent } from "@/hooks/useMigrateIncompleteContent";
 import MyDrawers from "./pages/MyDrawers";
 import Friends from "./pages/Friends";
 import Search from "./pages/Search";
@@ -17,27 +18,35 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Component to run migration inside providers
+function MigrationRunner({ children }: { children: React.ReactNode }) {
+  useMigrateIncompleteContent();
+  return <>{children}</>;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
       <TooltipProvider>
         <AuthProvider>
           <DrawerProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/" element={<ProtectedRoute><MyDrawers /></ProtectedRoute>} />
-                <Route path="/my-drawers" element={<ProtectedRoute><MyDrawers /></ProtectedRoute>} />
-                <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
-                <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
-                <Route path="/trending" element={<ProtectedRoute><Trending /></ProtectedRoute>} />
-                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
+            <MigrationRunner>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <Routes>
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/" element={<ProtectedRoute><MyDrawers /></ProtectedRoute>} />
+                  <Route path="/my-drawers" element={<ProtectedRoute><MyDrawers /></ProtectedRoute>} />
+                  <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
+                  <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
+                  <Route path="/trending" element={<ProtectedRoute><Trending /></ProtectedRoute>} />
+                  <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </MigrationRunner>
           </DrawerProvider>
         </AuthProvider>
       </TooltipProvider>
