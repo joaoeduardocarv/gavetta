@@ -13,6 +13,65 @@ const TMDB_HEADERS = {
   "Accept": "application/json"
 };
 
+// =============== CACHE ===============
+interface CacheEntry {
+  data: unknown;
+  timestamp: number;
+}
+
+const cache = new Map<string, CacheEntry>();
+
+// TTL em milissegundos por tipo de dados
+const CACHE_TTL = {
+  search: 5 * 60 * 1000,        // 5 minutos para buscas
+  details: 60 * 60 * 1000,      // 1 hora para detalhes (raramente mudam)
+  credits: 24 * 60 * 60 * 1000, // 24 horas para elenco (quase nunca muda)
+  providers: 6 * 60 * 60 * 1000, // 6 horas para providers (mudam ocasionalmente)
+  discover: 30 * 60 * 1000,     // 30 minutos para discover
+  person: 24 * 60 * 60 * 1000,  // 24 horas para dados de pessoa
+};
+
+function getCacheKey(action: string, params: URLSearchParams): string {
+  const sortedParams = [...params.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  return `${action}:${sortedParams.map(([k, v]) => `${k}=${v}`).join('&')}`;
+}
+
+function getTTLForAction(action: string): number {
+  if (action.includes('search') || action === 'searchPerson') return CACHE_TTL.search;
+  if (action.includes('Details')) return CACHE_TTL.details;
+  if (action.includes('Credits') || action === 'getPersonCredits') return CACHE_TTL.credits;
+  if (action.includes('Providers')) return CACHE_TTL.providers;
+  if (action.includes('discover')) return CACHE_TTL.discover;
+  if (action.includes('Person')) return CACHE_TTL.person;
+  return CACHE_TTL.search; // default
+}
+
+function getFromCache(key: string, ttl: number): unknown | null {
+  const entry = cache.get(key);
+  if (!entry) return null;
+  
+  const isExpired = Date.now() - entry.timestamp > ttl;
+  if (isExpired) {
+    cache.delete(key);
+    return null;
+  }
+  
+  return entry.data;
+}
+
+function setCache(key: string, data: unknown): void {
+  // Limitar tamanho do cache (máximo 500 entradas)
+  if (cache.size >= 500) {
+    // Remove as 100 entradas mais antigas
+    const entries = [...cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
+    entries.slice(0, 100).forEach(([key]) => cache.delete(key));
+  }
+  
+  cache.set(key, { data, timestamp: Date.now() });
+}
+
+// =============== TMDB FETCH ===============
+
 async function fetchTMDB(endpoint: string): Promise<Response> {
   const response = await fetch(`${TMDB_BASE_URL}${endpoint}`, {
     method: "GET",
@@ -36,7 +95,28 @@ serve(async (req) => {
     const url = new URL(req.url);
     const action = url.searchParams.get('action');
     
-    console.log(`TMDB Edge Function called with action: ${action}`);
+    if (!action) {
+      return new Response(
+        JSON.stringify({ error: 'Action is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    // Gerar chave de cache
+    const cacheKey = getCacheKey(action, url.searchParams);
+    const ttl = getTTLForAction(action);
+    
+    // Verificar cache
+    const cachedData = getFromCache(cacheKey, ttl);
+    if (cachedData !== null) {
+      console.log(`Cache HIT for: ${action}`);
+      return new Response(
+        JSON.stringify(cachedData),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'HIT' } }
+      );
+    }
+    
+    console.log(`Cache MISS for: ${action} - Fetching from TMDB...`);
     
     let data: unknown;
     
@@ -218,9 +298,12 @@ serve(async (req) => {
         );
     }
     
+    // Salvar no cache
+    setCache(cacheKey, data);
+    
     return new Response(
       JSON.stringify(data),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'MISS' } }
     );
     
   } catch (error) {
