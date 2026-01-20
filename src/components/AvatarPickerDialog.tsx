@@ -1,56 +1,67 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Avatar, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
-import avatarSheet1 from "@/assets/avatars/avatars-1.png";
-import avatarSheet2 from "@/assets/avatars/avatars-2.png";
 
-// Definir os avatares com posições no sprite sheet
-// Primeira imagem: 4 linhas x 3 colunas
-const avatarsSheet1 = [
-  { id: "marty", name: "Marty McFly", row: 0, col: 0 },
-  { id: "apollo", name: "Apollo Creed", row: 0, col: 1 },
-  { id: "terminator", name: "Terminator", row: 0, col: 2 },
-  { id: "thanos", name: "Thanos", row: 1, col: 0 },
-  { id: "joker", name: "Coringa", row: 1, col: 1 },
-  { id: "rocky", name: "Rocky", row: 1, col: 2 },
-  { id: "furiosa", name: "Furiosa", row: 2, col: 0 },
-  { id: "aang", name: "Aang", row: 2, col: 1 },
-  { id: "john-wick", name: "John Wick", row: 2, col: 2 },
-  { id: "black-panther", name: "Pantera Negra", row: 3, col: 0 },
-  { id: "anton", name: "Anton Chigurh", row: 3, col: 1 },
-  { id: "mufasa", name: "Mufasa", row: 3, col: 2 },
-];
+// Import all avatar images
+import aang from "@/assets/avatars/aang.png";
+import anton from "@/assets/avatars/anton.png";
+import apollo from "@/assets/avatars/apollo.png";
+import batman from "@/assets/avatars/batman.png";
+import blackPanther from "@/assets/avatars/black-panther.png";
+import bride from "@/assets/avatars/bride.png";
+import demogorgon from "@/assets/avatars/demogorgon.png";
+import eleven from "@/assets/avatars/eleven.png";
+import furiosa from "@/assets/avatars/furiosa.png";
+import gandalf from "@/assets/avatars/gandalf.png";
+import godfather from "@/assets/avatars/godfather.png";
+import heisenberg from "@/assets/avatars/heisenberg.png";
+import ironMan from "@/assets/avatars/iron-man.png";
+import johnWick from "@/assets/avatars/john-wick.png";
+import joker from "@/assets/avatars/joker.png";
+import legolas from "@/assets/avatars/legolas.png";
+import neytiri from "@/assets/avatars/neytiri.png";
+import rocky from "@/assets/avatars/rocky.png";
+import simba from "@/assets/avatars/simba.png";
+import terminator from "@/assets/avatars/terminator.png";
+import thanos from "@/assets/avatars/thanos.png";
+import trinity from "@/assets/avatars/trinity.png";
 
-// Segunda imagem: 3 linhas x 3 colunas + 1
-const avatarsSheet2 = [
-  { id: "bride", name: "A Noiva", row: 0, col: 0 },
-  { id: "demogorgon", name: "Demogorgon", row: 0, col: 1 },
-  { id: "godfather", name: "O Poderoso Chefão", row: 0, col: 2 },
-  { id: "legolas", name: "Legolas", row: 1, col: 0 },
-  { id: "gandalf", name: "Gandalf", row: 1, col: 1 },
-  { id: "heisenberg", name: "Heisenberg", row: 1, col: 2 },
-  { id: "iron-man", name: "Homem de Ferro", row: 2, col: 0 },
-  { id: "batman", name: "Batman", row: 2, col: 1 },
-  { id: "neytiri", name: "Neytiri", row: 2, col: 2 },
-  { id: "neo", name: "Neo", row: 3, col: 0 },
-];
-
-interface AvatarOption {
+export interface AvatarOption {
   id: string;
-  sheet: string;
-  row: number;
-  col: number;
   name: string;
-  totalRows: number;
-  totalCols: number;
+  src: string;
 }
 
-const allAvatars: AvatarOption[] = [
-  ...avatarsSheet1.map(a => ({ ...a, sheet: avatarSheet1, totalRows: 4, totalCols: 3 })),
-  ...avatarsSheet2.map(a => ({ ...a, sheet: avatarSheet2, totalRows: 4, totalCols: 3 })),
+export const allAvatars: AvatarOption[] = [
+  { id: "aang", name: "Aang", src: aang },
+  { id: "anton", name: "Anton Chigurh", src: anton },
+  { id: "apollo", name: "Apollo Creed", src: apollo },
+  { id: "batman", name: "Batman", src: batman },
+  { id: "black-panther", name: "Pantera Negra", src: blackPanther },
+  { id: "bride", name: "A Noiva", src: bride },
+  { id: "demogorgon", name: "Demogorgon", src: demogorgon },
+  { id: "eleven", name: "Eleven", src: eleven },
+  { id: "furiosa", name: "Furiosa", src: furiosa },
+  { id: "gandalf", name: "Gandalf", src: gandalf },
+  { id: "godfather", name: "O Poderoso Chefão", src: godfather },
+  { id: "heisenberg", name: "Heisenberg", src: heisenberg },
+  { id: "iron-man", name: "Homem de Ferro", src: ironMan },
+  { id: "john-wick", name: "John Wick", src: johnWick },
+  { id: "joker", name: "Coringa", src: joker },
+  { id: "legolas", name: "Legolas", src: legolas },
+  { id: "neytiri", name: "Neytiri", src: neytiri },
+  { id: "rocky", name: "Rocky", src: rocky },
+  { id: "simba", name: "Simba", src: simba },
+  { id: "terminator", name: "Terminator", src: terminator },
+  { id: "thanos", name: "Thanos", src: thanos },
+  { id: "trinity", name: "Trinity", src: trinity },
 ];
+
+// Helper to get avatar source by ID
+export function getAvatarById(avatarId: string): AvatarOption | undefined {
+  return allAvatars.find(a => a.id === avatarId);
+}
 
 interface AvatarPickerDialogProps {
   open: boolean;
@@ -94,13 +105,10 @@ export function AvatarPickerDialog({
                 )}
                 title={avatar.name}
               >
-                <div
-                  className="w-full h-full"
-                  style={{
-                    backgroundImage: `url(${avatar.sheet})`,
-                    backgroundSize: `${avatar.totalCols * 100}% ${avatar.totalRows * 100}%`,
-                    backgroundPosition: `${(avatar.col / (avatar.totalCols - 1)) * 100}% ${(avatar.row / (avatar.totalRows - 1)) * 100}%`,
-                  }}
+                <img
+                  src={avatar.src}
+                  alt={avatar.name}
+                  className="w-full h-full object-cover"
                 />
               </button>
             ))}
@@ -110,17 +118,3 @@ export function AvatarPickerDialog({
     </Dialog>
   );
 }
-
-// Helper para obter a URL do avatar baseado no ID
-export function getAvatarStyle(avatarId: string): React.CSSProperties | null {
-  const avatar = allAvatars.find(a => a.id === avatarId);
-  if (!avatar) return null;
-  
-  return {
-    backgroundImage: `url(${avatar.sheet})`,
-    backgroundSize: `${avatar.totalCols * 100}% ${avatar.totalRows * 100}%`,
-    backgroundPosition: `${(avatar.col / (avatar.totalCols - 1)) * 100}% ${(avatar.row / (avatar.totalRows - 1)) * 100}%`,
-  };
-}
-
-export { allAvatars };
