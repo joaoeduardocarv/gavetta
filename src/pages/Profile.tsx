@@ -1,23 +1,82 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { User, Mail, Calendar, Globe, Lock, Bell, Settings as SettingsIcon, Activity, Camera, LogOut } from "lucide-react";
-import { AvatarPickerDialog, getAvatarStyle } from "@/components/AvatarPickerDialog";
+import { AvatarPickerDialog, getAvatarById } from "@/components/AvatarPickerDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function Profile() {
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState<string>("joker");
+  const [isLoading, setIsLoading] = useState(true);
   const { user, signOut } = useAuth();
   const { toast } = useToast();
 
-  const avatarStyle = getAvatarStyle(selectedAvatar);
+  // Load avatar from database on mount
+  useEffect(() => {
+    async function loadAvatar() {
+      if (!user?.id) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('avatar_url')
+          .eq('id', user.id)
+          .single();
+
+        if (error) {
+          console.error('Error loading avatar:', error);
+        } else if (data?.avatar_url) {
+          setSelectedAvatar(data.avatar_url);
+        }
+      } catch (err) {
+        console.error('Error loading avatar:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadAvatar();
+  }, [user?.id]);
+
+  // Save avatar to database when changed
+  const handleAvatarSelect = async (avatarId: string) => {
+    setSelectedAvatar(avatarId);
+    
+    if (!user?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: avatarId })
+        .eq('id', user.id);
+
+      if (error) {
+        console.error('Error saving avatar:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível salvar o avatar.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Avatar atualizado!",
+          description: "Seu novo avatar foi salvo.",
+        });
+      }
+    } catch (err) {
+      console.error('Error saving avatar:', err);
+    }
+  };
+
+  const avatarData = getAvatarById(selectedAvatar);
 
   const handleSignOut = async () => {
     await signOut();
@@ -44,11 +103,12 @@ export default function Profile() {
                 onClick={() => setIsAvatarPickerOpen(true)}
                 className="relative group"
               >
-                <Avatar className="h-20 w-20 aspect-square cursor-pointer transition-all duration-200 group-hover:ring-2 group-hover:ring-primary/50">
-                  {avatarStyle ? (
-                    <div 
-                      className="w-20 h-20 aspect-square rounded-full"
-                      style={avatarStyle}
+                <Avatar className="h-20 w-20 cursor-pointer transition-all duration-200 group-hover:ring-2 group-hover:ring-primary/50">
+                  {avatarData ? (
+                    <AvatarImage 
+                      src={avatarData.src} 
+                      alt={avatarData.name}
+                      className="object-cover"
                     />
                   ) : (
                     <AvatarFallback>
@@ -168,7 +228,7 @@ export default function Profile() {
         open={isAvatarPickerOpen}
         onOpenChange={setIsAvatarPickerOpen}
         currentAvatar={selectedAvatar}
-        onSelectAvatar={setSelectedAvatar}
+        onSelectAvatar={handleAvatarSelect}
       />
     </div>
   );
