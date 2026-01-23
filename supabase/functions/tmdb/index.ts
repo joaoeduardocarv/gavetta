@@ -29,6 +29,7 @@ const CACHE_TTL = {
   providers: 6 * 60 * 60 * 1000, // 6 horas para providers (mudam ocasionalmente)
   discover: 30 * 60 * 1000,     // 30 minutos para discover
   person: 24 * 60 * 60 * 1000,  // 24 horas para dados de pessoa
+  trending: 30 * 60 * 1000,     // 30 minutos para trending
 };
 
 function getCacheKey(action: string, params: URLSearchParams): string {
@@ -42,6 +43,7 @@ function getTTLForAction(action: string): number {
   if (action.includes('Credits') || action === 'getPersonCredits') return CACHE_TTL.credits;
   if (action.includes('Providers')) return CACHE_TTL.providers;
   if (action.includes('discover')) return CACHE_TTL.discover;
+  if (action.includes('trending') || action.includes('Trending')) return CACHE_TTL.trending;
   if (action.includes('Person')) return CACHE_TTL.person;
   return CACHE_TTL.search; // default
 }
@@ -286,6 +288,22 @@ serve(async (req) => {
         if (genreId) params.append('with_genres', genreId);
         
         const response = await fetchTMDB(`/discover/tv?${params}`);
+        const result = await response.json();
+        data = result.results;
+        break;
+      }
+      
+      case 'getTrendingMovies': {
+        const timeWindow = url.searchParams.get('timeWindow') || 'day';
+        const response = await fetchTMDB(`/trending/movie/${timeWindow}?language=pt-BR`);
+        const result = await response.json();
+        data = result.results;
+        break;
+      }
+      
+      case 'getTrendingTV': {
+        const timeWindow = url.searchParams.get('timeWindow') || 'day';
+        const response = await fetchTMDB(`/trending/tv/${timeWindow}?language=pt-BR`);
         const result = await response.json();
         data = result.results;
         break;
