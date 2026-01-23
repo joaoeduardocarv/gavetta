@@ -275,6 +275,16 @@ export async function discoverTVShows(options: { genreId?: number; page?: number
   return callTMDBFunction<TMDBTVShow[]>('discoverTVShows', params);
 }
 
+// =============== ACTION 13 — TRENDING (EM ALTA) ===============
+
+export async function getTrendingMovies(timeWindow: 'day' | 'week' = 'day'): Promise<TMDBMovie[]> {
+  return callTMDBFunction<TMDBMovie[]>('getTrendingMovies', { timeWindow });
+}
+
+export async function getTrendingTV(timeWindow: 'day' | 'week' = 'day'): Promise<TMDBTVShow[]> {
+  return callTMDBFunction<TMDBTVShow[]>('getTrendingTV', { timeWindow });
+}
+
 // =============== GENRE IDS (PT-BR) ===============
 
 export const MOVIE_GENRES = [
