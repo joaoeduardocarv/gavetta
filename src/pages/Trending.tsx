@@ -152,21 +152,31 @@ export default function Trending() {
     setIsLoadingNews(true);
     setNewsError(null);
     try {
-      const { data, error } = await supabase.functions.invoke('currents-news', {
-        body: null,
-      });
+      // Use direct fetch with GET method for better reliability
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/currents-news?action=latest&category=entertainment`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
-      if (error) {
-        console.error('Error fetching news:', error);
-        setNewsError('Erro ao carregar notícias');
-        return;
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status}`);
       }
+
+      const data = await response.json();
 
       if (data?.news) {
         setNews(data.news.slice(0, 10));
+      } else if (data?.error) {
+        setNewsError(data.error);
       }
     } catch (err) {
-      console.error('Error:', err);
+      console.error('Error fetching news:', err);
       setNewsError('Erro ao carregar notícias');
     } finally {
       setIsLoadingNews(false);
@@ -342,15 +352,17 @@ export default function Trending() {
             </div>
             
             {isLoadingNews ? (
-              <div className="flex items-center justify-center py-12">
+              <div className="flex flex-col items-center justify-center py-12 gap-2">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground">Carregando notícias...</p>
               </div>
             ) : newsError ? (
               <div className="text-center py-8 text-muted-foreground">
-                <p>{newsError}</p>
+                <p className="mb-2">{newsError}</p>
+                <p className="text-xs mb-3">A API de notícias pode estar temporariamente indisponível.</p>
                 <button 
                   onClick={fetchNews}
-                  className="mt-2 text-primary hover:underline"
+                  className="text-primary hover:underline"
                 >
                   Tentar novamente
                 </button>
