@@ -42,20 +42,37 @@ serve(async (req) => {
 
     console.log(`Fetching news from Currents API: ${endpoint}`);
 
-    const response = await fetch(`${CURRENTS_BASE_URL}${endpoint}?${params.toString()}`);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Currents API error:', errorText);
-      throw new Error(`Currents API error: ${response.status}`);
+    // Add timeout controller
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+    try {
+      const response = await fetch(`${CURRENTS_BASE_URL}${endpoint}?${params.toString()}`, {
+        signal: controller.signal,
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Currents API error:', response.status, errorText);
+        throw new Error(`Currents API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log(`Successfully fetched ${data.news?.length || 0} news items`);
+
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+        console.error('Currents API timeout');
+        throw new Error('API timeout - tente novamente');
+      }
+      throw fetchError;
     }
-
-    const data = await response.json();
-    console.log(`Successfully fetched ${data.news?.length || 0} news items`);
-
-    return new Response(JSON.stringify(data), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
