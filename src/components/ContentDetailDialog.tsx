@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Film, Tv, Calendar, Star, Share2, MessageCircle, FolderOpen, Check, Play, Eye, CheckCircle } from "lucide-react";
+import { Film, Tv, Calendar, Star, Share2, MessageCircle, FolderOpen, Check, Play, Eye, CheckCircle, Loader2 } from "lucide-react";
+import { useStoryShare } from "@/hooks/useStoryShare";
 import { RecommendDialog } from "./RecommendDialog";
 import { PersonDetailDialog } from "./PersonDetailDialog";
 import { Content } from "@/lib/mockData";
@@ -47,6 +48,7 @@ interface PersonInfo {
 
 export function ContentDetailDialog({ content, open, onOpenChange, onContentChange }: ContentDetailDialogProps) {
   const { toast } = useToast();
+  const { shareToStory, isGenerating: isGeneratingStory } = useStoryShare();
   const { 
     customDrawers, 
     getContentDrawers, 
@@ -581,8 +583,22 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                 <MessageCircle className="h-4 w-4" />
                 Indicar para Amigo
               </Button>
-              <Button variant="outline" className="flex-1 gap-2">
-                <Share2 className="h-4 w-4" />
+              <Button 
+                variant="outline" 
+                className="flex-1 gap-2"
+                onClick={() => shareToStory({
+                  title: content.title,
+                  posterUrl: content.posterUrl,
+                  backdropUrl: content.backdropUrl,
+                  type: content.type,
+                })}
+                disabled={isGeneratingStory}
+              >
+                {isGeneratingStory ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Share2 className="h-4 w-4" />
+                )}
                 Compartilhar
               </Button>
             </div>
