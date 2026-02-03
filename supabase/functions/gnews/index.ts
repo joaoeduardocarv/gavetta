@@ -21,14 +21,14 @@ serve(async (req) => {
     }
 
     const url = new URL(req.url);
-    const action = url.searchParams.get('action') || 'top';
+    const action = url.searchParams.get('action') || 'movies';
     const query = url.searchParams.get('query') || '';
-    const category = url.searchParams.get('category') || 'entertainment';
     const language = url.searchParams.get('lang') || 'pt';
     const country = url.searchParams.get('country') || 'br';
     const max = url.searchParams.get('max') || '10';
 
-    let endpoint = '';
+    // Use search endpoint with cinema/series keywords for better results
+    const endpoint = '/search';
     const params = new URLSearchParams({
       apikey: GNEWS_API_KEY,
       lang: language,
@@ -36,15 +36,15 @@ serve(async (req) => {
       max: max,
     });
 
-    if (action === 'search' && query) {
-      endpoint = '/search';
-      params.append('q', query);
-    } else {
-      endpoint = '/top-headlines';
-      params.append('category', category);
+    // Define search query based on action
+    let searchQuery = query;
+    if (!query || action === 'movies') {
+      // Search for movie and series related news - focused on entertainment
+      searchQuery = 'Netflix OR "novo filme" OR "nova série" OR cinema OR streaming OR "Amazon Prime" OR "Disney+"';
     }
+    params.append('q', searchQuery);
 
-    console.log(`Fetching news from GNews API: ${endpoint} with category: ${category}`);
+    console.log(`Fetching news from GNews API: ${endpoint} with query: ${searchQuery}`);
 
     // Add timeout controller
     const controller = new AbortController();
