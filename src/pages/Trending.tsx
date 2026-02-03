@@ -152,9 +152,8 @@ export default function Trending() {
     setIsLoadingNews(true);
     setNewsError(null);
     try {
-      // Use direct fetch with GET method for better reliability
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/currents-news?action=latest&category=entertainment`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gnews?action=top&category=entertainment&lang=pt&country=br&max=10`,
         {
           method: 'GET',
           headers: {
@@ -171,7 +170,7 @@ export default function Trending() {
       const data = await response.json();
 
       if (data?.news) {
-        setNews(data.news.slice(0, 10));
+        setNews(data.news);
       } else if (data?.error) {
         setNewsError(data.error);
       }
