@@ -1,6 +1,6 @@
 project_id = "lvwatpmfefimjpvqohxk"
 
-[functions.currents-news]
+[functions.gnews]
 verify_jwt = false
 
 [functions.tmdb]
