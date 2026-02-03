@@ -153,7 +153,7 @@ export default function Trending() {
     setNewsError(null);
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gnews?action=top&category=entertainment&lang=pt&country=br&max=10`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gnews?action=movies&lang=pt&country=br&max=10`,
         {
           method: 'GET',
           headers: {
