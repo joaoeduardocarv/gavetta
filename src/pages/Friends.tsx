@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, UserPlus, Users, Loader2, UserX } from "lucide-react";
+import { Search, UserPlus, Users, Loader2, UserX, Activity, Gift } from "lucide-react";
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { Content } from "@/lib/mockData";
 import { useFriendships, FriendProfile } from "@/hooks/useFriendships";
 import { AddFriendDialog } from "@/components/AddFriendDialog";
 import { FriendRequestsCard } from "@/components/FriendRequestsCard";
+import { ActivityFeed } from "@/components/ActivityFeed";
 
 export default function Friends() {
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
@@ -43,11 +44,26 @@ export default function Friends() {
           </p>
         </div>
 
-        <Tabs defaultValue="friends" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="friends">Amigos</TabsTrigger>
-            <TabsTrigger value="recommendations">Indicações</TabsTrigger>
+        <Tabs defaultValue="activities" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="activities" className="text-xs sm:text-sm">
+              <Activity className="h-4 w-4 mr-1 hidden sm:inline" />
+              Atividades
+            </TabsTrigger>
+            <TabsTrigger value="recommendations" className="text-xs sm:text-sm">
+              <Gift className="h-4 w-4 mr-1 hidden sm:inline" />
+              Indicações
+            </TabsTrigger>
+            <TabsTrigger value="friends" className="text-xs sm:text-sm">
+              <Users className="h-4 w-4 mr-1 hidden sm:inline" />
+              Amigos
+            </TabsTrigger>
           </TabsList>
+
+          {/* Feed de Atividades */}
+          <TabsContent value="activities" className="space-y-4">
+            <ActivityFeed />
+          </TabsContent>
 
           {/* Lista de Amigos */}
           <TabsContent value="friends" className="space-y-4">
