@@ -8,6 +8,7 @@ import { DrawerProvider } from "@/contexts/DrawerContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useMigrateIncompleteContent } from "@/hooks/useMigrateIncompleteContent";
+import { GlobalRatingDialog } from "@/components/GlobalRatingDialog";
 import MyDrawers from "./pages/MyDrawers";
 import Friends from "./pages/Friends";
 import Search from "./pages/Search";
@@ -33,6 +34,7 @@ const App = () => (
             <MigrationRunner>
               <Toaster />
               <Sonner />
+              <GlobalRatingDialog />
               <BrowserRouter>
                 <Routes>
                   <Route path="/auth" element={<Auth />} />

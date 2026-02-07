@@ -32,6 +32,11 @@ export interface ContentDrawerAssignment {
   comment: string | null;
 }
 
+interface PendingWatchedAssignment {
+  content: Content;
+  resolve: (result: { confirmed: boolean; rating?: number; comment?: string }) => void;
+}
+
 interface DrawerContextType {
   // Gavetas personalizadas
   customDrawers: CustomDrawer[];
@@ -61,6 +66,11 @@ interface DrawerContextType {
   getDrawerContents: (drawerId: string) => Content[];
   isDefaultDrawer: (drawerId: string) => boolean;
   isLoading: boolean;
+
+  // Rating dialog control
+  pendingWatchedAssignment: PendingWatchedAssignment | null;
+  confirmWatchedRating: (rating: number, comment: string) => void;
+  cancelWatchedRating: () => void;
 }
 
 const DrawerContext = createContext<DrawerContextType | null>(null);
@@ -70,6 +80,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
   const [customDrawers, setCustomDrawers] = useState<CustomDrawer[]>([]);
   const [assignments, setAssignments] = useState<ContentDrawerAssignment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [pendingWatchedAssignment, setPendingWatchedAssignment] = useState<PendingWatchedAssignment | null>(null);
 
   // Fetch initial data when user is authenticated
   useEffect(() => {
@@ -210,8 +221,78 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // Internal function to actually save to watched drawer with rating
+  const saveToWatchedDrawer = useCallback(async (content: Content, rating: number, comment: string) => {
+    if (!user) return;
+
+    const productionType = content.type === 'movie' ? 'movie' : 'tv';
+    const productionId = content.id;
+
+    // Enrich content before saving
+    const enrichedContent = await enrichContent(content);
+
+    try {
+      // First, remove any existing default drawer assignment for this content
+      for (const defaultId of DEFAULT_DRAWER_IDS) {
+        await supabase
+          .from('user_drawer_assignments')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('production_id', productionId)
+          .eq('production_type', productionType)
+          .eq('drawer_id', defaultId);
+      }
+
+      // Insert with rating and comment
+      const { error } = await supabase
+        .from('user_drawer_assignments')
+        .insert({
+          user_id: user.id,
+          drawer_id: 'watched',
+          production_id: productionId,
+          production_type: productionType,
+          production_data: enrichedContent as unknown as Record<string, unknown>,
+          rating,
+          comment: comment || null
+        } as any);
+
+      if (error) throw error;
+
+      // Update local state
+      setAssignments(prev => {
+        const existing = prev.find(a => a.contentId === content.id);
+        if (existing) {
+          return prev.map(a => 
+            a.contentId === content.id 
+              ? { ...a, defaultDrawer: 'watched' as DefaultDrawerId, content: enrichedContent, rating, comment }
+              : a
+          );
+        }
+        return [...prev, { contentId: content.id, content: enrichedContent, defaultDrawer: 'watched' as DefaultDrawerId, customDrawers: [], rating, comment }];
+      });
+    } catch (error) {
+      console.error('Error saving to watched drawer:', error);
+    }
+  }, [user]);
+
   const setDefaultDrawer = useCallback(async (content: Content, drawerId: DefaultDrawerId | null) => {
     if (!user) return;
+
+    // If adding to "watched", show rating dialog first
+    if (drawerId === 'watched') {
+      return new Promise<void>((resolve) => {
+        setPendingWatchedAssignment({
+          content,
+          resolve: async (result) => {
+            setPendingWatchedAssignment(null);
+            if (result.confirmed && result.rating !== undefined) {
+              await saveToWatchedDrawer(content, result.rating, result.comment || '');
+            }
+            resolve();
+          }
+        });
+      });
+    }
 
     const productionType = content.type === 'movie' ? 'movie' : 'tv';
     const productionId = content.id;
@@ -257,7 +338,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
           }
           return prev.map(a => 
             a.contentId === content.id 
-              ? { ...a, defaultDrawer: drawerId, content: enrichedContent, rating: drawerId === 'watched' ? a.rating : null }
+              ? { ...a, defaultDrawer: drawerId, content: enrichedContent, rating: null }
               : a
           );
         }
@@ -267,7 +348,19 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error('Error setting default drawer:', error);
     }
-  }, [user]);
+  }, [user, saveToWatchedDrawer]);
+
+  const confirmWatchedRating = useCallback((rating: number, comment: string) => {
+    if (pendingWatchedAssignment) {
+      pendingWatchedAssignment.resolve({ confirmed: true, rating, comment });
+    }
+  }, [pendingWatchedAssignment]);
+
+  const cancelWatchedRating = useCallback(() => {
+    if (pendingWatchedAssignment) {
+      pendingWatchedAssignment.resolve({ confirmed: false });
+    }
+  }, [pendingWatchedAssignment]);
 
   const getDefaultDrawer = (contentId: string): DefaultDrawerId | null => {
     return assignments.find(a => a.contentId === contentId)?.defaultDrawer || null;
@@ -525,7 +618,10 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
       setContentRating,
       getContentRating,
       setContentComment,
-      getContentComment
+      getContentComment,
+      pendingWatchedAssignment,
+      confirmWatchedRating,
+      cancelWatchedRating
     }}>
       {children}
     </DrawerContext.Provider>
