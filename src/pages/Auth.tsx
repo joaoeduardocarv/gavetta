@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useLayoutEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,25 @@ export default function Auth() {
   const [checkingSession, setCheckingSession] = useState(true);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
+  const [previousTheme, setPreviousTheme] = useState<string | undefined>();
+
+  useLayoutEffect(() => {
+    setPreviousTheme(theme);
+    setTheme("light");
+    return () => {
+      // Restore previous theme when leaving Auth page
+    };
+  }, []);
+
+  // Restore theme when navigating away
+  useEffect(() => {
+    return () => {
+      if (previousTheme) {
+        setTheme(previousTheme);
+      }
+    };
+  }, [previousTheme, setTheme]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
