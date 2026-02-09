@@ -1,4 +1,4 @@
-import { Archive, Clock, Play, Check, Plus, Folder } from "lucide-react";
+import { Archive, Clock, Play, Check, Plus } from "lucide-react";
 import {
   Popover,
   PopoverContent,
@@ -104,7 +104,7 @@ export function DrawerPickerPopover({ content, children }: DrawerPickerPopoverPr
                       isSelected && "bg-accent/20"
                     )}
                   >
-                    <Folder className="h-4 w-4 text-muted-foreground" />
+                    <Archive className="h-4 w-4 text-muted-foreground" />
                     <span className="flex-1 text-left">{drawer.name}</span>
                     {isSelected && <Check className="h-4 w-4 text-accent" />}
                   </button>
