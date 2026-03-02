@@ -352,3 +352,13 @@ export const TV_GENRES = [
   { id: 10768, name: 'Guerra & Política' },
   { id: 37, name: 'Faroeste' }
 ];
+
+// =============== UTILITÁRIO: MAPEAR GENRE IDS PARA NOMES ===============
+
+const _allGenresMap = new Map<number, string>();
+MOVIE_GENRES.forEach(g => _allGenresMap.set(g.id, g.name));
+TV_GENRES.forEach(g => { if (!_allGenresMap.has(g.id)) _allGenresMap.set(g.id, g.name); });
+
+export function mapGenreIdsToNames(genreIds: number[]): string[] {
+  return genreIds.map(id => _allGenresMap.get(id)).filter((n): n is string => !!n);
+}
