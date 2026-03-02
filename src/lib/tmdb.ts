@@ -109,12 +109,38 @@ export interface TMDBPersonCredit {
   title?: string;
   name?: string;
   poster_path: string | null;
+  backdrop_path?: string | null;
+  overview?: string;
   release_date?: string;
   first_air_date?: string;
   vote_average: number;
+  popularity?: number;
+  genre_ids?: number[];
   media_type: 'movie' | 'tv';
   character?: string;
   job?: string;
+}
+
+// =============== BUSCA PESSOA COM CRÉDITOS ===============
+
+export interface PersonWithCredits {
+  person: { id: number; name: string; profile_path: string | null };
+  credits: TMDBPersonCredit[];
+}
+
+export async function searchPersonWithCredits(name: string): Promise<PersonWithCredits | null> {
+  const people = await searchPerson(name);
+  if (people.length === 0) return null;
+  
+  const person = people[0];
+  const credits = await getPersonCredits(person.id);
+  
+  return {
+    person,
+    credits: credits
+      .filter(c => c.poster_path)
+      .sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0)),
+  };
 }
 
 // =============== UTILITÁRIOS DE IMAGEM ===============
