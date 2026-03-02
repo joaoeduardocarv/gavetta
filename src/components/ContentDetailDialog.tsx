@@ -497,13 +497,6 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                 </div>
               )}
 
-              <div className="overflow-hidden">
-                <Label className="text-sm font-semibold">Sinopse</Label>
-                <p className="text-sm text-muted-foreground leading-relaxed break-words whitespace-pre-wrap">
-                  {content.synopsis}
-                </p>
-              </div>
-
               {content.availableOn && content.availableOn.length > 0 && (
                 <div>
                   <Label className="text-sm font-semibold">Disponível em</Label>
@@ -516,6 +509,13 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                   </div>
                 </div>
               )}
+
+              <div className="overflow-hidden">
+                <Label className="text-sm font-semibold">Sinopse</Label>
+                <p className="text-sm text-muted-foreground leading-relaxed break-words whitespace-pre-wrap">
+                  {content.synopsis}
+                </p>
+              </div>
             </div>
 
             <Separator />

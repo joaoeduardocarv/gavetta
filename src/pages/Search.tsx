@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { Input } from "@/components/ui/input";
@@ -27,6 +27,7 @@ import {
   MOVIE_GENRES,
   searchPerson,
   getPersonCredits,
+  mapGenreIdsToNames,
 } from "@/lib/tmdb";
 
 type FilterType = 'all' | 'movies' | 'series' | 'genre';
@@ -54,7 +55,7 @@ function tmdbMovieToContent(movie: TMDBMovie): Content & { popularity: number } 
     backdropUrl: movie.backdrop_path ? getTMDBImageUrl(movie.backdrop_path, 'original') : undefined,
     rating: movie.vote_average,
     releaseDate: movie.release_date || '',
-    genres: [],
+    genres: mapGenreIdsToNames(movie.genre_ids || []),
     synopsis: movie.overview,
     isInDrawer: false,
     popularity: movie.popularity,
@@ -71,7 +72,7 @@ function tmdbTVToContent(tvShow: TMDBTVShow): Content & { popularity: number } {
     backdropUrl: tvShow.backdrop_path ? getTMDBImageUrl(tvShow.backdrop_path, 'original') : undefined,
     rating: tvShow.vote_average,
     releaseDate: tvShow.first_air_date || '',
-    genres: [],
+    genres: mapGenreIdsToNames(tvShow.genre_ids || []),
     synopsis: tvShow.overview,
     isInDrawer: false,
     popularity: tvShow.popularity,
@@ -88,7 +89,7 @@ function personCreditToContent(credit: TMDBPersonCredit): Content & { popularity
     backdropUrl: credit.backdrop_path ? getTMDBImageUrl(credit.backdrop_path, 'original') : undefined,
     rating: credit.vote_average,
     releaseDate: credit.release_date || credit.first_air_date || '',
-    genres: [],
+    genres: mapGenreIdsToNames(credit.genre_ids || []),
     synopsis: credit.overview || '',
     isInDrawer: false,
     popularity: credit.popularity ?? 0,
@@ -270,6 +271,44 @@ export default function Search() {
 
     loadFilteredContent();
   }, [activeFilter, searchQuery, searchMode]);
+
+  // Enriquecer resultados com streaming providers em lotes
+  const enrichmentRef = useRef(0);
+  const lastEnrichedKey = useRef('');
+  useEffect(() => {
+    if (searchResults.length === 0) return;
+    const key = searchResults.map(r => r.id).join(',');
+    if (searchResults.every(r => r.availableOn !== undefined)) return;
+    if (lastEnrichedKey.current === key) return;
+    lastEnrichedKey.current = key;
+
+    const batchId = ++enrichmentRef.current;
+    const enrichResults = async () => {
+      const batchSize = 5;
+      const updated = [...searchResults];
+      
+      for (let i = 0; i < updated.length; i += batchSize) {
+        if (enrichmentRef.current !== batchId) return;
+        const batch = updated.slice(i, i + batchSize);
+        
+        await Promise.all(batch.map(async (item, idx) => {
+          if (item.availableOn !== undefined) return;
+          try {
+            const tmdbId = parseInt(item.id.split('-')[1]);
+            const providers = item.type === 'movie'
+              ? await getMovieWatchProviders(tmdbId)
+              : await getTVWatchProviders(tmdbId);
+            updated[i + idx] = { ...updated[i + idx], availableOn: extractStreamingNames(providers) };
+          } catch { /* skip */ }
+        }));
+        
+        if (enrichmentRef.current !== batchId) return;
+        setSearchResults([...updated]);
+      }
+    };
+
+    enrichResults();
+  }, [searchResults]);
 
   const handleFilterClick = (type: FilterType, genreId?: number, genreName?: string) => {
     if (type === 'genre' && !genreId) {
