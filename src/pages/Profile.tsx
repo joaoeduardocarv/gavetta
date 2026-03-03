@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { User, Mail, Calendar, Globe, Lock, Bell, Camera, LogOut, ChevronRight, Shield } from "lucide-react";
+import { User, Mail, Calendar, Globe, Lock, Bell, Camera, LogOut, ChevronRight, Shield, Share2, Eye, EyeOff } from "lucide-react";
 import { AvatarPickerDialog, getAvatarById } from "@/components/AvatarPickerDialog";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
@@ -23,28 +23,31 @@ export default function Profile() {
   const [selectedAvatar, setSelectedAvatar] = useState<string>("joker");
   const [isLoading, setIsLoading] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [isPublicProfile, setIsPublicProfile] = useState(false);
   const { user, signOut } = useAuth();
   const { toast } = useToast();
 
-  // Load avatar from database on mount
   useEffect(() => {
-    async function loadAvatar() {
+    async function loadProfile() {
       if (!user?.id) return;
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('avatar_url')
+          .select('avatar_url, is_public')
           .eq('id', user.id)
           .single();
-        if (error) console.error('Error loading avatar:', error);
-        else if (data?.avatar_url) setSelectedAvatar(data.avatar_url);
+        if (error) console.error('Error loading profile:', error);
+        else {
+          if (data?.avatar_url) setSelectedAvatar(data.avatar_url);
+          setIsPublicProfile(data?.is_public ?? false);
+        }
       } catch (err) {
-        console.error('Error loading avatar:', err);
+        console.error('Error loading profile:', err);
       } finally {
         setIsLoading(false);
       }
     }
-    loadAvatar();
+    loadProfile();
   }, [user?.id]);
 
   const handleAvatarSelect = async (avatarId: string) => {
@@ -196,6 +199,61 @@ export default function Profile() {
                 onCheckedChange={setNotificationsEnabled}
               />
             </div>
+
+            {/* Perfil Público */}
+            <div className="flex items-center justify-between py-3 px-1">
+              <div className="flex items-center gap-3">
+                {isPublicProfile ? <Eye className="h-4 w-4 text-muted-foreground" /> : <EyeOff className="h-4 w-4 text-muted-foreground" />}
+                <div>
+                  <p className="text-sm font-medium text-foreground">Perfil Público</p>
+                  <p className="text-xs text-muted-foreground">
+                    {isPublicProfile ? "Qualquer pessoa pode ver seu perfil" : "Seu perfil está oculto"}
+                  </p>
+                </div>
+              </div>
+              <Switch
+                checked={isPublicProfile}
+                onCheckedChange={async (checked) => {
+                  setIsPublicProfile(checked);
+                  if (!user?.id) return;
+                  const { error } = await supabase
+                    .from('profiles')
+                    .update({ is_public: checked })
+                    .eq('id', user.id);
+                  if (error) {
+                    setIsPublicProfile(!checked);
+                    toast({ title: "Erro", description: "Não foi possível alterar a visibilidade.", variant: "destructive" });
+                  } else {
+                    toast({ title: checked ? "Perfil público!" : "Perfil privado", description: checked ? "Seu perfil agora pode ser visto por qualquer pessoa." : "Seu perfil está oculto." });
+                  }
+                }}
+              />
+            </div>
+
+            {/* Link do perfil público */}
+            {isPublicProfile && user?.user_metadata?.username && (
+              <button
+                onClick={async () => {
+                  const url = `${window.location.origin}/u/${user.user_metadata.username}`;
+                  if (navigator.share) {
+                    try { await navigator.share({ title: "Meu perfil Gavetta", url }); } catch {}
+                  } else {
+                    await navigator.clipboard.writeText(url);
+                    toast({ title: "Link copiado!", description: url });
+                  }
+                }}
+                className="w-full flex items-center justify-between py-3 px-1 rounded-md hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <Share2 className="h-4 w-4 text-muted-foreground" />
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-foreground">Compartilhar Perfil</p>
+                    <p className="text-xs text-muted-foreground">Copie o link do seu perfil público</p>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+            )}
           </div>
 
           <Separator />
