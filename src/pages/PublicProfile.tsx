@@ -6,7 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Share2, Lock, Star, Film, Tv, Eye, Clock, Trophy, Loader2, User } from "lucide-react";
+import { Share2, Lock, Star, Film, Tv, Eye, Clock, Trophy, Loader2, User, CheckCircle } from "lucide-react";
 import { getTMDBImageUrl } from "@/lib/tmdb";
 import { useToast } from "@/hooks/use-toast";
 import gavetaIcon from "@/assets/gaveta-icon.png";
@@ -27,6 +27,12 @@ interface DrawerItem {
   rating: number | null;
 }
 
+interface ProfileStats {
+  totalMovies: number;
+  totalSeries: number;
+  avgRating: number | null;
+}
+
 export default function PublicProfile() {
   const { username } = useParams<{ username: string }>();
   const [profile, setProfile] = useState<ProfileData | null>(null);
@@ -36,6 +42,7 @@ export default function PublicProfile() {
   const [watchingItems, setWatchingItems] = useState<DrawerItem[]>([]);
   const [toWatchItems, setToWatchItems] = useState<DrawerItem[]>([]);
   const [top3Items, setTop3Items] = useState<DrawerItem[]>([]);
+  const [stats, setStats] = useState<ProfileStats>({ totalMovies: 0, totalSeries: 0, avgRating: null });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -69,6 +76,14 @@ export default function PublicProfile() {
           .sort((a: any, b: any) => (b.rating ?? 0) - (a.rating ?? 0))
           .slice(0, 3);
         setTop3Items(rated);
+
+        // Compute stats
+        const watched = assignments.filter((a: any) => a.drawer_id === "watched");
+        const movies = watched.filter((a: any) => a.production_type === "movie").length;
+        const series = watched.filter((a: any) => a.production_type === "tv").length;
+        const ratingsArr = assignments.filter((a: any) => a.rating && a.rating > 0).map((a: any) => a.rating as number);
+        const avg = ratingsArr.length > 0 ? Math.round((ratingsArr.reduce((s: number, r: number) => s + r, 0) / ratingsArr.length) * 10) / 10 : null;
+        setStats({ totalMovies: movies, totalSeries: series, avgRating: avg });
       }
       setLoading(false);
     }
@@ -156,7 +171,26 @@ export default function PublicProfile() {
       </div>
 
       <div className="px-4 pb-12 max-w-lg mx-auto space-y-8">
-        {/* Top 3 */}
+        {/* Stats */}
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-card rounded-lg p-4 text-center border border-border">
+            <Film className="h-5 w-5 mx-auto text-primary mb-1" />
+            <p className="text-2xl font-bold text-foreground">{stats.totalMovies}</p>
+            <p className="text-xs text-muted-foreground">Filmes assistidos</p>
+          </div>
+          <div className="bg-card rounded-lg p-4 text-center border border-border">
+            <Tv className="h-5 w-5 mx-auto text-primary mb-1" />
+            <p className="text-2xl font-bold text-foreground">{stats.totalSeries}</p>
+            <p className="text-xs text-muted-foreground">Séries assistidas</p>
+          </div>
+          <div className="bg-card rounded-lg p-4 text-center border border-border">
+            <Star className="h-5 w-5 mx-auto text-accent mb-1" />
+            <p className="text-2xl font-bold text-foreground">{stats.avgRating ?? "—"}</p>
+            <p className="text-xs text-muted-foreground">Nota média</p>
+          </div>
+        </div>
+
+        <Separator />
         {top3Items.length > 0 && (
           <section>
             <div className="flex items-center gap-2 mb-4">
