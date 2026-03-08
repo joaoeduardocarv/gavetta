@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from "react-image-crop";
+import { Slider } from "@/components/ui/slider";
 import "react-image-crop/dist/ReactCrop.css";
 
 // Import all avatar images
@@ -74,21 +75,23 @@ export function getAvatarById(avatarId: string): AvatarOption | undefined {
   return undefined;
 }
 
-function getCroppedBlob(image: HTMLImageElement, crop: Crop): Promise<Blob> {
+function getCroppedBlob(image: HTMLImageElement, crop: Crop, zoom: number): Promise<Blob> {
   const canvas = document.createElement("canvas");
   const scaleX = image.naturalWidth / image.width;
   const scaleY = image.naturalHeight / image.height;
-  const size = 256; // output size
+  const size = 256;
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext("2d")!;
 
+  // The crop coordinates are relative to the displayed (zoomed) image
+  // We need to adjust for zoom when mapping to natural coordinates
   ctx.drawImage(
     image,
-    crop.x * scaleX,
-    crop.y * scaleY,
-    crop.width * scaleX,
-    crop.height * scaleY,
+    (crop.x * scaleX) / zoom,
+    (crop.y * scaleY) / zoom,
+    (crop.width * scaleX) / zoom,
+    (crop.height * scaleY) / zoom,
     0,
     0,
     size,
@@ -126,6 +129,7 @@ export function AvatarPickerDialog({
   // Crop state
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState<Crop>();
+  const [zoom, setZoom] = useState(1);
   const imgRef = useRef<HTMLImageElement>(null);
 
   const handleSelect = (avatar: AvatarOption) => {
@@ -171,7 +175,7 @@ export function AvatarPickerDialog({
 
     setUploading(true);
     try {
-      const blob = await getCroppedBlob(imgRef.current, crop);
+      const blob = await getCroppedBlob(imgRef.current, crop, zoom);
       const filePath = `${user.id}/avatar.jpg`;
 
       const { error: uploadError } = await supabase.storage
@@ -200,6 +204,7 @@ export function AvatarPickerDialog({
 
   const handleCropCancel = () => {
     setImageSrc(null);
+    setZoom(1);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -225,9 +230,24 @@ export function AvatarPickerDialog({
                   src={imageSrc}
                   onLoad={onImageLoad}
                   alt="Recorte"
-                  className="max-h-[350px] w-auto"
+                  className="max-h-[300px] w-auto"
+                  style={{ transform: `scale(${zoom})`, transformOrigin: "center center" }}
                 />
               </ReactCrop>
+            </div>
+
+            {/* Zoom slider */}
+            <div className="flex items-center gap-3 px-2">
+              <span className="text-xs text-muted-foreground whitespace-nowrap">Zoom</span>
+              <Slider
+                min={1}
+                max={3}
+                step={0.05}
+                value={[zoom]}
+                onValueChange={([v]) => setZoom(v)}
+                className="flex-1"
+              />
+              <span className="text-xs text-muted-foreground w-10 text-right">{Math.round(zoom * 100)}%</span>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={handleCropCancel} disabled={uploading}>
