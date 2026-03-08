@@ -29,7 +29,37 @@ const getNotificationIcon = (type: Notification["type"]) => {
 export function NotificationsPopover() {
   const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification } =
     useNotifications();
+  const { acceptInvite, rejectInvite } = useSharedDrawers();
+  const { toast } = useToast();
+  const [processing, setProcessing] = useState<string | null>(null);
 
+  const handleAcceptDrawerInvite = async (notification: Notification) => {
+    if (!notification.related_content_id) return;
+    setProcessing(notification.id);
+    try {
+      await acceptInvite(notification.related_content_id);
+      markAsRead.mutate(notification.id);
+      toast({ title: "Gaveta aceita!", description: "Agora ela aparece nas suas gavettas." });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const handleRejectDrawerInvite = async (notification: Notification) => {
+    if (!notification.related_content_id) return;
+    setProcessing(notification.id);
+    try {
+      await rejectInvite(notification.related_content_id);
+      deleteNotification.mutate(notification.id);
+      toast({ title: "Convite recusado." });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } finally {
+      setProcessing(null);
+    }
+  };
   return (
     <Popover>
       <PopoverTrigger asChild>
