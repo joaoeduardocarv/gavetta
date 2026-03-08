@@ -293,9 +293,57 @@ export default function MyDrawers() {
                   const Icon = iconMap[drawer.icon] || Star;
                   const count = getDrawerCount(drawer.id);
                   return (
+                    <div key={drawer.id} className="flex items-center gap-2 mb-3">
+                      <button
+                        onClick={() => handleSelectDrawer(drawer.id)}
+                        className="flex-1 flex items-center justify-between p-4 bg-card rounded-lg border border-border hover:bg-accent/5 hover:border-accent/50 transition-all duration-200"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon className={`h-6 w-6 ${drawer.color}`} />
+                          <div className="text-left">
+                            <h4 className="font-heading font-bold text-foreground">
+                              {drawer.name}
+                            </h4>
+                            <p className="text-xs text-muted-foreground">
+                              {count} {count === 1 ? 'item' : 'itens'}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge variant="secondary">{count}</Badge>
+                      </button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-10 w-10 shrink-0"
+                        onClick={() => {
+                          setShareDrawerId(drawer.id);
+                          setShareDrawerName(drawer.name);
+                        }}
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {sharedDrawers.length > 0 && (
+              <div className="pt-6">
+                <h3 className="font-heading text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Gavettas Compartilhadas
+                </h3>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Gavetas compartilhadas com amigos — ambos podem adicionar conteúdo.
+                </p>
+                
+                {sharedDrawers.map((drawer) => {
+                  const Icon = iconMap[drawer.icon] || Star;
+                  return (
                     <button
                       key={drawer.id}
-                      onClick={() => handleSelectDrawer(drawer.id)}
+                      onClick={() => handleSelectSharedDrawer(drawer.drawerId)}
                       className="w-full flex items-center justify-between p-4 bg-card rounded-lg border border-border hover:bg-accent/5 hover:border-accent/50 transition-all duration-200 mb-3"
                     >
                       <div className="flex items-center gap-3">
@@ -305,11 +353,11 @@ export default function MyDrawers() {
                             {drawer.name}
                           </h4>
                           <p className="text-xs text-muted-foreground">
-                            {count} {count === 1 ? 'item' : 'itens'}
+                            de {drawer.ownerUsername}
                           </p>
                         </div>
                       </div>
-                      <Badge variant="secondary">{count}</Badge>
+                      <Users className="h-4 w-4 text-muted-foreground" />
                     </button>
                   );
                 })}
