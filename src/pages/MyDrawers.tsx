@@ -77,7 +77,8 @@ export default function MyDrawers() {
   const [shareDrawerName, setShareDrawerName] = useState("");
   const [isSharedDrawerSelected, setIsSharedDrawerSelected] = useState(false);
   const [sharedDrawerContent, setSharedDrawerContent] = useState<Content[]>([]);
-
+  const [manageMembersDrawerId, setManageMembersDrawerId] = useState<string | null>(null);
+  const [manageMembersDrawerName, setManageMembersDrawerName] = useState("");
   const handleCardClick = async (content: Content) => {
     setIsLoadingDetails(true);
     
