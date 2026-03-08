@@ -104,6 +104,41 @@ export type Database = {
         }
         Relationships: []
       }
+      shared_drawer_members: {
+        Row: {
+          created_at: string
+          drawer_id: string
+          id: string
+          invited_by: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          drawer_id: string
+          id?: string
+          invited_by: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          drawer_id?: string
+          id?: string
+          invited_by?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shared_drawer_members_drawer_id_fkey"
+            columns: ["drawer_id"]
+            isOneToOne: false
+            referencedRelation: "user_custom_drawers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_custom_drawers: {
         Row: {
           created_at: string
