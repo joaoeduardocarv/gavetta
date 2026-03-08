@@ -435,6 +435,7 @@ export default function MyDrawers() {
           onOpenChange={(open) => { if (!open) setShareDrawerId(null); }}
           drawerId={shareDrawerId}
           drawerName={shareDrawerName}
+          currentPermission={customDrawers.find(d => d.id === shareDrawerId)?.shared_permission || "open"}
         />
       )}
     </div>
