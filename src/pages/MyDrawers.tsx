@@ -9,7 +9,7 @@ import { ManageMembersDialog } from "@/components/ManageMembersDialog";
 import { Content } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Play, Eye, CheckCircle, Star, Heart, Bookmark, Clock, Sparkles, Loader2, Users, Share2 } from "lucide-react";
+import { Plus, Play, Eye, CheckCircle, Star, Heart, Bookmark, Clock, Sparkles, Loader2, Users, Share2, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useDrawers } from "@/contexts/DrawerContext";
 import { useSharedDrawers } from "@/hooks/useSharedDrawers";
