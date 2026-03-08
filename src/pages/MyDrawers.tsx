@@ -5,6 +5,7 @@ import { ContentCard } from "@/components/ContentCard";
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { CreateDrawerDialog } from "@/components/CreateDrawerDialog";
 import { ShareDrawerDialog } from "@/components/ShareDrawerDialog";
+import { ManageMembersDialog } from "@/components/ManageMembersDialog";
 import { Content } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
