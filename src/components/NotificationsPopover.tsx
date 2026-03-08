@@ -128,7 +128,34 @@ export function NotificationsPopover() {
                           locale: ptBR,
                         })}
                       </p>
-                    </div>
+                      {notification.type === "shared_drawer_invite" && !notification.is_read && (
+                        <div className="flex gap-2 mt-2">
+                          <Button
+                            size="sm"
+                            variant="default"
+                            className="h-7 text-xs"
+                            disabled={processing === notification.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAcceptDrawerInvite(notification);
+                            }}
+                          >
+                            <CheckCircle className="h-3 w-3 mr-1" /> Aceitar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs"
+                            disabled={processing === notification.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRejectDrawerInvite(notification);
+                            }}
+                          >
+                            <X className="h-3 w-3 mr-1" /> Recusar
+                          </Button>
+                        </div>
+                      )}
                     <Button
                       variant="ghost"
                       size="icon"
