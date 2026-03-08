@@ -127,6 +127,7 @@ export function AvatarPickerDialog({
   // Crop state
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [crop, setCrop] = useState<Crop>();
+  const [zoom, setZoom] = useState(1);
   const imgRef = useRef<HTMLImageElement>(null);
 
   const handleSelect = (avatar: AvatarOption) => {
