@@ -156,7 +156,7 @@ export function NotificationsPopover() {
                           </Button>
                         </div>
                       )}
-                    <Button
+                    </div>
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
