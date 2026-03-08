@@ -209,9 +209,9 @@ export default function MyDrawers() {
     return getDrawerContents(drawerId).length;
   };
 
-  // Obter conteúdo da gaveta selecionada diretamente do contexto
   const getSelectedDrawerContent = (): Content[] => {
     if (!selectedDrawer) return [];
+    if (isSharedDrawerSelected) return sharedDrawerContent;
     return getDrawerContents(selectedDrawer);
   };
 
