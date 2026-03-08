@@ -228,9 +228,24 @@ export function AvatarPickerDialog({
                   src={imageSrc}
                   onLoad={onImageLoad}
                   alt="Recorte"
-                  className="max-h-[350px] w-auto"
+                  className="max-h-[300px] w-auto"
+                  style={{ transform: `scale(${zoom})`, transformOrigin: "center center" }}
                 />
               </ReactCrop>
+            </div>
+
+            {/* Zoom slider */}
+            <div className="flex items-center gap-3 px-2">
+              <span className="text-xs text-muted-foreground whitespace-nowrap">Zoom</span>
+              <Slider
+                min={1}
+                max={3}
+                step={0.05}
+                value={[zoom]}
+                onValueChange={([v]) => setZoom(v)}
+                className="flex-1"
+              />
+              <span className="text-xs text-muted-foreground w-10 text-right">{Math.round(zoom * 100)}%</span>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={handleCropCancel} disabled={uploading}>
