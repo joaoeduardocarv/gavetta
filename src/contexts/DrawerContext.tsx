@@ -107,7 +107,8 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
           id: d.id,
           name: d.name,
           icon: d.icon,
-          color: '#6366f1' // default color
+          color: '#6366f1',
+          shared_permission: (d as any).shared_permission || 'open',
         }));
         setCustomDrawers(fetchedDrawers);
 
