@@ -375,7 +375,14 @@ export default function MyDrawers() {
             </Button>
             
             <h3 className="font-heading text-xl font-bold text-foreground mb-4">
-              {allDrawers.find(d => d.id === selectedDrawer)?.name}
+              {isSharedDrawerSelected 
+                ? sharedDrawers.find(d => d.drawerId === selectedDrawer)?.name
+                : allDrawers.find(d => d.id === selectedDrawer)?.name}
+              {isSharedDrawerSelected && (
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  (compartilhada)
+                </span>
+              )}
             </h3>
 
             <div className="space-y-3">
