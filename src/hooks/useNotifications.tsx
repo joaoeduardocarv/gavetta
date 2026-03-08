@@ -6,7 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 export interface Notification {
   id: string;
   user_id: string;
-  type: "friend_request" | "friend_accepted" | "recommendation" | "activity";
+  type: "friend_request" | "friend_accepted" | "recommendation" | "activity" | "shared_drawer_invite";
   title: string;
   message: string | null;
   related_user_id: string | null;

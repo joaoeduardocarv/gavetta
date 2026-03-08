@@ -1,9 +1,12 @@
-import { Bell, Check, UserPlus, ThumbsUp, Film, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Bell, Check, UserPlus, ThumbsUp, Film, Trash2, Users, CheckCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNotifications, Notification } from "@/hooks/useNotifications";
+import { useSharedDrawers } from "@/hooks/useSharedDrawers";
+import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -16,6 +19,8 @@ const getNotificationIcon = (type: Notification["type"]) => {
       return <ThumbsUp className="h-4 w-4 text-green-500" />;
     case "recommendation":
       return <Film className="h-4 w-4 text-accent" />;
+    case "shared_drawer_invite":
+      return <Users className="h-4 w-4 text-purple-500" />;
     default:
       return <Bell className="h-4 w-4 text-muted-foreground" />;
   }
