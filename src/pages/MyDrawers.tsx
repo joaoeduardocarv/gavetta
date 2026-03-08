@@ -1,15 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { ContentCard } from "@/components/ContentCard";
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { CreateDrawerDialog } from "@/components/CreateDrawerDialog";
+import { ShareDrawerDialog } from "@/components/ShareDrawerDialog";
 import { Content } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Play, Eye, CheckCircle, Star, Heart, Bookmark, Clock, Sparkles, Loader2 } from "lucide-react";
+import { Plus, Play, Eye, CheckCircle, Star, Heart, Bookmark, Clock, Sparkles, Loader2, Users, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useDrawers } from "@/contexts/DrawerContext";
+import { useSharedDrawers } from "@/hooks/useSharedDrawers";
 import { 
   getMovieDetails, 
   getTVDetails, 
@@ -63,12 +65,17 @@ const iconMap: Record<string, any> = {
 export default function MyDrawers() {
   const { toast } = useToast();
   const { customDrawers, addCustomDrawer, getDrawerContents, isLoading } = useDrawers();
+  const { sharedDrawers, isLoading: sharedLoading, getSharedDrawerContents } = useSharedDrawers();
   
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedDrawer, setSelectedDrawer] = useState<string | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [shareDrawerId, setShareDrawerId] = useState<string | null>(null);
+  const [shareDrawerName, setShareDrawerName] = useState("");
+  const [isSharedDrawerSelected, setIsSharedDrawerSelected] = useState(false);
+  const [sharedDrawerContent, setSharedDrawerContent] = useState<Content[]>([]);
 
   const handleCardClick = async (content: Content) => {
     setIsLoadingDetails(true);
@@ -159,6 +166,21 @@ export default function MyDrawers() {
 
   const handleSelectDrawer = (drawerId: string) => {
     setSelectedDrawer(drawerId);
+    setIsSharedDrawerSelected(false);
+  };
+
+  const handleSelectSharedDrawer = async (drawerId: string) => {
+    setSelectedDrawer(drawerId);
+    setIsSharedDrawerSelected(true);
+    setIsLoadingDetails(true);
+    try {
+      const contents = await getSharedDrawerContents(drawerId);
+      setSharedDrawerContent(contents);
+    } catch (error) {
+      console.error("Error fetching shared drawer contents:", error);
+    } finally {
+      setIsLoadingDetails(false);
+    }
   };
 
   const handleCreateDrawer = async (drawer: { name: string; icon: string; color: string; contentIds: string[] }) => {
@@ -187,9 +209,9 @@ export default function MyDrawers() {
     return getDrawerContents(drawerId).length;
   };
 
-  // Obter conteúdo da gaveta selecionada diretamente do contexto
   const getSelectedDrawerContent = (): Content[] => {
     if (!selectedDrawer) return [];
+    if (isSharedDrawerSelected) return sharedDrawerContent;
     return getDrawerContents(selectedDrawer);
   };
 
@@ -271,9 +293,57 @@ export default function MyDrawers() {
                   const Icon = iconMap[drawer.icon] || Star;
                   const count = getDrawerCount(drawer.id);
                   return (
+                    <div key={drawer.id} className="flex items-center gap-2 mb-3">
+                      <button
+                        onClick={() => handleSelectDrawer(drawer.id)}
+                        className="flex-1 flex items-center justify-between p-4 bg-card rounded-lg border border-border hover:bg-accent/5 hover:border-accent/50 transition-all duration-200"
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon className={`h-6 w-6 ${drawer.color}`} />
+                          <div className="text-left">
+                            <h4 className="font-heading font-bold text-foreground">
+                              {drawer.name}
+                            </h4>
+                            <p className="text-xs text-muted-foreground">
+                              {count} {count === 1 ? 'item' : 'itens'}
+                            </p>
+                          </div>
+                        </div>
+                        <Badge variant="secondary">{count}</Badge>
+                      </button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-10 w-10 shrink-0"
+                        onClick={() => {
+                          setShareDrawerId(drawer.id);
+                          setShareDrawerName(drawer.name);
+                        }}
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {sharedDrawers.length > 0 && (
+              <div className="pt-6">
+                <h3 className="font-heading text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Gavettas Compartilhadas
+                </h3>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Gavetas compartilhadas com amigos — ambos podem adicionar conteúdo.
+                </p>
+                
+                {sharedDrawers.map((drawer) => {
+                  const Icon = iconMap[drawer.icon] || Star;
+                  return (
                     <button
                       key={drawer.id}
-                      onClick={() => handleSelectDrawer(drawer.id)}
+                      onClick={() => handleSelectSharedDrawer(drawer.drawerId)}
                       className="w-full flex items-center justify-between p-4 bg-card rounded-lg border border-border hover:bg-accent/5 hover:border-accent/50 transition-all duration-200 mb-3"
                     >
                       <div className="flex items-center gap-3">
@@ -283,11 +353,11 @@ export default function MyDrawers() {
                             {drawer.name}
                           </h4>
                           <p className="text-xs text-muted-foreground">
-                            {count} {count === 1 ? 'item' : 'itens'}
+                            de {drawer.ownerUsername}
                           </p>
                         </div>
                       </div>
-                      <Badge variant="secondary">{count}</Badge>
+                      <Users className="h-4 w-4 text-muted-foreground" />
                     </button>
                   );
                 })}
@@ -305,7 +375,14 @@ export default function MyDrawers() {
             </Button>
             
             <h3 className="font-heading text-xl font-bold text-foreground mb-4">
-              {allDrawers.find(d => d.id === selectedDrawer)?.name}
+              {isSharedDrawerSelected 
+                ? sharedDrawers.find(d => d.drawerId === selectedDrawer)?.name
+                : allDrawers.find(d => d.id === selectedDrawer)?.name}
+              {isSharedDrawerSelected && (
+                <span className="text-sm font-normal text-muted-foreground ml-2">
+                  (compartilhada)
+                </span>
+              )}
             </h3>
 
             <div className="space-y-3">
@@ -351,6 +428,15 @@ export default function MyDrawers() {
         onOpenChange={setIsCreateDialogOpen}
         onCreateDrawer={handleCreateDrawer}
       />
+
+      {shareDrawerId && (
+        <ShareDrawerDialog
+          open={!!shareDrawerId}
+          onOpenChange={(open) => { if (!open) setShareDrawerId(null); }}
+          drawerId={shareDrawerId}
+          drawerName={shareDrawerName}
+        />
+      )}
     </div>
   );
 }

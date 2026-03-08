@@ -1,9 +1,12 @@
-import { Bell, Check, UserPlus, ThumbsUp, Film, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { Bell, Check, UserPlus, ThumbsUp, Film, Trash2, Users, CheckCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNotifications, Notification } from "@/hooks/useNotifications";
+import { useSharedDrawers } from "@/hooks/useSharedDrawers";
+import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -16,6 +19,8 @@ const getNotificationIcon = (type: Notification["type"]) => {
       return <ThumbsUp className="h-4 w-4 text-green-500" />;
     case "recommendation":
       return <Film className="h-4 w-4 text-accent" />;
+    case "shared_drawer_invite":
+      return <Users className="h-4 w-4 text-purple-500" />;
     default:
       return <Bell className="h-4 w-4 text-muted-foreground" />;
   }
@@ -24,6 +29,37 @@ const getNotificationIcon = (type: Notification["type"]) => {
 export function NotificationsPopover() {
   const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification } =
     useNotifications();
+  const { acceptInvite, rejectInvite } = useSharedDrawers();
+  const { toast } = useToast();
+  const [processing, setProcessing] = useState<string | null>(null);
+
+  const handleAcceptDrawerInvite = async (notification: Notification) => {
+    if (!notification.related_content_id) return;
+    setProcessing(notification.id);
+    try {
+      await acceptInvite(notification.related_content_id);
+      markAsRead.mutate(notification.id);
+      toast({ title: "Gaveta aceita!", description: "Agora ela aparece nas suas gavettas." });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } finally {
+      setProcessing(null);
+    }
+  };
+
+  const handleRejectDrawerInvite = async (notification: Notification) => {
+    if (!notification.related_content_id) return;
+    setProcessing(notification.id);
+    try {
+      await rejectInvite(notification.related_content_id);
+      deleteNotification.mutate(notification.id);
+      toast({ title: "Convite recusado." });
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    } finally {
+      setProcessing(null);
+    }
+  };
 
   return (
     <Popover>
@@ -93,6 +129,34 @@ export function NotificationsPopover() {
                           locale: ptBR,
                         })}
                       </p>
+                      {notification.type === "shared_drawer_invite" && !notification.is_read && (
+                        <div className="flex gap-2 mt-2">
+                          <Button
+                            size="sm"
+                            variant="default"
+                            className="h-7 text-xs"
+                            disabled={processing === notification.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAcceptDrawerInvite(notification);
+                            }}
+                          >
+                            <CheckCircle className="h-3 w-3 mr-1" /> Aceitar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs"
+                            disabled={processing === notification.id}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRejectDrawerInvite(notification);
+                            }}
+                          >
+                            <X className="h-3 w-3 mr-1" /> Recusar
+                          </Button>
+                        </div>
+                      )}
                     </div>
                     <Button
                       variant="ghost"
