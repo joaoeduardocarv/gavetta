@@ -175,7 +175,7 @@ export function AvatarPickerDialog({
 
     setUploading(true);
     try {
-      const blob = await getCroppedBlob(imgRef.current, crop);
+      const blob = await getCroppedBlob(imgRef.current, crop, zoom);
       const filePath = `${user.id}/avatar.jpg`;
 
       const { error: uploadError } = await supabase.storage
