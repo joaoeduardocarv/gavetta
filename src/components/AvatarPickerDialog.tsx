@@ -202,6 +202,7 @@ export function AvatarPickerDialog({
 
   const handleCropCancel = () => {
     setImageSrc(null);
+    setZoom(1);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
