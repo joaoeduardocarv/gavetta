@@ -21,6 +21,7 @@ export interface CustomDrawer {
   name: string;
   icon: string;
   color: string;
+  shared_permission?: string;
 }
 
 export interface ContentDrawerAssignment {
