@@ -1,15 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { ContentCard } from "@/components/ContentCard";
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { CreateDrawerDialog } from "@/components/CreateDrawerDialog";
+import { ShareDrawerDialog } from "@/components/ShareDrawerDialog";
 import { Content } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Play, Eye, CheckCircle, Star, Heart, Bookmark, Clock, Sparkles, Loader2 } from "lucide-react";
+import { Plus, Play, Eye, CheckCircle, Star, Heart, Bookmark, Clock, Sparkles, Loader2, Users, Share2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useDrawers } from "@/contexts/DrawerContext";
+import { useSharedDrawers } from "@/hooks/useSharedDrawers";
 import { 
   getMovieDetails, 
   getTVDetails, 
