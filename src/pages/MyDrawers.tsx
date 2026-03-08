@@ -453,6 +453,15 @@ export default function MyDrawers() {
           currentPermission={customDrawers.find(d => d.id === shareDrawerId)?.shared_permission || "open"}
         />
       )}
+
+      {manageMembersDrawerId && (
+        <ManageMembersDialog
+          open={!!manageMembersDrawerId}
+          onOpenChange={(open) => { if (!open) setManageMembersDrawerId(null); }}
+          drawerId={manageMembersDrawerId}
+          drawerName={manageMembersDrawerName}
+        />
+      )}
     </div>
   );
 }
