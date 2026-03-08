@@ -75,21 +75,23 @@ export function getAvatarById(avatarId: string): AvatarOption | undefined {
   return undefined;
 }
 
-function getCroppedBlob(image: HTMLImageElement, crop: Crop): Promise<Blob> {
+function getCroppedBlob(image: HTMLImageElement, crop: Crop, zoom: number): Promise<Blob> {
   const canvas = document.createElement("canvas");
   const scaleX = image.naturalWidth / image.width;
   const scaleY = image.naturalHeight / image.height;
-  const size = 256; // output size
+  const size = 256;
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext("2d")!;
 
+  // The crop coordinates are relative to the displayed (zoomed) image
+  // We need to adjust for zoom when mapping to natural coordinates
   ctx.drawImage(
     image,
-    crop.x * scaleX,
-    crop.y * scaleY,
-    crop.width * scaleX,
-    crop.height * scaleY,
+    (crop.x * scaleX) / zoom,
+    (crop.y * scaleY) / zoom,
+    (crop.width * scaleX) / zoom,
+    (crop.height * scaleY) / zoom,
     0,
     0,
     size,
