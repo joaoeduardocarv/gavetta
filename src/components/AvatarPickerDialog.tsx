@@ -1,12 +1,14 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Upload, Loader2 } from "lucide-react";
+import { Upload, Loader2, Check, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from "react-image-crop";
+import "react-image-crop/dist/ReactCrop.css";
 
 // Import all avatar images
 import aang from "@/assets/avatars/aang.png";
@@ -63,15 +65,43 @@ export const allAvatars: AvatarOption[] = [
   { id: "trinity", name: "Trinity", src: trinity },
 ];
 
-// Helper to get avatar source by ID — supports custom URLs
 export function getAvatarById(avatarId: string): AvatarOption | undefined {
   const found = allAvatars.find(a => a.id === avatarId);
   if (found) return found;
-  // If it's a URL (custom upload), return it as-is
   if (avatarId && (avatarId.startsWith("http://") || avatarId.startsWith("https://"))) {
     return { id: "custom", name: "Foto personalizada", src: avatarId };
   }
   return undefined;
+}
+
+function getCroppedBlob(image: HTMLImageElement, crop: Crop): Promise<Blob> {
+  const canvas = document.createElement("canvas");
+  const scaleX = image.naturalWidth / image.width;
+  const scaleY = image.naturalHeight / image.height;
+  const size = 256; // output size
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+
+  ctx.drawImage(
+    image,
+    crop.x * scaleX,
+    crop.y * scaleY,
+    crop.width * scaleX,
+    crop.height * scaleY,
+    0,
+    0,
+    size,
+    size
+  );
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => (blob ? resolve(blob) : reject(new Error("Canvas is empty"))),
+      "image/jpeg",
+      0.9
+    );
+  });
 }
 
 interface AvatarPickerDialogProps {
@@ -81,11 +111,11 @@ interface AvatarPickerDialogProps {
   onSelectAvatar: (avatarId: string) => void;
 }
 
-export function AvatarPickerDialog({ 
-  open, 
-  onOpenChange, 
-  currentAvatar, 
-  onSelectAvatar 
+export function AvatarPickerDialog({
+  open,
+  onOpenChange,
+  currentAvatar,
+  onSelectAvatar,
 }: AvatarPickerDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -93,20 +123,24 @@ export function AvatarPickerDialog({
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Crop state
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const [crop, setCrop] = useState<Crop>();
+  const imgRef = useRef<HTMLImageElement>(null);
+
   const handleSelect = (avatar: AvatarOption) => {
     setSelectedId(avatar.id);
     onSelectAvatar(avatar.id);
     onOpenChange(false);
   };
 
-  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user?.id) return;
+    if (!file) return;
 
-    // Validate file
-    const maxSize = 2 * 1024 * 1024; // 2MB
+    const maxSize = 5 * 1024 * 1024; // 5MB for source (will be cropped down)
     if (file.size > maxSize) {
-      toast({ title: "Arquivo muito grande", description: "O tamanho máximo é 2MB.", variant: "destructive" });
+      toast({ title: "Arquivo muito grande", description: "O tamanho máximo é 5MB.", variant: "destructive" });
       return;
     }
 
@@ -116,14 +150,33 @@ export function AvatarPickerDialog({
       return;
     }
 
+    const reader = new FileReader();
+    reader.onload = () => setImageSrc(reader.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
+    imgRef.current = e.currentTarget;
+    const { width, height } = e.currentTarget;
+    const initialCrop = centerCrop(
+      makeAspectCrop({ unit: "%", width: 80 }, 1, width, height),
+      width,
+      height
+    );
+    setCrop(initialCrop);
+  }, []);
+
+  const handleCropConfirm = async () => {
+    if (!imgRef.current || !crop || !user?.id) return;
+
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop() || "jpg";
-      const filePath = `${user.id}/avatar.${ext}`;
+      const blob = await getCroppedBlob(imgRef.current, crop);
+      const filePath = `${user.id}/avatar.jpg`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, blob, { upsert: true, contentType: "image/jpeg" });
 
       if (uploadError) throw uploadError;
 
@@ -131,11 +184,10 @@ export function AvatarPickerDialog({
         .from("avatars")
         .getPublicUrl(filePath);
 
-      // Add cache-busting param
       const url = `${publicUrl}?t=${Date.now()}`;
-
       onSelectAvatar(url);
       setSelectedId(url);
+      setImageSrc(null);
       onOpenChange(false);
       toast({ title: "Foto atualizada!", description: "Sua foto personalizada foi salva." });
     } catch (err: any) {
@@ -146,61 +198,99 @@ export function AvatarPickerDialog({
     }
   };
 
+  const handleCropCancel = () => {
+    setImageSrc(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) setImageSrc(null); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle className="font-heading text-xl">Escolha seu Avatar</DialogTitle>
+          <DialogTitle className="font-heading text-xl">
+            {imageSrc ? "Recortar imagem" : "Escolha seu Avatar"}
+          </DialogTitle>
         </DialogHeader>
 
-        {/* Upload button */}
-        <div className="mb-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="hidden"
-            onChange={handleUpload}
-          />
-          <Button
-            variant="outline"
-            className="w-full"
-            disabled={uploading}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {uploading ? (
-              <Loader2 className="h-4 w-4 animate-spin mr-2" />
-            ) : (
-              <Upload className="h-4 w-4 mr-2" />
-            )}
-            {uploading ? "Enviando..." : "Enviar foto da biblioteca"}
-          </Button>
-          <p className="text-xs text-muted-foreground mt-1 text-center">JPG, PNG ou WebP • Máx. 2MB</p>
-        </div>
-        
-        <ScrollArea className="h-[350px] pr-4">
-          <div className="grid grid-cols-4 gap-3">
-            {allAvatars.map((avatar) => (
-              <button
-                key={avatar.id}
-                onClick={() => handleSelect(avatar)}
-                className={cn(
-                  "relative aspect-square rounded-full overflow-hidden border-2 transition-all duration-200 hover:scale-105",
-                  selectedId === avatar.id
-                    ? "border-primary ring-2 ring-primary/50"
-                    : "border-transparent hover:border-muted-foreground/30"
-                )}
-                title={avatar.name}
+        {imageSrc ? (
+          <div className="space-y-4">
+            <div className="flex justify-center rounded-lg overflow-hidden bg-muted/30">
+              <ReactCrop
+                crop={crop}
+                onChange={(c) => setCrop(c)}
+                aspect={1}
+                circularCrop
               >
                 <img
-                  src={avatar.src}
-                  alt={avatar.name}
-                  className="w-full h-full object-cover"
+                  src={imageSrc}
+                  onLoad={onImageLoad}
+                  alt="Recorte"
+                  className="max-h-[350px] w-auto"
                 />
-              </button>
-            ))}
+              </ReactCrop>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={handleCropCancel} disabled={uploading}>
+                <X className="h-4 w-4 mr-2" />
+                Cancelar
+              </Button>
+              <Button className="flex-1" onClick={handleCropConfirm} disabled={uploading}>
+                {uploading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Check className="h-4 w-4 mr-2" />
+                )}
+                {uploading ? "Salvando..." : "Confirmar"}
+              </Button>
+            </div>
           </div>
-        </ScrollArea>
+        ) : (
+          <>
+            {/* Upload button */}
+            <div className="mb-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Enviar foto da biblioteca
+              </Button>
+              <p className="text-xs text-muted-foreground mt-1 text-center">JPG, PNG ou WebP • Máx. 5MB</p>
+            </div>
+
+            <ScrollArea className="h-[350px] pr-4">
+              <div className="grid grid-cols-4 gap-3">
+                {allAvatars.map((avatar) => (
+                  <button
+                    key={avatar.id}
+                    onClick={() => handleSelect(avatar)}
+                    className={cn(
+                      "relative aspect-square rounded-full overflow-hidden border-2 transition-all duration-200 hover:scale-105",
+                      selectedId === avatar.id
+                        ? "border-primary ring-2 ring-primary/50"
+                        : "border-transparent hover:border-muted-foreground/30"
+                    )}
+                    title={avatar.name}
+                  >
+                    <img
+                      src={avatar.src}
+                      alt={avatar.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            </ScrollArea>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
