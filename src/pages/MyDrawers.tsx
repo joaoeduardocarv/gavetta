@@ -65,12 +65,17 @@ const iconMap: Record<string, any> = {
 export default function MyDrawers() {
   const { toast } = useToast();
   const { customDrawers, addCustomDrawer, getDrawerContents, isLoading } = useDrawers();
+  const { sharedDrawers, isLoading: sharedLoading, getSharedDrawerContents } = useSharedDrawers();
   
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedDrawer, setSelectedDrawer] = useState<string | null>(null);
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const [shareDrawerId, setShareDrawerId] = useState<string | null>(null);
+  const [shareDrawerName, setShareDrawerName] = useState("");
+  const [isSharedDrawerSelected, setIsSharedDrawerSelected] = useState(false);
+  const [sharedDrawerContent, setSharedDrawerContent] = useState<Content[]>([]);
 
   const handleCardClick = async (content: Content) => {
     setIsLoadingDetails(true);
