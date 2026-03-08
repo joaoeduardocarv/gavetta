@@ -5,10 +5,11 @@ import { ContentCard } from "@/components/ContentCard";
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { CreateDrawerDialog } from "@/components/CreateDrawerDialog";
 import { ShareDrawerDialog } from "@/components/ShareDrawerDialog";
+import { ManageMembersDialog } from "@/components/ManageMembersDialog";
 import { Content } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Play, Eye, CheckCircle, Star, Heart, Bookmark, Clock, Sparkles, Loader2, Users, Share2 } from "lucide-react";
+import { Plus, Play, Eye, CheckCircle, Star, Heart, Bookmark, Clock, Sparkles, Loader2, Users, Share2, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useDrawers } from "@/contexts/DrawerContext";
 import { useSharedDrawers } from "@/hooks/useSharedDrawers";
@@ -76,7 +77,8 @@ export default function MyDrawers() {
   const [shareDrawerName, setShareDrawerName] = useState("");
   const [isSharedDrawerSelected, setIsSharedDrawerSelected] = useState(false);
   const [sharedDrawerContent, setSharedDrawerContent] = useState<Content[]>([]);
-
+  const [manageMembersDrawerId, setManageMembersDrawerId] = useState<string | null>(null);
+  const [manageMembersDrawerName, setManageMembersDrawerName] = useState("");
   const handleCardClick = async (content: Content) => {
     setIsLoadingDetails(true);
     
@@ -315,6 +317,19 @@ export default function MyDrawers() {
                         size="icon"
                         variant="ghost"
                         className="h-10 w-10 shrink-0"
+                        title="Gerenciar membros"
+                        onClick={() => {
+                          setManageMembersDrawerId(drawer.id);
+                          setManageMembersDrawerName(drawer.name);
+                        }}
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-10 w-10 shrink-0"
+                        title="Compartilhar"
                         onClick={() => {
                           setShareDrawerId(drawer.id);
                           setShareDrawerName(drawer.name);
@@ -436,6 +451,15 @@ export default function MyDrawers() {
           drawerId={shareDrawerId}
           drawerName={shareDrawerName}
           currentPermission={customDrawers.find(d => d.id === shareDrawerId)?.shared_permission || "open"}
+        />
+      )}
+
+      {manageMembersDrawerId && (
+        <ManageMembersDialog
+          open={!!manageMembersDrawerId}
+          onOpenChange={(open) => { if (!open) setManageMembersDrawerId(null); }}
+          drawerId={manageMembersDrawerId}
+          drawerName={manageMembersDrawerName}
         />
       )}
     </div>
