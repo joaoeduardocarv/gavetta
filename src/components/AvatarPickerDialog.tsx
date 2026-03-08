@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from "react-image-crop";
+import { Slider } from "@/components/ui/slider";
 import "react-image-crop/dist/ReactCrop.css";
 
 // Import all avatar images
