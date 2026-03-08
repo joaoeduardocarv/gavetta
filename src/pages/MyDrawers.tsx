@@ -428,6 +428,15 @@ export default function MyDrawers() {
         onOpenChange={setIsCreateDialogOpen}
         onCreateDrawer={handleCreateDrawer}
       />
+
+      {shareDrawerId && (
+        <ShareDrawerDialog
+          open={!!shareDrawerId}
+          onOpenChange={(open) => { if (!open) setShareDrawerId(null); }}
+          drawerId={shareDrawerId}
+          drawerName={shareDrawerName}
+        />
+      )}
     </div>
   );
 }
