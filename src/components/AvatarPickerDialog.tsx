@@ -1,7 +1,12 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Upload, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
 
 // Import all avatar images
 import aang from "@/assets/avatars/aang.png";
@@ -58,9 +63,15 @@ export const allAvatars: AvatarOption[] = [
   { id: "trinity", name: "Trinity", src: trinity },
 ];
 
-// Helper to get avatar source by ID
+// Helper to get avatar source by ID — supports custom URLs
 export function getAvatarById(avatarId: string): AvatarOption | undefined {
-  return allAvatars.find(a => a.id === avatarId);
+  const found = allAvatars.find(a => a.id === avatarId);
+  if (found) return found;
+  // If it's a URL (custom upload), return it as-is
+  if (avatarId && (avatarId.startsWith("http://") || avatarId.startsWith("https://"))) {
+    return { id: "custom", name: "Foto personalizada", src: avatarId };
+  }
+  return undefined;
 }
 
 interface AvatarPickerDialogProps {
@@ -76,12 +87,63 @@ export function AvatarPickerDialog({
   currentAvatar, 
   onSelectAvatar 
 }: AvatarPickerDialogProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [selectedId, setSelectedId] = useState(currentAvatar);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSelect = (avatar: AvatarOption) => {
     setSelectedId(avatar.id);
     onSelectAvatar(avatar.id);
     onOpenChange(false);
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user?.id) return;
+
+    // Validate file
+    const maxSize = 2 * 1024 * 1024; // 2MB
+    if (file.size > maxSize) {
+      toast({ title: "Arquivo muito grande", description: "O tamanho máximo é 2MB.", variant: "destructive" });
+      return;
+    }
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast({ title: "Formato inválido", description: "Use JPG, PNG ou WebP.", variant: "destructive" });
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop() || "jpg";
+      const filePath = `${user.id}/avatar.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+
+      // Add cache-busting param
+      const url = `${publicUrl}?t=${Date.now()}`;
+
+      onSelectAvatar(url);
+      setSelectedId(url);
+      onOpenChange(false);
+      toast({ title: "Foto atualizada!", description: "Sua foto personalizada foi salva." });
+    } catch (err: any) {
+      toast({ title: "Erro no upload", description: err.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
   };
 
   return (
@@ -90,8 +152,33 @@ export function AvatarPickerDialog({
         <DialogHeader>
           <DialogTitle className="font-heading text-xl">Escolha seu Avatar</DialogTitle>
         </DialogHeader>
+
+        {/* Upload button */}
+        <div className="mb-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            onChange={handleUpload}
+          />
+          <Button
+            variant="outline"
+            className="w-full"
+            disabled={uploading}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {uploading ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <Upload className="h-4 w-4 mr-2" />
+            )}
+            {uploading ? "Enviando..." : "Enviar foto da biblioteca"}
+          </Button>
+          <p className="text-xs text-muted-foreground mt-1 text-center">JPG, PNG ou WebP • Máx. 2MB</p>
+        </div>
         
-        <ScrollArea className="h-[400px] pr-4">
+        <ScrollArea className="h-[350px] pr-4">
           <div className="grid grid-cols-4 gap-3">
             {allAvatars.map((avatar) => (
               <button
