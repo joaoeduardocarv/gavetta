@@ -317,6 +317,19 @@ export default function MyDrawers() {
                         size="icon"
                         variant="ghost"
                         className="h-10 w-10 shrink-0"
+                        title="Gerenciar membros"
+                        onClick={() => {
+                          setManageMembersDrawerId(drawer.id);
+                          setManageMembersDrawerName(drawer.name);
+                        }}
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-10 w-10 shrink-0"
+                        title="Compartilhar"
                         onClick={() => {
                           setShareDrawerId(drawer.id);
                           setShareDrawerName(drawer.name);
