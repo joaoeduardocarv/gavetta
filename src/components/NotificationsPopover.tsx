@@ -60,6 +60,7 @@ export function NotificationsPopover() {
       setProcessing(null);
     }
   };
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -156,6 +157,7 @@ export function NotificationsPopover() {
                           </Button>
                         </div>
                       )}
+                    </div>
                     <Button
                       variant="ghost"
                       size="icon"
