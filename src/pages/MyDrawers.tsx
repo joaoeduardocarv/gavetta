@@ -166,6 +166,21 @@ export default function MyDrawers() {
 
   const handleSelectDrawer = (drawerId: string) => {
     setSelectedDrawer(drawerId);
+    setIsSharedDrawerSelected(false);
+  };
+
+  const handleSelectSharedDrawer = async (drawerId: string) => {
+    setSelectedDrawer(drawerId);
+    setIsSharedDrawerSelected(true);
+    setIsLoadingDetails(true);
+    try {
+      const contents = await getSharedDrawerContents(drawerId);
+      setSharedDrawerContent(contents);
+    } catch (error) {
+      console.error("Error fetching shared drawer contents:", error);
+    } finally {
+      setIsLoadingDetails(false);
+    }
   };
 
   const handleCreateDrawer = async (drawer: { name: string; icon: string; color: string; contentIds: string[] }) => {
