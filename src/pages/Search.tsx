@@ -31,7 +31,6 @@ import {
 } from "@/lib/tmdb";
 
 type FilterType = 'all' | 'movies' | 'series' | 'genre';
-type SearchMode = 'title' | 'person';
 
 interface ActiveFilter {
   type: FilterType;
