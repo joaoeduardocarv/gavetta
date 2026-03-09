@@ -97,7 +97,6 @@ function personCreditToContent(credit: TMDBPersonCredit): Content & { popularity
 
 export default function Search() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [searchMode, setSearchMode] = useState<SearchMode>('title');
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<Content[]>([]);
@@ -107,35 +106,31 @@ export default function Search() {
   const [showGenres, setShowGenres] = useState(false);
 
   // Person search state
-  const [personMatches, setPersonMatches] = useState<PersonResult[]>([]);
+  const [personSuggestions, setPersonSuggestions] = useState<PersonResult[]>([]);
   const [selectedPerson, setSelectedPerson] = useState<PersonResult | null>(null);
-  const [showPersonPicker, setShowPersonPicker] = useState(false);
 
-  // Reset person state when mode changes
+  // Unified debounced search — title + person in parallel
   useEffect(() => {
-    setPersonMatches([]);
-    setSelectedPerson(null);
-    setShowPersonPicker(false);
-    setSearchResults([]);
-    setSearchQuery("");
-    setActiveFilter(null);
-  }, [searchMode]);
-
-  // Debounced search — title mode
-  useEffect(() => {
-    if (searchMode !== 'title') return;
-
     if (!searchQuery.trim()) {
       if (!activeFilter) {
         setSearchResults([]);
       }
+      setPersonSuggestions([]);
+      setSelectedPerson(null);
       return;
     }
+
+    // If a person is already selected, don't re-search
+    if (selectedPerson) return;
 
     const timeoutId = setTimeout(async () => {
       setIsLoading(true);
       try {
-        const { movies, tvShows } = await searchAll(searchQuery);
+        const [{ movies, tvShows }, people] = await Promise.all([
+          searchAll(searchQuery),
+          searchPerson(searchQuery),
+        ]);
+
         let movieResults = movies.map(tmdbMovieToContent);
         let tvResults = tvShows.map(tmdbTVToContent);
         
@@ -147,56 +142,20 @@ export default function Search() {
           const combined = [...movieResults, ...tvResults].sort((a, b) => b.popularity - a.popularity);
           setSearchResults(combined);
         }
+
+        // Show person suggestions if found
+        setPersonSuggestions(people.length > 0 ? people.slice(0, 3) : []);
       } catch (error) {
         console.error('Erro ao buscar conteúdo:', error);
         setSearchResults([]);
+        setPersonSuggestions([]);
       } finally {
         setIsLoading(false);
       }
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, activeFilter, searchMode]);
-
-  // Debounced search — person mode
-  useEffect(() => {
-    if (searchMode !== 'person') return;
-
-    if (!searchQuery.trim()) {
-      setPersonMatches([]);
-      setSelectedPerson(null);
-      setShowPersonPicker(false);
-      setSearchResults([]);
-      return;
-    }
-
-    const timeoutId = setTimeout(async () => {
-      setIsLoading(true);
-      setSelectedPerson(null);
-      setSearchResults([]);
-      try {
-        const people = await searchPerson(searchQuery);
-        setPersonMatches(people);
-        
-        if (people.length === 1) {
-          // Auto-select if single result
-          await selectPerson(people[0]);
-        } else if (people.length > 1) {
-          setShowPersonPicker(true);
-          setIsLoading(false);
-        } else {
-          setShowPersonPicker(false);
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error('Erro ao buscar pessoa:', error);
-        setPersonMatches([]);
-        setIsLoading(false);
-      }
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchQuery, searchMode]);
+  }, [searchQuery, activeFilter, selectedPerson]);
 
   const selectPerson = async (person: PersonResult) => {
     setSelectedPerson(person);
