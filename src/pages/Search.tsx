@@ -159,7 +159,7 @@ export default function Search() {
 
   const selectPerson = async (person: PersonResult) => {
     setSelectedPerson(person);
-    setShowPersonPicker(false);
+    setPersonSuggestions([]);
     setIsLoading(true);
     try {
       const credits = await getPersonCredits(person.id);
@@ -185,9 +185,18 @@ export default function Search() {
     }
   };
 
-  // Carregar conteúdo quando filtro muda (sem busca) — title mode only
+  const clearPersonSelection = () => {
+    setSelectedPerson(null);
+    setPersonSuggestions([]);
+    // Re-trigger search
+    const query = searchQuery;
+    setSearchQuery('');
+    setTimeout(() => setSearchQuery(query), 0);
+  };
+
+  // Carregar conteúdo quando filtro muda (sem busca)
   useEffect(() => {
-    if (searchMode !== 'title') return;
+    if (selectedPerson) return;
     if (searchQuery.trim()) return;
     
     if (!activeFilter) {
@@ -228,7 +237,7 @@ export default function Search() {
     };
 
     loadFilteredContent();
-  }, [activeFilter, searchQuery, searchMode]);
+  }, [activeFilter, searchQuery, selectedPerson]);
 
   // Enriquecer resultados com streaming providers em lotes
   const enrichmentRef = useRef(0);
@@ -362,65 +371,46 @@ export default function Search() {
           Buscar
         </h2>
 
-        {/* Toggle: Título / Pessoa */}
-        <div className="flex gap-2 mb-4">
-          <button
-            onClick={() => setSearchMode('title')}
-            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-              searchMode === 'title'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-accent/10'
-            }`}
-          >
-            <Film className="h-4 w-4 inline mr-2" />
-            Título
-          </button>
-          <button
-            onClick={() => setSearchMode('person')}
-            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-              searchMode === 'person'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-accent/10'
-            }`}
-          >
-            <User className="h-4 w-4 inline mr-2" />
-            Pessoa
-          </button>
-        </div>
-
         {/* Campo de Busca */}
         <div className="relative mb-6">
           <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder={searchMode === 'title' ? "Buscar filmes e séries..." : "Buscar ator ou diretor..."}
+            placeholder="Buscar filmes, séries, atores..."
             className="pl-10"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              if (selectedPerson) {
+                setSelectedPerson(null);
+              }
+            }}
           />
         </div>
 
-        {/* Person picker — multiple matches */}
-        {searchMode === 'person' && showPersonPicker && personMatches.length > 1 && (
-          <div className="mb-6 space-y-2">
-            <p className="text-sm text-muted-foreground">Selecione a pessoa:</p>
-            {personMatches.map((person) => (
-              <button
-                key={person.id}
-                onClick={() => selectPerson(person)}
-                className="w-full flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:bg-accent/5 transition-colors text-left"
-              >
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={getTMDBProfileUrl(person.profile_path)} alt={person.name} />
-                  <AvatarFallback><User className="h-5 w-5" /></AvatarFallback>
-                </Avatar>
-                <span className="font-medium text-foreground">{person.name}</span>
-              </button>
-            ))}
+        {/* Person suggestions — shown inline above results */}
+        {!selectedPerson && personSuggestions.length > 0 && !isLoading && (
+          <div className="mb-4">
+            <p className="text-xs text-muted-foreground mb-2">Você quis dizer a pessoa?</p>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {personSuggestions.map((person) => (
+                <button
+                  key={person.id}
+                  onClick={() => selectPerson(person)}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card hover:bg-accent/10 transition-colors text-left shrink-0"
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={getTMDBProfileUrl(person.profile_path)} alt={person.name} />
+                    <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium text-foreground whitespace-nowrap">{person.name}</span>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
         {/* Person header — selected person */}
-        {searchMode === 'person' && selectedPerson && (
+        {selectedPerson && (
           <div className="flex items-center gap-4 mb-6 p-4 rounded-lg bg-card border border-border">
             <Avatar className="h-16 w-16 rounded-lg">
               <AvatarImage 
@@ -430,15 +420,21 @@ export default function Search() {
               />
               <AvatarFallback className="rounded-lg"><User className="h-8 w-8" /></AvatarFallback>
             </Avatar>
-            <div>
+            <div className="flex-1">
               <p className="text-sm text-muted-foreground">Filmes e séries com</p>
               <h3 className="font-heading text-xl font-bold text-foreground">{selectedPerson.name}</h3>
             </div>
+            <button
+              onClick={clearPersonSelection}
+              className="p-2 rounded-full hover:bg-accent/10 transition-colors"
+            >
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
           </div>
         )}
 
-        {/* Filtro ativo — title mode only */}
-        {searchMode === 'title' && activeFilter && (
+        {/* Filtro ativo */}
+        {!selectedPerson && activeFilter && (
           <div className="flex items-center gap-2 mb-4">
             <span className="text-sm text-muted-foreground">Filtrando por:</span>
             <Badge 
@@ -454,8 +450,8 @@ export default function Search() {
           </div>
         )}
 
-        {/* Navegação Rápida — title mode only */}
-        {searchMode === 'title' && (
+        {/* Navegação Rápida */}
+        {!selectedPerson && (
           <div 
             className={`mb-6 transition-all duration-300 ease-out overflow-hidden ${
               searchQuery.trim() 
@@ -514,7 +510,7 @@ export default function Search() {
         {!isLoading && searchResults.length > 0 && (
           <div>
             <h3 className="font-heading text-lg font-semibold text-foreground mb-4">
-              {searchMode === 'person' && selectedPerson
+              {selectedPerson
                 ? `Resultados (${searchResults.length})`
                 : searchQuery 
                   ? `Resultados (${searchResults.length})` 
@@ -533,16 +529,10 @@ export default function Search() {
           </div>
         )}
 
-        {!isLoading && searchResults.length === 0 && !showPersonPicker && (searchQuery || activeFilter) && (
-          searchMode === 'person' && personMatches.length === 0 && searchQuery.trim() ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">Nenhuma pessoa encontrada</p>
-            </div>
-          ) : searchMode === 'title' ? (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">Nenhum resultado encontrado</p>
-            </div>
-          ) : null
+        {!isLoading && searchResults.length === 0 && (searchQuery || activeFilter) && !selectedPerson && personSuggestions.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Nenhum resultado encontrado</p>
+          </div>
         )}
       </main>
 
