@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { ContentCard } from "@/components/ContentCard";
@@ -185,17 +186,49 @@ export default function MyDrawers() {
     }
   };
 
-  const handleCreateDrawer = async (drawer: { name: string; icon: string; color: string; contentIds: string[] }) => {
+  const handleCreateDrawer = async (drawer: { name: string; icon: string; color: string; contentIds: string[]; sharedWithFriends?: string[] }) => {
     try {
-      await addCustomDrawer({
+      const newDrawer = await addCustomDrawer({
         name: drawer.name,
         icon: drawer.icon,
         color: drawer.color,
       });
+
+      // Send invites if shared
+      if (drawer.sharedWithFriends && drawer.sharedWithFriends.length > 0 && newDrawer?.id) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("username")
+            .eq("id", user.id)
+            .maybeSingle();
+
+          for (const friendId of drawer.sharedWithFriends) {
+            await supabase.from("shared_drawer_members").insert({
+              drawer_id: newDrawer.id,
+              user_id: friendId,
+              invited_by: user.id,
+              status: "pending",
+            });
+
+            await supabase.from("notifications").insert({
+              user_id: friendId,
+              type: "shared_drawer_invite",
+              title: "Convite de gaveta compartilhada",
+              message: `${profile?.username || "Alguém"} quer compartilhar a gaveta "${drawer.name}" com você!`,
+              related_user_id: user.id,
+              related_content_id: newDrawer.id,
+            });
+          }
+        }
+      }
       
       toast({
         title: "Gavetta criada!",
-        description: `"${drawer.name}" foi criada.`,
+        description: drawer.sharedWithFriends?.length
+          ? `"${drawer.name}" foi criada e convites enviados!`
+          : `"${drawer.name}" foi criada.`,
       });
     } catch (error) {
       toast({
