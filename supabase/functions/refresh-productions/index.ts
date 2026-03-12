@@ -135,7 +135,7 @@ serve(async (req) => {
           const { error: updateError } = await supabase
             .from('user_drawer_assignments')
             .update({ production_data: enrichedData })
-            .eq('production_id', productionId)
+            .eq('production_id', rawId)
             .eq('production_type', type);
 
           if (updateError) {
