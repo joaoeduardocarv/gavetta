@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.tmdb]
 verify_jwt = false
+
+[functions.refresh-productions]
+verify_jwt = false
