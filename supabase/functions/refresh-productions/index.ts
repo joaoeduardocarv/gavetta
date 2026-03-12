@@ -121,8 +121,10 @@ serve(async (req) => {
 
       const results = await Promise.allSettled(
         batch.map(async ([key, type]) => {
-          const productionId = key.split(':')[1];
-          const enrichedData = await enrichProduction(productionId, type);
+          const rawId = key.split(':')[1];
+          // Strip prefix like "movie-" or "tv-" to get the numeric TMDB id
+          const numericId = rawId.replace(/^(movie|tv)-/, '');
+          const enrichedData = await enrichProduction(numericId, type);
 
           if (!enrichedData) {
             failed++;
