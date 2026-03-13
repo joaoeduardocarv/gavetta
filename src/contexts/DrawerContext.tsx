@@ -127,7 +127,21 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
         
         (assignmentsData || []).forEach(a => {
           const contentKey = `${a.production_id}-${a.production_type}`;
-          const content = a.production_data as unknown as Content;
+          const rawData = a.production_data as Record<string, unknown>;
+          const content = rawData as unknown as Content;
+          
+          // Hydrate watchProviderLogos from refresh function's watch_providers if not already set
+          if (!content.watchProviderLogos && rawData.watch_providers) {
+            const wp = rawData.watch_providers as { flatrate?: { provider_name: string; logo_path: string; provider_id: number }[]; rent?: { provider_name: string; logo_path: string; provider_id: number }[]; buy?: { provider_name: string; logo_path: string; provider_id: number }[] };
+            const seen = new Set<number>();
+            const logos: { name: string; logoPath: string }[] = [];
+            const addP = (list?: { provider_name: string; logo_path: string; provider_id: number }[]) => {
+              list?.forEach(p => { if (!seen.has(p.provider_id)) { seen.add(p.provider_id); logos.push({ name: p.provider_name, logoPath: p.logo_path }); } });
+            };
+            addP(wp.flatrate); addP(wp.rent); addP(wp.buy);
+            content.watchProviderLogos = logos;
+          }
+          
           const rating = (a as any).rating as number | null;
           const comment = (a as any).comment as string | null;
           
