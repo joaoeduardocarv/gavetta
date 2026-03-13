@@ -6,7 +6,6 @@ import type { Content } from "@/lib/mockData";
 import { DrawerPickerPopover } from "./DrawerPickerPopover";
 import { useDrawers } from "@/contexts/DrawerContext";
 import { getTMDBImageUrl } from "@/lib/tmdb";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 interface ContentCardProps {
   content: Content;
