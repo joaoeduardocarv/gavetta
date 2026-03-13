@@ -116,6 +116,7 @@ async function enrichContentData(content: Content, productionId: string): Promis
         director: director?.name || content.director,
         cast: credits.cast?.slice(0, 10).map(c => c.name) || content.cast,
         availableOn: extractStreamingNames(providers),
+        watchProviderLogos: extractStreamingLogos(providers),
       };
     } else {
       const [details, credits, providers] = await Promise.all([
