@@ -12,9 +12,10 @@ interface ContentCardProps {
   onClick?: () => void;
 }
 
-const typeLabels = {
+const typeLabels: Record<string, string> = {
   movie: 'Filme',
   series: 'Série',
+  tv: 'Série',
 };
 
 const statusIcons = {
