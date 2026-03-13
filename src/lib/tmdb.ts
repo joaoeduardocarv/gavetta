@@ -266,6 +266,30 @@ export function extractStreamingNames(providers: TMDBWatchProvidersResult | null
   return Array.from(names);
 }
 
+// Extrai logos únicos dos provedores de streaming
+export function extractStreamingLogos(providers: TMDBWatchProvidersResult | null): { name: string; logoPath: string }[] {
+  if (!providers) return [];
+  
+  const seen = new Set<number>();
+  const logos: { name: string; logoPath: string }[] = [];
+  
+  const addProviders = (list?: TMDBWatchProvider[]) => {
+    list?.forEach(p => {
+      if (!seen.has(p.provider_id)) {
+        seen.add(p.provider_id);
+        logos.push({ name: p.provider_name, logoPath: p.logo_path });
+      }
+    });
+  };
+  
+  // Prioriza flatrate (assinatura)
+  addProviders(providers.flatrate);
+  addProviders(providers.rent);
+  addProviders(providers.buy);
+  
+  return logos;
+}
+
 // =============== ACTION 9 — DETALHES DE PESSOA ===============
 
 export async function getPersonDetails(personId: number): Promise<TMDBPerson> {
