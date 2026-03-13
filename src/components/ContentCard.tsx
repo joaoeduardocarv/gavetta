@@ -1,10 +1,12 @@
-import { Archive, Star, Film, Tv, Check, Clock, Play, Monitor } from "lucide-react";
+import { Archive, Star, Film, Tv, Check, Clock, Play } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { cn } from "@/lib/utils";
 import type { Content } from "@/lib/mockData";
 import { DrawerPickerPopover } from "./DrawerPickerPopover";
 import { useDrawers } from "@/contexts/DrawerContext";
+import { getTMDBImageUrl } from "@/lib/tmdb";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 interface ContentCardProps {
   content: Content;
@@ -41,6 +43,10 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
   
   const { defaultDrawer, customDrawers } = getContentDrawers(content.id);
   const isInAnyDrawer = defaultDrawer !== null || customDrawers.length > 0;
+
+  const providerLogos = content.watchProviderLogos?.slice(0, 5) || [];
+  const hasLogos = providerLogos.length > 0;
+  const extraCount = (content.watchProviderLogos?.length || 0) - 5;
   
   return (
     <div
@@ -99,16 +105,36 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
           {content.genres.join(" • ")}
         </p>
 
-        {/* Plataformas de streaming */}
-        {content.availableOn && content.availableOn.length > 0 && (
-          <div className="flex items-center gap-1.5 mt-1.5">
-            <Monitor className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-            <p className="text-xs text-muted-foreground line-clamp-1">
-              {content.availableOn.slice(0, 3).join(" • ")}
-              {content.availableOn.length > 3 && ` +${content.availableOn.length - 3}`}
-            </p>
-          </div>
-        )}
+        {/* Plataformas de streaming com logos */}
+        {hasLogos ? (
+          <TooltipProvider delayDuration={300}>
+            <div className="flex items-center gap-1 mt-1.5">
+              {providerLogos.map((provider, i) => (
+                <Tooltip key={i}>
+                  <TooltipTrigger asChild>
+                    <img
+                      src={getTMDBImageUrl(provider.logoPath, 'w200')}
+                      alt={provider.name}
+                      className="h-5 w-5 rounded-sm object-cover flex-shrink-0"
+                      loading="lazy"
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs">
+                    {provider.name}
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+              {extraCount > 0 && (
+                <span className="text-[10px] text-muted-foreground ml-0.5">+{extraCount}</span>
+              )}
+            </div>
+          </TooltipProvider>
+        ) : content.availableOn && content.availableOn.length > 0 ? (
+          <p className="text-xs text-muted-foreground mt-1.5 line-clamp-1">
+            {content.availableOn.slice(0, 3).join(" • ")}
+            {content.availableOn.length > 3 && ` +${content.availableOn.length - 3}`}
+          </p>
+        ) : null}
       </div>
     </div>
   );
