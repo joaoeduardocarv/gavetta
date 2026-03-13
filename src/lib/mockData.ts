@@ -11,6 +11,7 @@ export interface Content {
   director?: string;
   cast?: string[];
   availableOn?: string[];
+  watchProviderLogos?: { name: string; logoPath: string }[];
   rating?: number;
   status?: 'watched' | 'watching' | 'to_watch';
   isFavorite?: boolean;
