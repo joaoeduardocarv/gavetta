@@ -12,9 +12,10 @@ interface ContentCardProps {
   onClick?: () => void;
 }
 
-const typeLabels = {
+const typeLabels: Record<string, string> = {
   movie: 'Filme',
   series: 'Série',
+  tv: 'Série',
 };
 
 const statusIcons = {
@@ -29,14 +30,15 @@ const statusColors = {
   to_watch: 'text-yellow-500',
 };
 
-const typeIcons = {
+const typeIcons: Record<string, typeof Film> = {
   movie: Film,
   series: Tv,
+  tv: Tv,
 };
 
 
 export function ContentCard({ content, onClick }: ContentCardProps) {
-  const Icon = typeIcons[content.type];
+  const Icon = typeIcons[content.type] || Film;
   const StatusIcon = content.status ? statusIcons[content.status] : null;
   const { getContentDrawers } = useDrawers();
   
