@@ -8,7 +8,8 @@ import {
   getTVDetails,
   getTVCredits,
   getTVWatchProviders,
-  extractStreamingNames
+  extractStreamingNames,
+  extractStreamingLogos
 } from '@/lib/tmdb';
 import { Content } from '@/lib/mockData';
 import { Json } from '@/integrations/supabase/types';
