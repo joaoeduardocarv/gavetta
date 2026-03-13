@@ -85,7 +85,8 @@ export default function MyDrawers() {
     
     try {
       // Extrair o ID numérico do TMDB do content.id (formato: "tmdb-movie-123" ou "tmdb-tv-123")
-      const idMatch = content.id.match(/tmdb-(movie|tv)-(\d+)/);
+      const contentId = String(content.id);
+      const idMatch = contentId.match(/tmdb-(movie|tv)-(\d+)/);
       
       if (idMatch) {
         const [, mediaType, tmdbId] = idMatch;
