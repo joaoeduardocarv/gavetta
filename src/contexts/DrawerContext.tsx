@@ -218,6 +218,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
           director: details.created_by?.[0]?.name || content.director,
           cast: credits.cast.slice(0, 10).map(c => c.name),
           availableOn: extractStreamingNames(providers),
+          watchProviderLogos: extractStreamingLogos(providers),
         };
       }
     } catch (error) {
