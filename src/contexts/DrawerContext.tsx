@@ -9,7 +9,8 @@ import {
   getTVDetails,
   getTVCredits,
   getTVWatchProviders,
-  extractStreamingNames
+  extractStreamingNames,
+  extractStreamingLogos
 } from "@/lib/tmdb";
 
 // IDs das gavetas padrão mutuamente exclusivas
