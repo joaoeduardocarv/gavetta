@@ -30,9 +30,10 @@ const statusColors = {
   to_watch: 'text-yellow-500',
 };
 
-const typeIcons = {
+const typeIcons: Record<string, typeof Film> = {
   movie: Film,
   series: Tv,
+  tv: Tv,
 };
 
 
