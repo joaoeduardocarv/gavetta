@@ -6,7 +6,6 @@ import type { Content } from "@/lib/mockData";
 import { DrawerPickerPopover } from "./DrawerPickerPopover";
 import { useDrawers } from "@/contexts/DrawerContext";
 import { getTMDBImageUrl } from "@/lib/tmdb";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip";
 
 interface ContentCardProps {
   content: Content;
@@ -107,28 +106,21 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
 
         {/* Plataformas de streaming com logos */}
         {hasLogos ? (
-          <TooltipProvider delayDuration={300}>
-            <div className="flex items-center gap-1 mt-1.5">
-              {providerLogos.map((provider, i) => (
-                <Tooltip key={i}>
-                  <TooltipTrigger asChild>
-                    <img
-                      src={getTMDBImageUrl(provider.logoPath, 'w200')}
-                      alt={provider.name}
-                      className="h-5 w-5 rounded-sm object-cover flex-shrink-0"
-                      loading="lazy"
-                    />
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="text-xs">
-                    {provider.name}
-                  </TooltipContent>
-                </Tooltip>
-              ))}
-              {extraCount > 0 && (
-                <span className="text-[10px] text-muted-foreground ml-0.5">+{extraCount}</span>
-              )}
-            </div>
-          </TooltipProvider>
+          <div className="flex items-center gap-1 mt-1.5">
+            {providerLogos.map((provider, i) => (
+              <img
+                key={i}
+                src={getTMDBImageUrl(provider.logoPath, 'w200')}
+                alt={provider.name}
+                title={provider.name}
+                className="h-5 w-5 rounded-sm object-cover flex-shrink-0"
+                loading="lazy"
+              />
+            ))}
+            {extraCount > 0 && (
+              <span className="text-[10px] text-muted-foreground ml-0.5">+{extraCount}</span>
+            )}
+          </div>
         ) : content.availableOn && content.availableOn.length > 0 ? (
           <p className="text-xs text-muted-foreground mt-1.5 line-clamp-1">
             {content.availableOn.slice(0, 3).join(" • ")}
