@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Content } from "@/lib/mockData";
+import { normalizeStoredContent } from "@/lib/contentNormalizer";
 
 export interface SharedDrawer {
   id: string;
