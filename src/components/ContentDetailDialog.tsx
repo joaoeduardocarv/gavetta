@@ -24,14 +24,16 @@ interface ContentDetailDialogProps {
   onContentChange?: (content: Content) => void;
 }
 
-const typeLabels = {
+const typeLabels: Record<string, string> = {
   movie: 'Filme',
   series: 'Série',
+  tv: 'Série',
 };
 
-const typeIcons = {
+const typeIcons: Record<string, JSX.Element> = {
   movie: <Film className="h-3.5 w-3.5" />,
   series: <Tv className="h-3.5 w-3.5" />,
+  tv: <Tv className="h-3.5 w-3.5" />,
 };
 
 const defaultDrawerInfo = [
