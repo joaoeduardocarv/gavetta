@@ -92,7 +92,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-heading font-bold text-foreground line-clamp-1">
-            {content.title}
+            {safeTitle}
           </h3>
           <DrawerPickerPopover content={content}>
             <button 
