@@ -94,7 +94,7 @@ export function useMigrateIncompleteContent() {
 
 async function enrichContentData(content: Content, productionId: string): Promise<Content | null> {
   // Parse the production ID to get type and TMDB ID
-  const idMatch = productionId.match(/^tmdb-(movie|tv)-(\d+)$/);
+  const idMatch = productionId.match(/^(?:tmdb-)?(movie|tv)-(\d+)$/);
   if (!idMatch) return null;
 
   const [, mediaType, tmdbIdStr] = idMatch;
