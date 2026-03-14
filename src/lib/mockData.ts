@@ -1,6 +1,6 @@
 export interface Content {
   id: string;
-  type: 'movie' | 'series';
+  type: 'movie' | 'series' | 'tv';
   title: string;
   originalTitle?: string;
   releaseDate: string;
