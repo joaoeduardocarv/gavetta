@@ -111,7 +111,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
         
         <div className="flex flex-wrap items-center gap-2 mt-1">
           <Badge variant="secondary" className="text-xs">
-            {typeLabels[content.type]}
+            {typeLabels[content.type] || 'Filme'}
           </Badge>
           {StatusIcon && (
             <StatusIcon className={cn("h-3.5 w-3.5", content.status && statusColors[content.status])} />
