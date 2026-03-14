@@ -85,14 +85,12 @@ export default function MyDrawers() {
     setIsLoadingDetails(true);
     
     try {
-      // Extrair o ID numérico do TMDB do content.id (formato: "tmdb-movie-123" ou "tmdb-tv-123")
-      const contentId = String(content.id);
-      const idMatch = contentId.match(/tmdb-(movie|tv)-(\d+)/);
-      
-      if (idMatch) {
-        const [, mediaType, tmdbId] = idMatch;
-        const numericId = parseInt(tmdbId, 10);
-        
+      // Extrair o ID numérico do TMDB do content.id (suporta tmdb-movie-123, movie-123, tmdb-tv-123, tv-123)
+      const parsedId = extractTmdbInfoFromId(content.id);
+
+      if (parsedId) {
+        const { mediaType, tmdbId: numericId } = parsedId;
+
         if (mediaType === 'movie') {
           const [details, creditsData, providers] = await Promise.all([
             getMovieDetails(numericId),
