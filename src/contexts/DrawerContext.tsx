@@ -185,12 +185,11 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
     const needsEnrichment = !content.genres?.length || !content.director || !content.availableOn?.length;
     if (!needsEnrichment) return content;
 
-    // Extract TMDB ID from content.id (format: "tmdb-movie-123" or "tmdb-tv-456")
-    const idMatch = content.id.match(/tmdb-(movie|tv)-(\d+)/);
-    if (!idMatch) return content;
+    // Extract TMDB ID from content.id (supports: tmdb-movie-123, movie-123, tmdb-tv-123, tv-123)
+    const parsedId = extractTmdbInfoFromId(content.id);
+    if (!parsedId) return content;
 
-    const [, mediaType, tmdbId] = idMatch;
-    const numericId = parseInt(tmdbId, 10);
+    const { mediaType, tmdbId: numericId } = parsedId;
 
     try {
       if (mediaType === 'movie') {
