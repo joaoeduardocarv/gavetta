@@ -12,6 +12,7 @@ import {
   extractStreamingNames,
   extractStreamingLogos
 } from "@/lib/tmdb";
+import { extractTmdbInfoFromId, normalizeStoredContent } from "@/lib/contentNormalizer";
 
 // IDs das gavetas padrão mutuamente exclusivas
 export const DEFAULT_DRAWER_IDS = ['to-watch', 'watching', 'watched'] as const;
@@ -127,21 +128,11 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
         
         (assignmentsData || []).forEach(a => {
           const contentKey = `${a.production_id}-${a.production_type}`;
-          const rawData = a.production_data as Record<string, unknown>;
-          const content = rawData as unknown as Content;
-          
-          // Hydrate watchProviderLogos from refresh function's watch_providers if not already set
-          if (!content.watchProviderLogos && rawData.watch_providers) {
-            const wp = rawData.watch_providers as { flatrate?: { provider_name: string; logo_path: string; provider_id: number }[]; rent?: { provider_name: string; logo_path: string; provider_id: number }[]; buy?: { provider_name: string; logo_path: string; provider_id: number }[] };
-            const seen = new Set<number>();
-            const logos: { name: string; logoPath: string }[] = [];
-            const addP = (list?: { provider_name: string; logo_path: string; provider_id: number }[]) => {
-              list?.forEach(p => { if (!seen.has(p.provider_id)) { seen.add(p.provider_id); logos.push({ name: p.provider_name, logoPath: p.logo_path }); } });
-            };
-            addP(wp.flatrate); addP(wp.rent); addP(wp.buy);
-            content.watchProviderLogos = logos;
-          }
-          
+          const content = normalizeStoredContent(a.production_data, {
+            productionId: String(a.production_id),
+            productionType: String(a.production_type),
+          });
+
           const rating = (a as any).rating as number | null;
           const comment = (a as any).comment as string | null;
           
@@ -194,12 +185,11 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
     const needsEnrichment = !content.genres?.length || !content.director || !content.availableOn?.length;
     if (!needsEnrichment) return content;
 
-    // Extract TMDB ID from content.id (format: "tmdb-movie-123" or "tmdb-tv-456")
-    const idMatch = content.id.match(/tmdb-(movie|tv)-(\d+)/);
-    if (!idMatch) return content;
+    // Extract TMDB ID from content.id (supports: tmdb-movie-123, movie-123, tmdb-tv-123, tv-123)
+    const parsedId = extractTmdbInfoFromId(content.id);
+    if (!parsedId) return content;
 
-    const [, mediaType, tmdbId] = idMatch;
-    const numericId = parseInt(tmdbId, 10);
+    const { mediaType, tmdbId: numericId } = parsedId;
 
     try {
       if (mediaType === 'movie') {
