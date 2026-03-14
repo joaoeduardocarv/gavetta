@@ -125,7 +125,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
         </div>
         
         <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-          {content.genres.join(" • ")}
+          {safeGenres.join(" • ")}
         </p>
 
         {/* Plataformas de streaming com logos */}
