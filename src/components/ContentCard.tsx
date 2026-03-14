@@ -45,7 +45,29 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
   const { defaultDrawer, customDrawers } = getContentDrawers(content.id);
   const isInAnyDrawer = defaultDrawer !== null || customDrawers.length > 0;
 
-  const providerLogos = content.watchProviderLogos?.slice(0, 5) || [];
+  const posterSrc =
+    typeof content.posterUrl === "string"
+      ? content.posterUrl.startsWith("http") || content.posterUrl.startsWith("/placeholder")
+        ? content.posterUrl
+        : getTMDBImageUrl(content.posterUrl)
+      : undefined;
+
+  const safeTitle =
+    typeof content.title === "string"
+      ? content.title
+      : String(content.title ?? "Sem título");
+
+  const safeGenres = (Array.isArray(content.genres) ? content.genres : [])
+    .map((genre) => {
+      if (typeof genre === "string") return genre;
+      if (genre && typeof genre === "object" && "name" in genre) {
+        return String((genre as { name?: unknown }).name ?? "");
+      }
+      return "";
+    })
+    .filter((genre) => Boolean(genre));
+
+  const providerLogos = (content.watchProviderLogos || []).slice(0, 5);
   const hasLogos = providerLogos.length > 0;
   const extraCount = (content.watchProviderLogos?.length || 0) - 5;
   
