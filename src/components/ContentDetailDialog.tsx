@@ -473,9 +473,16 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                     <div className="flex gap-3 pb-2 overflow-x-auto scrollbar-thin scrollbar-thumb-muted">
                       {content.cast.slice(0, 10).map((actor, index) => {
                         const actorInfo = castInfo[index];
+                        const actorName =
+                          typeof actor === 'string'
+                            ? actor
+                            : actor && typeof actor === 'object' && 'name' in actor
+                              ? String((actor as { name?: unknown }).name || '')
+                              : '';
+
                         return (
                           <button
-                            key={actor}
+                            key={`${actorName}-${index}`}
                             onClick={() => actorInfo && handlePersonClick(actorInfo)}
                             className="flex flex-col items-center gap-2 p-2 rounded-lg hover:bg-accent/50 transition-colors flex-shrink-0"
                             style={{ width: '80px' }}
@@ -483,12 +490,12 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                             <Avatar className="h-14 w-14 rounded-full">
                               <AvatarImage 
                                 src={actorInfo?.profile_path ? getTMDBProfileUrl(actorInfo.profile_path) : undefined}
-                                alt={actor}
+                                alt={actorName}
                                 className="object-cover"
                               />
-                              <AvatarFallback>{actor.charAt(0)}</AvatarFallback>
+                              <AvatarFallback>{actorName.charAt(0) || '?'}</AvatarFallback>
                             </Avatar>
-                            <span className="text-xs text-center line-clamp-2 w-full">{actor}</span>
+                            <span className="text-xs text-center line-clamp-2 w-full">{actorName}</span>
                           </button>
                         );
                       })}
