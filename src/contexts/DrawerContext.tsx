@@ -12,6 +12,7 @@ import {
   extractStreamingNames,
   extractStreamingLogos
 } from "@/lib/tmdb";
+import { extractTmdbInfoFromId, normalizeStoredContent } from "@/lib/contentNormalizer";
 
 // IDs das gavetas padrão mutuamente exclusivas
 export const DEFAULT_DRAWER_IDS = ['to-watch', 'watching', 'watched'] as const;
