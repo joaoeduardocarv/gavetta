@@ -592,7 +592,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                   title: content.title,
                   posterUrl: content.posterUrl,
                   backdropUrl: content.backdropUrl,
-                  type: content.type,
+                  type: content.type === 'movie' ? 'movie' : 'series',
                 })}
                 disabled={isGeneratingStory}
               >
