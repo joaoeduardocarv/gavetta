@@ -24,6 +24,7 @@ import {
   extractStreamingNames, 
   getTMDBImageUrl 
 } from "@/lib/tmdb";
+import { extractTmdbInfoFromId } from "@/lib/contentNormalizer";
 
 interface Drawer {
   id: string;
