@@ -79,8 +79,8 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
       <Avatar className="h-14 w-14 flex-shrink-0 rounded-lg">
         {content.posterUrl && (
           <AvatarImage 
-            src={content.posterUrl} 
-            alt={content.title}
+            src={posterSrc} 
+            alt={safeTitle}
             className="object-cover"
           />
         )}
