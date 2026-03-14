@@ -59,6 +59,13 @@ const normalizeImageUrl = (value: unknown): string | undefined => {
   const raw = toStringValue(value);
   if (!raw) return undefined;
   if (raw.startsWith("http")) return raw;
+  if (
+    raw.startsWith("/placeholder") ||
+    raw.startsWith("/assets/") ||
+    raw.startsWith("/avatars/")
+  ) {
+    return raw;
+  }
   if (raw.startsWith("/")) return getTMDBImageUrl(raw);
   return raw;
 };
