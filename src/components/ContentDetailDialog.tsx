@@ -100,13 +100,24 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
       }
       
       // Buscar elenco (primeiros 10)
-      if (content.cast && content.cast.length > 0) {
+      const castNames = (content.cast || [])
+        .map((actor) => {
+          if (typeof actor === 'string') return actor;
+          if (actor && typeof actor === 'object' && 'name' in actor) {
+            const actorName = (actor as { name?: unknown }).name;
+            return typeof actorName === 'string' ? actorName : '';
+          }
+          return '';
+        })
+        .filter((name) => Boolean(name));
+
+      if (castNames.length > 0) {
         Promise.all(
-          content.cast.slice(0, 10).map(name => 
-            searchPerson(name).then(results => results[0] || { id: 0, name, profile_path: null })
+          castNames.slice(0, 10).map((name) =>
+            searchPerson(name).then((results) => results[0] || { id: 0, name, profile_path: null })
           )
         )
-          .then(results => setCastInfo(results.filter(r => r)))
+          .then((results) => setCastInfo(results.filter((r) => r)))
           .catch(console.error);
       }
     } else {
