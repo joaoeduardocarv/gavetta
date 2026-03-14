@@ -134,9 +134,9 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
             {providerLogos.map((provider, i) => (
               <img
                 key={i}
-                src={getTMDBImageUrl(provider.logoPath, 'w200')}
-                alt={provider.name}
-                title={provider.name}
+                src={getTMDBImageUrl((provider as any).logoPath || (provider as any).logo_path, 'w200')}
+                alt={String((provider as any).name || (provider as any).provider_name || 'Streaming')}
+                title={String((provider as any).name || (provider as any).provider_name || 'Streaming')}
                 className="h-5 w-5 rounded-sm object-cover flex-shrink-0"
                 loading="lazy"
               />
