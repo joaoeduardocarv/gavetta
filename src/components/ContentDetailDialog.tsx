@@ -458,9 +458,9 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                           alt={content.director}
                           className="object-cover"
                         />
-                        <AvatarFallback>{content.director.charAt(0)}</AvatarFallback>
+                        <AvatarFallback>{String(content.director).charAt(0) || '?'}</AvatarFallback>
                       </Avatar>
-                      <span className="text-sm font-medium">{content.director}</span>
+                      <span className="text-sm font-medium">{String(content.director)}</span>
                     </button>
                   </div>
                 </div>
