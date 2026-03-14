@@ -95,7 +95,12 @@ export function useSharedDrawers() {
       return [];
     }
 
-    return (data || []).map((a: any) => a.production_data as Content);
+    return (data || []).map((a: any) =>
+      normalizeStoredContent(a.production_data, {
+        productionId: String(a.production_id),
+        productionType: String(a.production_type),
+      }),
+    );
   }, []);
 
   const acceptInvite = useCallback(async (drawerId: string) => {
