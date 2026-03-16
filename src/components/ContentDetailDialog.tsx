@@ -24,16 +24,14 @@ interface ContentDetailDialogProps {
   onContentChange?: (content: Content) => void;
 }
 
-const typeLabels: Record<string, string> = {
+const typeLabels = {
   movie: 'Filme',
   series: 'Série',
-  tv: 'Série',
 };
 
-const typeIcons: Record<string, JSX.Element> = {
+const typeIcons = {
   movie: <Film className="h-3.5 w-3.5" />,
   series: <Tv className="h-3.5 w-3.5" />,
-  tv: <Tv className="h-3.5 w-3.5" />,
 };
 
 const defaultDrawerInfo = [
@@ -100,24 +98,13 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
       }
       
       // Buscar elenco (primeiros 10)
-      const castNames = (content.cast || [])
-        .map((actor) => {
-          if (typeof actor === 'string') return actor;
-          if (actor && typeof actor === 'object' && 'name' in actor) {
-            const actorName = (actor as { name?: unknown }).name;
-            return typeof actorName === 'string' ? actorName : '';
-          }
-          return '';
-        })
-        .filter((name) => Boolean(name));
-
-      if (castNames.length > 0) {
+      if (content.cast && content.cast.length > 0) {
         Promise.all(
-          castNames.slice(0, 10).map((name) =>
-            searchPerson(name).then((results) => results[0] || { id: 0, name, profile_path: null })
+          content.cast.slice(0, 10).map(name => 
+            searchPerson(name).then(results => results[0] || { id: 0, name, profile_path: null })
           )
         )
-          .then((results) => setCastInfo(results.filter((r) => r)))
+          .then(results => setCastInfo(results.filter(r => r)))
           .catch(console.error);
       }
     } else {
@@ -458,9 +445,9 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                           alt={content.director}
                           className="object-cover"
                         />
-                        <AvatarFallback>{String(content.director).charAt(0) || '?'}</AvatarFallback>
+                        <AvatarFallback>{content.director.charAt(0)}</AvatarFallback>
                       </Avatar>
-                      <span className="text-sm font-medium">{String(content.director)}</span>
+                      <span className="text-sm font-medium">{content.director}</span>
                     </button>
                   </div>
                 </div>
@@ -473,16 +460,9 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                     <div className="flex gap-3 pb-2 overflow-x-auto scrollbar-thin scrollbar-thumb-muted">
                       {content.cast.slice(0, 10).map((actor, index) => {
                         const actorInfo = castInfo[index];
-                        const actorName =
-                          typeof actor === 'string'
-                            ? actor
-                            : actor && typeof actor === 'object' && 'name' in actor
-                              ? String((actor as { name?: unknown }).name || '')
-                              : '';
-
                         return (
                           <button
-                            key={`${actorName}-${index}`}
+                            key={actor}
                             onClick={() => actorInfo && handlePersonClick(actorInfo)}
                             className="flex flex-col items-center gap-2 p-2 rounded-lg hover:bg-accent/50 transition-colors flex-shrink-0"
                             style={{ width: '80px' }}
@@ -490,12 +470,12 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                             <Avatar className="h-14 w-14 rounded-full">
                               <AvatarImage 
                                 src={actorInfo?.profile_path ? getTMDBProfileUrl(actorInfo.profile_path) : undefined}
-                                alt={actorName}
+                                alt={actor}
                                 className="object-cover"
                               />
-                              <AvatarFallback>{actorName.charAt(0) || '?'}</AvatarFallback>
+                              <AvatarFallback>{actor.charAt(0)}</AvatarFallback>
                             </Avatar>
-                            <span className="text-xs text-center line-clamp-2 w-full">{actorName}</span>
+                            <span className="text-xs text-center line-clamp-2 w-full">{actor}</span>
                           </button>
                         );
                       })}
@@ -610,7 +590,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                   title: content.title,
                   posterUrl: content.posterUrl,
                   backdropUrl: content.backdropUrl,
-                  type: content.type === 'movie' ? 'movie' : 'series',
+                  type: content.type,
                 })}
                 disabled={isGeneratingStory}
               >

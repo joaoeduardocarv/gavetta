@@ -1,6 +1,6 @@
 export interface Content {
   id: string;
-  type: 'movie' | 'series' | 'tv';
+  type: 'movie' | 'series';
   title: string;
   originalTitle?: string;
   releaseDate: string;
@@ -11,7 +11,6 @@ export interface Content {
   director?: string;
   cast?: string[];
   availableOn?: string[];
-  watchProviderLogos?: { name: string; logoPath: string }[];
   rating?: number;
   status?: 'watched' | 'watching' | 'to_watch';
   isFavorite?: boolean;

@@ -8,8 +8,7 @@ import {
   getTVDetails,
   getTVCredits,
   getTVWatchProviders,
-  extractStreamingNames,
-  extractStreamingLogos
+  extractStreamingNames
 } from '@/lib/tmdb';
 import { Content } from '@/lib/mockData';
 import { Json } from '@/integrations/supabase/types';
@@ -94,7 +93,7 @@ export function useMigrateIncompleteContent() {
 
 async function enrichContentData(content: Content, productionId: string): Promise<Content | null> {
   // Parse the production ID to get type and TMDB ID
-  const idMatch = productionId.match(/^(?:tmdb-)?(movie|tv)-(\d+)$/);
+  const idMatch = productionId.match(/^tmdb-(movie|tv)-(\d+)$/);
   if (!idMatch) return null;
 
   const [, mediaType, tmdbIdStr] = idMatch;
@@ -116,7 +115,6 @@ async function enrichContentData(content: Content, productionId: string): Promis
         director: director?.name || content.director,
         cast: credits.cast?.slice(0, 10).map(c => c.name) || content.cast,
         availableOn: extractStreamingNames(providers),
-        watchProviderLogos: extractStreamingLogos(providers),
       };
     } else {
       const [details, credits, providers] = await Promise.all([
@@ -131,7 +129,6 @@ async function enrichContentData(content: Content, productionId: string): Promis
         director: details.created_by?.[0]?.name || content.director,
         cast: credits.cast?.slice(0, 10).map(c => c.name) || content.cast,
         availableOn: extractStreamingNames(providers),
-        watchProviderLogos: extractStreamingLogos(providers),
       };
     }
   } catch (err) {

@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Content } from "@/lib/mockData";
-import { normalizeStoredContent } from "@/lib/contentNormalizer";
 
 export interface SharedDrawer {
   id: string;
@@ -95,12 +94,7 @@ export function useSharedDrawers() {
       return [];
     }
 
-    return (data || []).map((a: any) =>
-      normalizeStoredContent(a.production_data, {
-        productionId: String(a.production_id),
-        productionType: String(a.production_type),
-      }),
-    );
+    return (data || []).map((a: any) => a.production_data as Content);
   }, []);
 
   const acceptInvite = useCallback(async (drawerId: string) => {

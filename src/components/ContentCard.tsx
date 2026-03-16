@@ -1,21 +1,19 @@
-import { Archive, Star, Film, Tv, Check, Clock, Play } from "lucide-react";
+import { Archive, Star, Film, Tv, Check, Clock, Play, Monitor } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { cn } from "@/lib/utils";
 import type { Content } from "@/lib/mockData";
 import { DrawerPickerPopover } from "./DrawerPickerPopover";
 import { useDrawers } from "@/contexts/DrawerContext";
-import { getTMDBImageUrl } from "@/lib/tmdb";
 
 interface ContentCardProps {
   content: Content;
   onClick?: () => void;
 }
 
-const typeLabels: Record<string, string> = {
+const typeLabels = {
   movie: 'Filme',
   series: 'Série',
-  tv: 'Série',
 };
 
 const statusIcons = {
@@ -30,46 +28,19 @@ const statusColors = {
   to_watch: 'text-yellow-500',
 };
 
-const typeIcons: Record<string, typeof Film> = {
+const typeIcons = {
   movie: Film,
   series: Tv,
-  tv: Tv,
 };
 
 
 export function ContentCard({ content, onClick }: ContentCardProps) {
-  const Icon = typeIcons[content.type] || Film;
+  const Icon = typeIcons[content.type];
   const StatusIcon = content.status ? statusIcons[content.status] : null;
   const { getContentDrawers } = useDrawers();
   
   const { defaultDrawer, customDrawers } = getContentDrawers(content.id);
   const isInAnyDrawer = defaultDrawer !== null || customDrawers.length > 0;
-
-  const posterSrc =
-    typeof content.posterUrl === "string"
-      ? content.posterUrl.startsWith("http") || content.posterUrl.startsWith("/placeholder")
-        ? content.posterUrl
-        : getTMDBImageUrl(content.posterUrl)
-      : undefined;
-
-  const safeTitle =
-    typeof content.title === "string"
-      ? content.title
-      : String(content.title ?? "Sem título");
-
-  const safeGenres = (Array.isArray(content.genres) ? content.genres : [])
-    .map((genre) => {
-      if (typeof genre === "string") return genre;
-      if (genre && typeof genre === "object" && "name" in genre) {
-        return String((genre as { name?: unknown }).name ?? "");
-      }
-      return "";
-    })
-    .filter((genre) => Boolean(genre));
-
-  const providerLogos = (content.watchProviderLogos || []).slice(0, 5);
-  const hasLogos = providerLogos.length > 0;
-  const extraCount = (content.watchProviderLogos?.length || 0) - 5;
   
   return (
     <div
@@ -79,8 +50,8 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
       <Avatar className="h-14 w-14 flex-shrink-0 rounded-lg">
         {content.posterUrl && (
           <AvatarImage 
-            src={posterSrc} 
-            alt={safeTitle}
+            src={content.posterUrl} 
+            alt={content.title}
             className="object-cover"
           />
         )}
@@ -92,7 +63,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-heading font-bold text-foreground line-clamp-1">
-            {safeTitle}
+            {content.title}
           </h3>
           <DrawerPickerPopover content={content}>
             <button 
@@ -111,7 +82,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
         
         <div className="flex flex-wrap items-center gap-2 mt-1">
           <Badge variant="secondary" className="text-xs">
-            {typeLabels[content.type] || 'Filme'}
+            {typeLabels[content.type]}
           </Badge>
           {StatusIcon && (
             <StatusIcon className={cn("h-3.5 w-3.5", content.status && statusColors[content.status])} />
@@ -125,32 +96,19 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
         </div>
         
         <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-          {safeGenres.join(" • ")}
+          {content.genres.join(" • ")}
         </p>
 
-        {/* Plataformas de streaming com logos */}
-        {hasLogos ? (
-          <div className="flex items-center gap-1 mt-1.5">
-            {providerLogos.map((provider, i) => (
-              <img
-                key={i}
-                src={getTMDBImageUrl((provider as any).logoPath || (provider as any).logo_path, 'w200')}
-                alt={String((provider as any).name || (provider as any).provider_name || 'Streaming')}
-                title={String((provider as any).name || (provider as any).provider_name || 'Streaming')}
-                className="h-5 w-5 rounded-sm object-cover flex-shrink-0"
-                loading="lazy"
-              />
-            ))}
-            {extraCount > 0 && (
-              <span className="text-[10px] text-muted-foreground ml-0.5">+{extraCount}</span>
-            )}
+        {/* Plataformas de streaming */}
+        {content.availableOn && content.availableOn.length > 0 && (
+          <div className="flex items-center gap-1.5 mt-1.5">
+            <Monitor className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+            <p className="text-xs text-muted-foreground line-clamp-1">
+              {content.availableOn.slice(0, 3).join(" • ")}
+              {content.availableOn.length > 3 && ` +${content.availableOn.length - 3}`}
+            </p>
           </div>
-        ) : content.availableOn && content.availableOn.length > 0 ? (
-          <p className="text-xs text-muted-foreground mt-1.5 line-clamp-1">
-            {content.availableOn.slice(0, 3).join(" • ")}
-            {content.availableOn.length > 3 && ` +${content.availableOn.length - 3}`}
-          </p>
-        ) : null}
+        )}
       </div>
     </div>
   );
