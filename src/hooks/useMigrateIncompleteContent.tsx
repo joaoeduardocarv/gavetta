@@ -13,6 +13,7 @@ import {
 } from '@/lib/tmdb';
 import { Content } from '@/lib/mockData';
 import { Json } from '@/integrations/supabase/types';
+import { extractTmdbInfoFromId } from '@/lib/contentNormalizer';
 
 export function useMigrateIncompleteContent() {
   const { user } = useAuth();
