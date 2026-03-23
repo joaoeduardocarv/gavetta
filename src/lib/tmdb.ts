@@ -154,33 +154,51 @@ export function getTMDBProfileUrl(path: string | null): string {
   return getTMDBImageUrl(path, 'w300');
 }
 
+// =============== CLIENT-SIDE CACHE ===============
+
+const clientCache = new Map<string, { data: unknown; ts: number }>();
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+async function cachedCall<T>(cacheKey: string, fetcher: () => Promise<T>): Promise<T> {
+  const cached = clientCache.get(cacheKey);
+  if (cached && Date.now() - cached.ts < CACHE_TTL) {
+    return cached.data as T;
+  }
+  const data = await fetcher();
+  clientCache.set(cacheKey, { data, ts: Date.now() });
+  return data;
+}
+
 // =============== HELPER PARA CHAMAR A EDGE FUNCTION ===============
 
 async function callTMDBFunction<T>(action: string, params: Record<string, string> = {}): Promise<T> {
-  const queryParams = new URLSearchParams({ action, ...params });
+  const cacheKey = `${action}:${JSON.stringify(params)}`;
+  return cachedCall(cacheKey, async () => {
+    const queryParams = new URLSearchParams({ action, ...params });
 
-  // Get the user's session token for authenticated edge function calls
-  const { supabase } = await import('@/integrations/supabase/client');
-  const { data: { session } } = await supabase.auth.getSession();
-  const token = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    // Get the user's session token for authenticated edge function calls
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { data: { session } } = await supabase.auth.getSession();
+    const token = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
-  const response = await fetch(
-    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tmdb?${queryParams}`,
-    {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
+    const response = await fetch(
+      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tmdb?${queryParams}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `TMDB API error: ${response.status}`);
     }
-  );
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.error || `TMDB API error: ${response.status}`);
-  }
-
-  return await response.json();
+    return await response.json();
+  });
 }
 
 // =============== ACTION 1 — BUSCAR FILMES ===============
