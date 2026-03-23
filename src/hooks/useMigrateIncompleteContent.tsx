@@ -93,13 +93,25 @@ export function useMigrateIncompleteContent() {
   }, [user]);
 }
 
-async function enrichContentData(content: Content, productionId: string): Promise<Content | null> {
-  // Parse the production ID to get type and TMDB ID
-  const idMatch = productionId.match(/^(?:tmdb-)?(movie|tv)-(\d+)$/);
-  if (!idMatch) return null;
+async function enrichContentData(content: Content, productionId: string, productionType: string): Promise<Content | null> {
+  // Try extracting TMDB info from the production_id first
+  let mediaType: string | null = null;
+  let tmdbId: number | null = null;
 
-  const [, mediaType, tmdbIdStr] = idMatch;
-  const tmdbId = parseInt(tmdbIdStr, 10);
+  const parsed = extractTmdbInfoFromId(productionId);
+  if (parsed) {
+    mediaType = parsed.mediaType;
+    tmdbId = parsed.tmdbId;
+  } else if (/^\d+$/.test(productionId)) {
+    // Bare numeric ID — use production_type to determine media type
+    tmdbId = parseInt(productionId, 10);
+    mediaType = productionType === 'tv' ? 'tv' : 'movie';
+  }
+
+  if (!mediaType || !tmdbId) {
+    console.warn(`Cannot enrich: unrecognized production_id format "${productionId}"`);
+    return null;
+  }
 
   try {
     if (mediaType === 'movie') {
