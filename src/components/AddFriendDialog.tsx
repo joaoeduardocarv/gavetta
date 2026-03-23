@@ -13,6 +13,7 @@ interface UserResult {
   id: string;
   username: string | null;
   avatar_url: string | null;
+  handle: string | null;
 }
 
 interface AddFriendDialogProps {
