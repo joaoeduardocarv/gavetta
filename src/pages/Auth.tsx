@@ -21,7 +21,8 @@ const loginSchema = z.object({
 const signupSchema = z.object({
   email: z.string().trim().email({ message: "Email inválido" }),
   password: z.string().min(6, { message: "Senha deve ter pelo menos 6 caracteres" }),
-  username: z.string().trim().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }).max(50, { message: "Nome deve ter no máximo 50 caracteres" }).regex(/^[a-zA-Z0-9_\- ]+$/, { message: "Nome só pode conter letras, números, espaços, _ e -" }),
+  username: z.string().trim().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }).max(50, { message: "Nome deve ter no máximo 50 caracteres" }),
+  handle: z.string().trim().min(3, { message: "@ deve ter pelo menos 3 caracteres" }).max(30, { message: "@ deve ter no máximo 30 caracteres" }).regex(/^[a-zA-Z0-9_]+$/, { message: "@ só pode conter letras, números e _" }).transform(v => v.toLowerCase()),
 });
 
 export default function Auth() {
