@@ -13,6 +13,7 @@ interface UserResult {
   id: string;
   username: string | null;
   avatar_url: string | null;
+  handle: string | null;
 }
 
 interface AddFriendDialogProps {
@@ -41,10 +42,11 @@ export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
 
     setIsSearching(true);
     try {
+      const cleanQuery = searchQuery.replace(/^@/, '').trim().toLowerCase();
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, username, avatar_url")
-        .ilike("username", `%${searchQuery}%`)
+        .select("id, username, avatar_url, handle")
+        .ilike("handle", `%${cleanQuery}%`)
         .neq("id", user?.id)
         .limit(10);
 
@@ -99,7 +101,7 @@ export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por username..."
+                placeholder="Buscar por @usuario..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
@@ -116,9 +118,9 @@ export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
           </div>
 
           <div className="space-y-2 max-h-64 overflow-y-auto">
-            {results.length === 0 && !isSearching && (
+             {results.length === 0 && !isSearching && (
               <p className="text-sm text-muted-foreground text-center py-8">
-                Busque por username para encontrar amigos
+                Busque pelo @ para encontrar amigos
               </p>
             )}
 
@@ -140,6 +142,9 @@ export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
                     <p className="font-medium text-sm">
                       {resultUser.username || "Usuário sem nome"}
                     </p>
+                    {resultUser.handle && (
+                      <p className="text-xs text-muted-foreground">@{resultUser.handle}</p>
+                    )}
                   </div>
                   <Button
                     size="sm"

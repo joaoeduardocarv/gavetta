@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Lock, User, Loader2, CheckCircle2 } from "lucide-react";
+import { Mail, Lock, User, AtSign, Loader2, CheckCircle2 } from "lucide-react";
 import gavetaLogo from "@/assets/gavettalogo.png";
 import { z } from "zod";
 
@@ -21,13 +21,15 @@ const loginSchema = z.object({
 const signupSchema = z.object({
   email: z.string().trim().email({ message: "Email inválido" }),
   password: z.string().min(6, { message: "Senha deve ter pelo menos 6 caracteres" }),
-  username: z.string().trim().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }).max(50, { message: "Nome deve ter no máximo 50 caracteres" }).regex(/^[a-zA-Z0-9_\- ]+$/, { message: "Nome só pode conter letras, números, espaços, _ e -" }),
+  username: z.string().trim().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }).max(50, { message: "Nome deve ter no máximo 50 caracteres" }),
+  handle: z.string().trim().min(3, { message: "@ deve ter pelo menos 3 caracteres" }).max(30, { message: "@ deve ter no máximo 30 caracteres" }).regex(/^[a-zA-Z0-9_]+$/, { message: "@ só pode conter letras, números e _" }).transform(v => v.toLowerCase()),
 });
 
 export default function Auth() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
+  const [handle, setHandle] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -118,7 +120,7 @@ export default function Auth() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const validation = signupSchema.safeParse({ email, password, username });
+    const validation = signupSchema.safeParse({ email, password, username, handle });
     if (!validation.success) {
       toast({
         variant: "destructive",
@@ -138,6 +140,7 @@ export default function Auth() {
         emailRedirectTo: redirectUrl,
         data: {
           username: username.trim(),
+          handle: handle.trim().toLowerCase(),
         },
       },
     });
@@ -220,6 +223,7 @@ export default function Auth() {
     setEmail("");
     setPassword("");
     setUsername("");
+    setHandle("");
   };
 
   if (checkingSession) {
@@ -382,7 +386,7 @@ export default function Auth() {
                 
                 <form onSubmit={handleSignup} className="space-y-4 mt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signup-username">Nome</Label>
+                    <Label htmlFor="signup-username">Nome de exibição</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -397,6 +401,25 @@ export default function Auth() {
                         maxLength={50}
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-handle">@ Nome de usuário</Label>
+                    <div className="relative">
+                      <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-handle"
+                        type="text"
+                        placeholder="seu_usuario"
+                        value={handle}
+                        onChange={(e) => setHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase())}
+                        className="pl-10"
+                        required
+                        disabled={isAnyLoading}
+                        maxLength={30}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Apenas letras, números e _ (sem espaços). Seus amigos te encontrarão por esse @.</p>
                   </div>
 
                   <div className="space-y-2">

@@ -81,6 +81,7 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          handle: string | null
           id: string
           is_public: boolean
           updated_at: string
@@ -89,6 +90,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          handle?: string | null
           id: string
           is_public?: boolean
           updated_at?: string
@@ -97,6 +99,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          handle?: string | null
           id?: string
           is_public?: boolean
           updated_at?: string
