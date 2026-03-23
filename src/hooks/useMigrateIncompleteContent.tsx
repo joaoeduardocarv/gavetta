@@ -62,7 +62,7 @@ export function useMigrateIncompleteContent() {
           await Promise.all(batch.map(async (assignment) => {
             try {
               const content = assignment.production_data as unknown as Content;
-              const enrichedContent = await enrichContentData(content, assignment.production_id);
+              const enrichedContent = await enrichContentData(content, assignment.production_id, assignment.production_type);
               
               if (enrichedContent) {
                 await supabase
