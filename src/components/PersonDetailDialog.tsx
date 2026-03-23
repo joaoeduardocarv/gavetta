@@ -32,10 +32,12 @@ export function PersonDetailDialog({
   const [person, setPerson] = useState<TMDBPerson | null>(null);
   const [credits, setCredits] = useState<TMDBPersonCredit[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open && personId) {
       setLoading(true);
+      setError(null);
       Promise.all([
         getPersonDetails(personId),
         getPersonCredits(personId)
@@ -44,8 +46,15 @@ export function PersonDetailDialog({
           setPerson(personData);
           setCredits(creditsData);
         })
-        .catch(console.error)
+        .catch((err) => {
+          console.error('Error fetching person details:', err);
+          setError('Não foi possível carregar os dados.');
+        })
         .finally(() => setLoading(false));
+    } else if (!open) {
+      setPerson(null);
+      setCredits([]);
+      setError(null);
     }
   }, [open, personId]);
 
@@ -62,6 +71,10 @@ export function PersonDetailDialog({
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        ) : error ? (
+          <div className="flex items-center justify-center h-64 text-sm text-muted-foreground">
+            {error}
           </div>
         ) : (
           <div className="flex flex-col h-full">

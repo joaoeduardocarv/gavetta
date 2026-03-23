@@ -128,10 +128,23 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
 
   if (!content) return null;
 
-  const handlePersonClick = (person: PersonInfo) => {
-    if (person.id) {
+  const handlePersonClick = async (person: PersonInfo | null, fallbackName?: string) => {
+    if (person?.id) {
       setSelectedPerson({ id: person.id, name: person.name });
       setIsPersonDialogOpen(true);
+      return;
+    }
+    // Fallback: search by name on-demand if person info wasn't pre-loaded
+    const nameToSearch = fallbackName || person?.name;
+    if (!nameToSearch) return;
+    try {
+      const results = await searchPerson(nameToSearch);
+      if (results.length > 0) {
+        setSelectedPerson({ id: results[0].id, name: results[0].name });
+        setIsPersonDialogOpen(true);
+      }
+    } catch (err) {
+      console.error('Error searching person:', err);
     }
   };
 
@@ -449,7 +462,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                   <Label className="text-sm font-semibold">Diretor</Label>
                   <div className="mt-2">
                     <button
-                      onClick={() => directorInfo && handlePersonClick(directorInfo)}
+                      onClick={() => handlePersonClick(directorInfo, content.director)}
                       className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors text-left"
                     >
                       <Avatar className="h-12 w-12 rounded-full">
@@ -483,7 +496,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                         return (
                           <button
                             key={`${actorName}-${index}`}
-                            onClick={() => actorInfo && handlePersonClick(actorInfo)}
+                            onClick={() => handlePersonClick(actorInfo, actorName)}
                             className="flex flex-col items-center gap-2 p-2 rounded-lg hover:bg-accent/50 transition-colors flex-shrink-0"
                             style={{ width: '80px' }}
                           >
