@@ -3,16 +3,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Checkbox } from "@/components/ui/checkbox";
-import { mockContent } from "@/lib/mockData";
-import { Play, Eye, CheckCircle, Star, Heart, Bookmark, Clock, Sparkles } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Play, Eye, CheckCircle, Star, Heart, Bookmark, Clock, Sparkles, Users, Send, Loader2, Check } from "lucide-react";
 import { useDrawers } from "@/contexts/DrawerContext";
+import { useFriendships, FriendProfile } from "@/hooks/useFriendships";
 
 interface CreateDrawerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onCreateDrawer: (drawer: { name: string; icon: string; color: string; contentIds: string[] }) => void;
+  onCreateDrawer: (drawer: { name: string; icon: string; color: string; contentIds: string[]; sharedWithFriends?: string[] }) => void;
 }
 
 const iconOptions = [
@@ -39,45 +40,47 @@ const colorOptions = [
 
 export function CreateDrawerDialog({ open, onOpenChange, onCreateDrawer }: CreateDrawerDialogProps) {
   const { addToCustomDrawer } = useDrawers();
+  const { friends, friendsLoading } = useFriendships();
   const [drawerName, setDrawerName] = useState("");
   const [selectedIcon, setSelectedIcon] = useState("Star");
   const [selectedColor, setSelectedColor] = useState("text-purple-500");
-  const [selectedContentIds, setSelectedContentIds] = useState<string[]>([]);
+  const [isShared, setIsShared] = useState(false);
+  const [selectedFriends, setSelectedFriends] = useState<string[]>([]);
 
-  const handleContentToggle = (contentId: string) => {
-    setSelectedContentIds((prev) =>
-      prev.includes(contentId)
-        ? prev.filter((id) => id !== contentId)
-        : [...prev, contentId]
+  const toggleFriend = (friendId: string) => {
+    setSelectedFriends((prev) =>
+      prev.includes(friendId)
+        ? prev.filter((id) => id !== friendId)
+        : [...prev, friendId]
     );
   };
 
   const handleCreate = () => {
     if (drawerName.trim()) {
-      // Criar a gaveta primeiro
       onCreateDrawer({
         name: drawerName,
         icon: selectedIcon,
         color: selectedColor,
-        contentIds: selectedContentIds,
+        contentIds: [],
+        sharedWithFriends: isShared ? selectedFriends : undefined,
       });
       
-      // Reset form
       setDrawerName("");
       setSelectedIcon("Star");
       setSelectedColor("text-purple-500");
-      setSelectedContentIds([]);
+      setIsShared(false);
+      setSelectedFriends([]);
       onOpenChange(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="font-heading text-2xl">Criar Nova Gavetta</DialogTitle>
           <DialogDescription>
-            Configure sua gaveta personalizada com nome, ícone e conteúdos
+            Configure sua gaveta personalizada com nome e ícone
           </DialogDescription>
         </DialogHeader>
 
@@ -138,45 +141,68 @@ export function CreateDrawerDialog({ open, onOpenChange, onCreateDrawer }: Creat
             </div>
           </div>
 
-          {/* Seleção de Conteúdos */}
+          {/* Compartilhar */}
           <div className="space-y-3">
-            <Label className="text-sm font-semibold">
-              Adicionar Conteúdos ({selectedContentIds.length} selecionados)
-            </Label>
-            <ScrollArea className="h-[300px] rounded-lg border p-4">
-              <div className="space-y-3">
-                {mockContent.map((content) => (
-                  <div
-                    key={content.id}
-                    className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/5 transition-colors"
-                  >
-                    <Checkbox
-                      id={`content-${content.id}`}
-                      checked={selectedContentIds.includes(content.id)}
-                      onCheckedChange={() => handleContentToggle(content.id)}
-                    />
-                    <label
-                      htmlFor={`content-${content.id}`}
-                      className="flex-1 cursor-pointer"
-                    >
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={content.posterUrl}
-                          alt={content.title}
-                          className="w-12 h-12 rounded object-cover"
-                        />
-                        <div>
-                          <p className="font-semibold text-sm">{content.title}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {content.type === "movie" ? "Filme" : "Série"}
-                          </p>
-                        </div>
-                      </div>
-                    </label>
-                  </div>
-                ))}
+            <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/30">
+              <div className="flex items-center gap-3">
+                <Users className="h-5 w-5 text-primary" />
+                <div>
+                  <Label className="text-sm font-medium">Gaveta Compartilhada</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Convide amigos para colaborar nesta gaveta
+                  </p>
+                </div>
               </div>
-            </ScrollArea>
+              <Switch
+                checked={isShared}
+                onCheckedChange={(checked) => {
+                  setIsShared(checked);
+                  if (!checked) setSelectedFriends([]);
+                }}
+              />
+            </div>
+
+            {isShared && (
+              <div className="space-y-2">
+                {friendsLoading ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : friends.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    Você ainda não tem amigos adicionados.
+                  </p>
+                ) : (
+                  <ScrollArea className="max-h-[180px]">
+                    <div className="space-y-2">
+                      {friends.map((friend) => {
+                        const isSelected = selectedFriends.includes(friend.id);
+                        return (
+                          <button
+                            key={friend.id}
+                            onClick={() => toggleFriend(friend.id)}
+                            className={`w-full flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                              isSelected
+                                ? "border-primary bg-primary/5"
+                                : "border-border hover:bg-accent/5"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src={friend.avatar_url || undefined} />
+                                <AvatarFallback>{friend.username?.[0]?.toUpperCase() || "?"}</AvatarFallback>
+                              </Avatar>
+                              <span className="font-medium text-sm">{friend.username || "Usuário"}</span>
+                            </div>
+                            {isSelected && <Check className="h-4 w-4 text-primary" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

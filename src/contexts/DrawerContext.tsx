@@ -9,8 +9,10 @@ import {
   getTVDetails,
   getTVCredits,
   getTVWatchProviders,
-  extractStreamingNames
+  extractStreamingNames,
+  extractStreamingLogos
 } from "@/lib/tmdb";
+import { extractTmdbInfoFromId, normalizeStoredContent } from "@/lib/contentNormalizer";
 
 // IDs das gavetas padrão mutuamente exclusivas
 export const DEFAULT_DRAWER_IDS = ['to-watch', 'watching', 'watched'] as const;
@@ -126,7 +128,11 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
         
         (assignmentsData || []).forEach(a => {
           const contentKey = `${a.production_id}-${a.production_type}`;
-          const content = a.production_data as unknown as Content;
+          const content = normalizeStoredContent(a.production_data, {
+            productionId: String(a.production_id),
+            productionType: String(a.production_type),
+          });
+
           const rating = (a as any).rating as number | null;
           const comment = (a as any).comment as string | null;
           
@@ -179,12 +185,11 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
     const needsEnrichment = !content.genres?.length || !content.director || !content.availableOn?.length;
     if (!needsEnrichment) return content;
 
-    // Extract TMDB ID from content.id (format: "tmdb-movie-123" or "tmdb-tv-456")
-    const idMatch = content.id.match(/tmdb-(movie|tv)-(\d+)/);
-    if (!idMatch) return content;
+    // Extract TMDB ID from content.id (supports: tmdb-movie-123, movie-123, tmdb-tv-123, tv-123)
+    const parsedId = extractTmdbInfoFromId(content.id);
+    if (!parsedId) return content;
 
-    const [, mediaType, tmdbId] = idMatch;
-    const numericId = parseInt(tmdbId, 10);
+    const { mediaType, tmdbId: numericId } = parsedId;
 
     try {
       if (mediaType === 'movie') {
@@ -202,6 +207,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
           director: director?.name || content.director,
           cast: credits.cast.slice(0, 10).map(c => c.name),
           availableOn: extractStreamingNames(providers),
+          watchProviderLogos: extractStreamingLogos(providers),
         };
       } else {
         const [details, credits, providers] = await Promise.all([
@@ -216,6 +222,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
           director: details.created_by?.[0]?.name || content.director,
           cast: credits.cast.slice(0, 10).map(c => c.name),
           availableOn: extractStreamingNames(providers),
+          watchProviderLogos: extractStreamingLogos(providers),
         };
       }
     } catch (error) {
