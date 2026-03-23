@@ -207,7 +207,7 @@ export default function Trending() {
 
   const handleMovieClick = (movie: TMDBMovie) => {
     const content: Content = {
-      id: String(movie.id),
+      id: `movie-${movie.id}`,
       type: 'movie',
       title: movie.title,
       originalTitle: movie.title,
@@ -224,7 +224,7 @@ export default function Trending() {
 
   const handleSeriesClick = (series: TMDBTVShow) => {
     const content: Content = {
-      id: String(series.id),
+      id: `tv-${series.id}`,
       type: 'series',
       title: series.name,
       originalTitle: series.name,
