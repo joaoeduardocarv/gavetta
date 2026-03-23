@@ -487,7 +487,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                 </div>
               )}
 
-              {content.cast && content.cast.length > 0 && (
+              {(castInfo.length > 0 || (content.cast && content.cast.length > 0)) && (
                 <div className="overflow-hidden">
                   <Label className="text-sm font-semibold">Elenco</Label>
                   <div className="mt-2 -mx-6 px-6">
