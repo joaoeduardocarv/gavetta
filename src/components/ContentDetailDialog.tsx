@@ -15,7 +15,8 @@ import { Content } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 import { useDrawers, DEFAULT_DRAWER_IDS, DefaultDrawerId } from "@/contexts/DrawerContext";
 import { useToast } from "@/hooks/use-toast";
-import { searchPerson, getTMDBProfileUrl, TMDBPersonCredit, getMovieDetails, getTVDetails, getMovieCredits, getMovieWatchProviders, getTVWatchProviders, extractStreamingNames, getTMDBImageUrl } from "@/lib/tmdb";
+import { searchPerson, getTMDBProfileUrl, TMDBPersonCredit, getMovieDetails, getTVDetails, getMovieCredits, getTVCredits, getMovieWatchProviders, getTVWatchProviders, extractStreamingNames, getTMDBImageUrl } from "@/lib/tmdb";
+import { extractTmdbInfoFromId } from "@/lib/contentNormalizer";
 
 interface ContentDetailDialogProps {
   content: Content | null;
@@ -85,46 +86,53 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
     }
   }, [content?.id, open]);
 
-  // Buscar informações de diretor e elenco quando o conteúdo mudar
+  // Buscar informações de diretor e elenco diretamente da API de créditos (1 chamada ao invés de 10+)
   useEffect(() => {
-    if (content && open) {
-      // Buscar diretor
-      if (content.director) {
-        searchPerson(content.director)
-          .then(results => {
-            if (results.length > 0) {
-              setDirectorInfo(results[0]);
-            }
-          })
-          .catch(console.error);
-      }
-      
-      // Buscar elenco (primeiros 10)
-      const castNames = (content.cast || [])
-        .map((actor) => {
-          if (typeof actor === 'string') return actor;
-          if (actor && typeof actor === 'object' && 'name' in actor) {
-            const actorName = (actor as { name?: unknown }).name;
-            return typeof actorName === 'string' ? actorName : '';
-          }
-          return '';
-        })
-        .filter((name) => Boolean(name));
-
-      if (castNames.length > 0) {
-        Promise.all(
-          castNames.slice(0, 10).map((name) =>
-            searchPerson(name).then((results) => results[0] || { id: 0, name, profile_path: null })
-          )
-        )
-          .then((results) => setCastInfo(results.filter((r) => r)))
-          .catch(console.error);
-      }
-    } else {
+    if (!content || !open) {
       setDirectorInfo(null);
       setCastInfo([]);
+      return;
     }
-  }, [content, open]);
+
+    // Reset immediately to avoid stale data from previous card
+    setDirectorInfo(null);
+    setCastInfo([]);
+
+    const parsed = extractTmdbInfoFromId(content.id);
+    if (!parsed) {
+      // Fallback: if we can't parse the ID, use searchPerson for director only
+      if (content.director) {
+        searchPerson(content.director)
+          .then(results => { if (results.length > 0) setDirectorInfo(results[0]); })
+          .catch(console.error);
+      }
+      return;
+    }
+
+    const fetchCredits = parsed.mediaType === 'movie' 
+      ? getMovieCredits(parsed.tmdbId) 
+      : getTVCredits(parsed.tmdbId);
+
+    fetchCredits
+      .then(creditsData => {
+        // Director from crew
+        const director = creditsData.crew.find(c => c.job === 'Director') 
+          || creditsData.crew.find(c => c.department === 'Directing');
+        if (director) {
+          setDirectorInfo({ id: director.id, name: director.name, profile_path: director.profile_path });
+        }
+
+        // Cast - already has id, name, profile_path
+        setCastInfo(
+          creditsData.cast.slice(0, 10).map(c => ({
+            id: c.id,
+            name: c.name,
+            profile_path: c.profile_path,
+          }))
+        );
+      })
+      .catch(console.error);
+  }, [content?.id, open]);
 
   if (!content) return null;
 
@@ -479,39 +487,45 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                 </div>
               )}
 
-              {content.cast && content.cast.length > 0 && (
+              {(castInfo.length > 0 || (content.cast && content.cast.length > 0)) && (
                 <div className="overflow-hidden">
                   <Label className="text-sm font-semibold">Elenco</Label>
                   <div className="mt-2 -mx-6 px-6">
                     <div className="flex gap-3 pb-2 overflow-x-auto scrollbar-thin scrollbar-thumb-muted">
-                      {content.cast.slice(0, 10).map((actor, index) => {
-                        const actorInfo = castInfo[index];
-                        const actorName =
-                          typeof actor === 'string'
-                            ? actor
-                            : actor && typeof actor === 'object' && 'name' in actor
-                              ? String((actor as { name?: unknown }).name || '')
-                              : '';
-
-                        return (
+                      {castInfo.length > 0 ? (
+                        castInfo.map((person) => (
                           <button
-                            key={`${actorName}-${index}`}
-                            onClick={() => handlePersonClick(actorInfo, actorName)}
+                            key={person.id}
+                            onClick={() => handlePersonClick(person)}
                             className="flex flex-col items-center gap-2 p-2 rounded-lg hover:bg-accent/50 transition-colors flex-shrink-0"
                             style={{ width: '80px' }}
                           >
                             <Avatar className="h-14 w-14 rounded-full">
                               <AvatarImage 
-                                src={actorInfo?.profile_path ? getTMDBProfileUrl(actorInfo.profile_path) : undefined}
-                                alt={actorName}
+                                src={person.profile_path ? getTMDBProfileUrl(person.profile_path) : undefined}
+                                alt={person.name}
                                 className="object-cover"
                               />
-                              <AvatarFallback>{actorName.charAt(0) || '?'}</AvatarFallback>
+                              <AvatarFallback>{person.name.charAt(0) || '?'}</AvatarFallback>
                             </Avatar>
-                            <span className="text-xs text-center line-clamp-2 w-full">{actorName}</span>
+                            <span className="text-xs text-center line-clamp-2 w-full">{person.name}</span>
                           </button>
-                        );
-                      })}
+                        ))
+                      ) : (
+                        // Show placeholder names while credits load
+                        content.cast.slice(0, 10).map((actor, index) => {
+                          const actorName = typeof actor === 'string' ? actor : 
+                            (actor && typeof actor === 'object' && 'name' in actor ? String((actor as any).name) : '');
+                          return (
+                            <div key={index} className="flex flex-col items-center gap-2 p-2 flex-shrink-0" style={{ width: '80px' }}>
+                              <Avatar className="h-14 w-14 rounded-full">
+                                <AvatarFallback>{actorName.charAt(0) || '?'}</AvatarFallback>
+                              </Avatar>
+                              <span className="text-xs text-center line-clamp-2 w-full text-muted-foreground">{actorName}</span>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
                 </div>
