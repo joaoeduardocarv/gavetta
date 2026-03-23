@@ -462,7 +462,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                   <Label className="text-sm font-semibold">Diretor</Label>
                   <div className="mt-2">
                     <button
-                      onClick={() => directorInfo && handlePersonClick(directorInfo)}
+                      onClick={() => handlePersonClick(directorInfo, content.director)}
                       className="flex items-center gap-3 p-2 rounded-lg hover:bg-accent/50 transition-colors text-left"
                     >
                       <Avatar className="h-12 w-12 rounded-full">
