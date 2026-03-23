@@ -93,25 +93,55 @@ export function useMigrateIncompleteContent() {
   }, [user]);
 }
 
-async function enrichContentData(content: Content, productionId: string, productionType: string): Promise<Content | null> {
-  // Try extracting TMDB info from the production_id first
-  let mediaType: string | null = null;
-  let tmdbId: number | null = null;
-
+async function resolveRealTmdbId(productionId: string, productionType: string, title: string): Promise<{ mediaType: string; tmdbId: number } | null> {
+  // 1. Try extracting from prefixed ID format (e.g. "movie-157336", "tv-76331")
   const parsed = extractTmdbInfoFromId(productionId);
   if (parsed) {
-    mediaType = parsed.mediaType;
-    tmdbId = parsed.tmdbId;
-  } else if (/^\d+$/.test(productionId)) {
-    // Bare numeric ID — use production_type to determine media type
-    tmdbId = parseInt(productionId, 10);
-    mediaType = productionType === 'tv' ? 'tv' : 'movie';
+    return { mediaType: parsed.mediaType, tmdbId: parsed.tmdbId };
   }
 
-  if (!mediaType || !tmdbId) {
+  // 2. For bare numeric IDs, they might be legacy sequential IDs (not real TMDB IDs).
+  //    Try searching TMDB by title to find the real ID.
+  const mediaType = productionType === 'tv' ? 'tv' : 'movie';
+
+  if (title) {
+    try {
+      const { searchMovies, searchTVShows } = await import('@/lib/tmdb');
+      if (mediaType === 'movie') {
+        const results = await searchMovies(title);
+        if (results.length > 0) {
+          console.log(`Resolved "${title}" to TMDB movie ID ${results[0].id}`);
+          return { mediaType: 'movie', tmdbId: results[0].id };
+        }
+      } else {
+        const results = await searchTVShows(title);
+        if (results.length > 0) {
+          console.log(`Resolved "${title}" to TMDB tv ID ${results[0].id}`);
+          return { mediaType: 'tv', tmdbId: results[0].id };
+        }
+      }
+    } catch (err) {
+      console.warn(`Search fallback failed for "${title}":`, err);
+    }
+  }
+
+  // 3. Last resort: try the numeric ID directly (it might actually be a valid TMDB ID)
+  if (/^\d+$/.test(productionId)) {
+    return { mediaType, tmdbId: parseInt(productionId, 10) };
+  }
+
+  return null;
+}
+
+async function enrichContentData(content: Content, productionId: string, productionType: string): Promise<Content | null> {
+  const resolved = await resolveRealTmdbId(productionId, productionType, content.title);
+
+  if (!resolved) {
     console.warn(`Cannot enrich: unrecognized production_id format "${productionId}"`);
     return null;
   }
+
+  const { mediaType, tmdbId } = resolved;
 
   try {
     if (mediaType === 'movie') {
