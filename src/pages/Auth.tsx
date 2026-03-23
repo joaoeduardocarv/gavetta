@@ -120,7 +120,7 @@ export default function Auth() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const validation = signupSchema.safeParse({ email, password, username });
+    const validation = signupSchema.safeParse({ email, password, username, handle });
     if (!validation.success) {
       toast({
         variant: "destructive",
