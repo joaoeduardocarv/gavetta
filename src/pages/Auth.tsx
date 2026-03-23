@@ -386,7 +386,7 @@ export default function Auth() {
                 
                 <form onSubmit={handleSignup} className="space-y-4 mt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="signup-username">Nome</Label>
+                    <Label htmlFor="signup-username">Nome de exibição</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -401,6 +401,25 @@ export default function Auth() {
                         maxLength={50}
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-handle">@ Nome de usuário</Label>
+                    <div className="relative">
+                      <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-handle"
+                        type="text"
+                        placeholder="seu_usuario"
+                        value={handle}
+                        onChange={(e) => setHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase())}
+                        className="pl-10"
+                        required
+                        disabled={isAnyLoading}
+                        maxLength={30}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Apenas letras, números e _ (sem espaços). Seus amigos te encontrarão por esse @.</p>
                   </div>
 
                   <div className="space-y-2">

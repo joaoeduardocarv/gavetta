@@ -142,6 +142,9 @@ export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
                     <p className="font-medium text-sm">
                       {resultUser.username || "Usuário sem nome"}
                     </p>
+                    {resultUser.handle && (
+                      <p className="text-xs text-muted-foreground">@{resultUser.handle}</p>
+                    )}
                   </div>
                   <Button
                     size="sm"
