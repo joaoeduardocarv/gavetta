@@ -118,9 +118,9 @@ export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
           </div>
 
           <div className="space-y-2 max-h-64 overflow-y-auto">
-            {results.length === 0 && !isSearching && (
+             {results.length === 0 && !isSearching && (
               <p className="text-sm text-muted-foreground text-center py-8">
-                Busque por username para encontrar amigos
+                Busque pelo @ para encontrar amigos
               </p>
             )}
 
