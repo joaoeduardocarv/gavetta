@@ -140,6 +140,7 @@ export default function Auth() {
         emailRedirectTo: redirectUrl,
         data: {
           username: username.trim(),
+          handle: handle.trim().toLowerCase(),
         },
       },
     });
