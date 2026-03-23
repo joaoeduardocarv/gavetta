@@ -496,7 +496,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                         return (
                           <button
                             key={`${actorName}-${index}`}
-                            onClick={() => actorInfo && handlePersonClick(actorInfo)}
+                            onClick={() => handlePersonClick(actorInfo, actorName)}
                             className="flex flex-col items-center gap-2 p-2 rounded-lg hover:bg-accent/50 transition-colors flex-shrink-0"
                             style={{ width: '80px' }}
                           >
