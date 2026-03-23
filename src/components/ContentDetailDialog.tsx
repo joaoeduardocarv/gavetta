@@ -492,34 +492,40 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                   <Label className="text-sm font-semibold">Elenco</Label>
                   <div className="mt-2 -mx-6 px-6">
                     <div className="flex gap-3 pb-2 overflow-x-auto scrollbar-thin scrollbar-thumb-muted">
-                      {content.cast.slice(0, 10).map((actor, index) => {
-                        const actorInfo = castInfo[index];
-                        const actorName =
-                          typeof actor === 'string'
-                            ? actor
-                            : actor && typeof actor === 'object' && 'name' in actor
-                              ? String((actor as { name?: unknown }).name || '')
-                              : '';
-
-                        return (
+                      {castInfo.length > 0 ? (
+                        castInfo.map((person) => (
                           <button
-                            key={`${actorName}-${index}`}
-                            onClick={() => handlePersonClick(actorInfo, actorName)}
+                            key={person.id}
+                            onClick={() => handlePersonClick(person)}
                             className="flex flex-col items-center gap-2 p-2 rounded-lg hover:bg-accent/50 transition-colors flex-shrink-0"
                             style={{ width: '80px' }}
                           >
                             <Avatar className="h-14 w-14 rounded-full">
                               <AvatarImage 
-                                src={actorInfo?.profile_path ? getTMDBProfileUrl(actorInfo.profile_path) : undefined}
-                                alt={actorName}
+                                src={person.profile_path ? getTMDBProfileUrl(person.profile_path) : undefined}
+                                alt={person.name}
                                 className="object-cover"
                               />
-                              <AvatarFallback>{actorName.charAt(0) || '?'}</AvatarFallback>
+                              <AvatarFallback>{person.name.charAt(0) || '?'}</AvatarFallback>
                             </Avatar>
-                            <span className="text-xs text-center line-clamp-2 w-full">{actorName}</span>
+                            <span className="text-xs text-center line-clamp-2 w-full">{person.name}</span>
                           </button>
-                        );
-                      })}
+                        ))
+                      ) : (
+                        // Show placeholder names while credits load
+                        content.cast.slice(0, 10).map((actor, index) => {
+                          const actorName = typeof actor === 'string' ? actor : 
+                            (actor && typeof actor === 'object' && 'name' in actor ? String((actor as any).name) : '');
+                          return (
+                            <div key={index} className="flex flex-col items-center gap-2 p-2 flex-shrink-0" style={{ width: '80px' }}>
+                              <Avatar className="h-14 w-14 rounded-full">
+                                <AvatarFallback>{actorName.charAt(0) || '?'}</AvatarFallback>
+                              </Avatar>
+                              <span className="text-xs text-center line-clamp-2 w-full text-muted-foreground">{actorName}</span>
+                            </div>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
                 </div>
