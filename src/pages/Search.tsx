@@ -31,6 +31,7 @@ import {
 } from "@/lib/tmdb";
 
 type FilterType = 'all' | 'movies' | 'series' | 'genre';
+type SearchMode = 'title' | 'person';
 
 interface ActiveFilter {
   type: FilterType;
@@ -97,6 +98,7 @@ function personCreditToContent(credit: TMDBPersonCredit): Content & { popularity
 
 export default function Search() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchMode, setSearchMode] = useState<SearchMode>('title');
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchResults, setSearchResults] = useState<Content[]>([]);
@@ -106,31 +108,35 @@ export default function Search() {
   const [showGenres, setShowGenres] = useState(false);
 
   // Person search state
-  const [personSuggestions, setPersonSuggestions] = useState<PersonResult[]>([]);
+  const [personMatches, setPersonMatches] = useState<PersonResult[]>([]);
   const [selectedPerson, setSelectedPerson] = useState<PersonResult | null>(null);
+  const [showPersonPicker, setShowPersonPicker] = useState(false);
 
-  // Unified debounced search — title + person in parallel
+  // Reset person state when mode changes
   useEffect(() => {
+    setPersonMatches([]);
+    setSelectedPerson(null);
+    setShowPersonPicker(false);
+    setSearchResults([]);
+    setSearchQuery("");
+    setActiveFilter(null);
+  }, [searchMode]);
+
+  // Debounced search — title mode
+  useEffect(() => {
+    if (searchMode !== 'title') return;
+
     if (!searchQuery.trim()) {
       if (!activeFilter) {
         setSearchResults([]);
       }
-      setPersonSuggestions([]);
-      setSelectedPerson(null);
       return;
     }
-
-    // If a person is already selected, don't re-search
-    if (selectedPerson) return;
 
     const timeoutId = setTimeout(async () => {
       setIsLoading(true);
       try {
-        const [{ movies, tvShows }, people] = await Promise.all([
-          searchAll(searchQuery),
-          searchPerson(searchQuery),
-        ]);
-
+        const { movies, tvShows } = await searchAll(searchQuery);
         let movieResults = movies.map(tmdbMovieToContent);
         let tvResults = tvShows.map(tmdbTVToContent);
         
@@ -142,24 +148,60 @@ export default function Search() {
           const combined = [...movieResults, ...tvResults].sort((a, b) => b.popularity - a.popularity);
           setSearchResults(combined);
         }
-
-        // Show person suggestions if found
-        setPersonSuggestions(people.length > 0 ? people.slice(0, 3) : []);
       } catch (error) {
         console.error('Erro ao buscar conteúdo:', error);
         setSearchResults([]);
-        setPersonSuggestions([]);
       } finally {
         setIsLoading(false);
       }
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [searchQuery, activeFilter, selectedPerson]);
+  }, [searchQuery, activeFilter, searchMode]);
+
+  // Debounced search — person mode
+  useEffect(() => {
+    if (searchMode !== 'person') return;
+
+    if (!searchQuery.trim()) {
+      setPersonMatches([]);
+      setSelectedPerson(null);
+      setShowPersonPicker(false);
+      setSearchResults([]);
+      return;
+    }
+
+    const timeoutId = setTimeout(async () => {
+      setIsLoading(true);
+      setSelectedPerson(null);
+      setSearchResults([]);
+      try {
+        const people = await searchPerson(searchQuery);
+        setPersonMatches(people);
+        
+        if (people.length === 1) {
+          // Auto-select if single result
+          await selectPerson(people[0]);
+        } else if (people.length > 1) {
+          setShowPersonPicker(true);
+          setIsLoading(false);
+        } else {
+          setShowPersonPicker(false);
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar pessoa:', error);
+        setPersonMatches([]);
+        setIsLoading(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery, searchMode]);
 
   const selectPerson = async (person: PersonResult) => {
     setSelectedPerson(person);
-    setPersonSuggestions([]);
+    setShowPersonPicker(false);
     setIsLoading(true);
     try {
       const credits = await getPersonCredits(person.id);
@@ -185,18 +227,9 @@ export default function Search() {
     }
   };
 
-  const clearPersonSelection = () => {
-    setSelectedPerson(null);
-    setPersonSuggestions([]);
-    // Re-trigger search
-    const query = searchQuery;
-    setSearchQuery('');
-    setTimeout(() => setSearchQuery(query), 0);
-  };
-
-  // Carregar conteúdo quando filtro muda (sem busca)
+  // Carregar conteúdo quando filtro muda (sem busca) — title mode only
   useEffect(() => {
-    if (selectedPerson) return;
+    if (searchMode !== 'title') return;
     if (searchQuery.trim()) return;
     
     if (!activeFilter) {
@@ -237,7 +270,7 @@ export default function Search() {
     };
 
     loadFilteredContent();
-  }, [activeFilter, searchQuery, selectedPerson]);
+  }, [activeFilter, searchQuery, searchMode]);
 
   // Enriquecer resultados com streaming providers em lotes
   const enrichmentRef = useRef(0);
@@ -371,46 +404,65 @@ export default function Search() {
           Buscar
         </h2>
 
+        {/* Toggle: Título / Pessoa */}
+        <div className="flex gap-2 mb-4">
+          <button
+            onClick={() => setSearchMode('title')}
+            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+              searchMode === 'title'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground hover:bg-accent/10'
+            }`}
+          >
+            <Film className="h-4 w-4 inline mr-2" />
+            Título
+          </button>
+          <button
+            onClick={() => setSearchMode('person')}
+            className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+              searchMode === 'person'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted text-muted-foreground hover:bg-accent/10'
+            }`}
+          >
+            <User className="h-4 w-4 inline mr-2" />
+            Pessoa
+          </button>
+        </div>
+
         {/* Campo de Busca */}
         <div className="relative mb-6">
           <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar filmes, séries, atores..."
+            placeholder={searchMode === 'title' ? "Buscar filmes e séries..." : "Buscar ator ou diretor..."}
             className="pl-10"
             value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              if (selectedPerson) {
-                setSelectedPerson(null);
-              }
-            }}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
 
-        {/* Person suggestions — shown inline above results */}
-        {!selectedPerson && personSuggestions.length > 0 && !isLoading && (
-          <div className="mb-4">
-            <p className="text-xs text-muted-foreground mb-2">Você quis dizer a pessoa?</p>
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {personSuggestions.map((person) => (
-                <button
-                  key={person.id}
-                  onClick={() => selectPerson(person)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card hover:bg-accent/10 transition-colors text-left shrink-0"
-                >
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={getTMDBProfileUrl(person.profile_path)} alt={person.name} />
-                    <AvatarFallback><User className="h-4 w-4" /></AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm font-medium text-foreground whitespace-nowrap">{person.name}</span>
-                </button>
-              ))}
-            </div>
+        {/* Person picker — multiple matches */}
+        {searchMode === 'person' && showPersonPicker && personMatches.length > 1 && (
+          <div className="mb-6 space-y-2">
+            <p className="text-sm text-muted-foreground">Selecione a pessoa:</p>
+            {personMatches.map((person) => (
+              <button
+                key={person.id}
+                onClick={() => selectPerson(person)}
+                className="w-full flex items-center gap-3 p-3 rounded-lg border border-border bg-card hover:bg-accent/5 transition-colors text-left"
+              >
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={getTMDBProfileUrl(person.profile_path)} alt={person.name} />
+                  <AvatarFallback><User className="h-5 w-5" /></AvatarFallback>
+                </Avatar>
+                <span className="font-medium text-foreground">{person.name}</span>
+              </button>
+            ))}
           </div>
         )}
 
         {/* Person header — selected person */}
-        {selectedPerson && (
+        {searchMode === 'person' && selectedPerson && (
           <div className="flex items-center gap-4 mb-6 p-4 rounded-lg bg-card border border-border">
             <Avatar className="h-16 w-16 rounded-lg">
               <AvatarImage 
@@ -420,21 +472,15 @@ export default function Search() {
               />
               <AvatarFallback className="rounded-lg"><User className="h-8 w-8" /></AvatarFallback>
             </Avatar>
-            <div className="flex-1">
+            <div>
               <p className="text-sm text-muted-foreground">Filmes e séries com</p>
               <h3 className="font-heading text-xl font-bold text-foreground">{selectedPerson.name}</h3>
             </div>
-            <button
-              onClick={clearPersonSelection}
-              className="p-2 rounded-full hover:bg-accent/10 transition-colors"
-            >
-              <X className="h-4 w-4 text-muted-foreground" />
-            </button>
           </div>
         )}
 
-        {/* Filtro ativo */}
-        {!selectedPerson && activeFilter && (
+        {/* Filtro ativo — title mode only */}
+        {searchMode === 'title' && activeFilter && (
           <div className="flex items-center gap-2 mb-4">
             <span className="text-sm text-muted-foreground">Filtrando por:</span>
             <Badge 
@@ -450,8 +496,8 @@ export default function Search() {
           </div>
         )}
 
-        {/* Navegação Rápida */}
-        {!selectedPerson && (
+        {/* Navegação Rápida — title mode only */}
+        {searchMode === 'title' && (
           <div 
             className={`mb-6 transition-all duration-300 ease-out overflow-hidden ${
               searchQuery.trim() 
@@ -510,7 +556,7 @@ export default function Search() {
         {!isLoading && searchResults.length > 0 && (
           <div>
             <h3 className="font-heading text-lg font-semibold text-foreground mb-4">
-              {selectedPerson
+              {searchMode === 'person' && selectedPerson
                 ? `Resultados (${searchResults.length})`
                 : searchQuery 
                   ? `Resultados (${searchResults.length})` 
@@ -529,10 +575,16 @@ export default function Search() {
           </div>
         )}
 
-        {!isLoading && searchResults.length === 0 && (searchQuery || activeFilter) && !selectedPerson && personSuggestions.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Nenhum resultado encontrado</p>
-          </div>
+        {!isLoading && searchResults.length === 0 && !showPersonPicker && (searchQuery || activeFilter) && (
+          searchMode === 'person' && personMatches.length === 0 && searchQuery.trim() ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Nenhuma pessoa encontrada</p>
+            </div>
+          ) : searchMode === 'title' ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">Nenhum resultado encontrado</p>
+            </div>
+          ) : null
         )}
       </main>
 
