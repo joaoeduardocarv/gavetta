@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from "react";
 import { Content } from "@/lib/mockData";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -28,6 +28,9 @@ export interface CustomDrawer {
 
 export interface ContentDrawerAssignment {
   contentId: string;
+  /** The original production_id as stored in the DB — used for all DB queries */
+  productionId: string;
+  productionType: string;
   content: Content;
   defaultDrawer: DefaultDrawerId | null;
   customDrawers: string[];
@@ -41,36 +44,29 @@ interface PendingWatchedAssignment {
 }
 
 interface DrawerContextType {
-  // Gavetas personalizadas
   customDrawers: CustomDrawer[];
   addCustomDrawer: (drawer: Omit<CustomDrawer, 'id'>) => Promise<CustomDrawer>;
   removeCustomDrawer: (drawerId: string) => Promise<void>;
   
-  // Atribuições de conteúdo
   assignments: ContentDrawerAssignment[];
   
-  // Adicionar/remover de gaveta padrão (exclusivo)
   setDefaultDrawer: (content: Content, drawerId: DefaultDrawerId | null) => Promise<void>;
   getDefaultDrawer: (contentId: string) => DefaultDrawerId | null;
   
-  // Adicionar/remover de gavetas personalizadas (múltiplas)
   addToCustomDrawer: (content: Content, drawerId: string) => Promise<void>;
   removeFromCustomDrawer: (contentId: string, drawerId: string) => Promise<void>;
   isInCustomDrawer: (contentId: string, drawerId: string) => boolean;
   
-  // Avaliação e comentário por item
   setContentRating: (contentId: string, rating: number) => Promise<void>;
   getContentRating: (contentId: string) => number | null;
   setContentComment: (contentId: string, comment: string) => Promise<void>;
   getContentComment: (contentId: string) => string | null;
   
-  // Utilitários
   getContentDrawers: (contentId: string) => { defaultDrawer: DefaultDrawerId | null; customDrawers: string[]; rating: number | null; comment: string | null };
   getDrawerContents: (drawerId: string) => Content[];
   isDefaultDrawer: (drawerId: string) => boolean;
   isLoading: boolean;
 
-  // Rating dialog control
   pendingWatchedAssignment: PendingWatchedAssignment | null;
   confirmWatchedRating: (rating: number, comment: string) => void;
   cancelWatchedRating: () => void;
@@ -84,6 +80,69 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
   const [assignments, setAssignments] = useState<ContentDrawerAssignment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [pendingWatchedAssignment, setPendingWatchedAssignment] = useState<PendingWatchedAssignment | null>(null);
+  const writeLock = useRef(false);
+
+  // Re-fetch from DB to ensure state is in sync
+  const refetchAssignments = useCallback(async () => {
+    if (!user) return;
+    try {
+      const { data: assignmentsData, error } = await supabase
+        .from('user_drawer_assignments')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error refetching assignments:', error);
+        return;
+      }
+
+      const assignmentMap = new Map<string, ContentDrawerAssignment>();
+      
+      (assignmentsData || []).forEach(a => {
+        const content = normalizeStoredContent(a.production_data, {
+          productionId: String(a.production_id),
+          productionType: String(a.production_type),
+        });
+        const contentKey = content.id;
+
+        const rating = a.rating as number | null;
+        const comment = a.comment as string | null;
+        
+        const existing = assignmentMap.get(contentKey);
+        if (existing) {
+          if (DEFAULT_DRAWER_IDS.includes(a.drawer_id as DefaultDrawerId)) {
+            existing.defaultDrawer = a.drawer_id as DefaultDrawerId;
+            if (a.drawer_id === 'watched') {
+              existing.rating = rating;
+              existing.comment = comment;
+            }
+          } else {
+            existing.customDrawers.push(a.drawer_id);
+          }
+        } else {
+          assignmentMap.set(contentKey, {
+            contentId: content.id,
+            productionId: String(a.production_id),
+            productionType: String(a.production_type),
+            content,
+            defaultDrawer: DEFAULT_DRAWER_IDS.includes(a.drawer_id as DefaultDrawerId) 
+              ? a.drawer_id as DefaultDrawerId 
+              : null,
+            customDrawers: DEFAULT_DRAWER_IDS.includes(a.drawer_id as DefaultDrawerId) 
+              ? [] 
+              : [a.drawer_id],
+            rating: a.drawer_id === 'watched' ? rating : null,
+            comment: a.drawer_id === 'watched' ? comment : null
+          });
+        }
+      });
+
+      setAssignments(Array.from(assignmentMap.values()));
+    } catch (error) {
+      console.error('Error refetching assignments:', error);
+    }
+  }, [user]);
 
   // Fetch initial data when user is authenticated
   useEffect(() => {
@@ -114,57 +173,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
         }));
         setCustomDrawers(fetchedDrawers);
 
-        // Fetch assignments
-        const { data: assignmentsData, error: assignmentsError } = await supabase
-          .from('user_drawer_assignments')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (assignmentsError) throw assignmentsError;
-
-        // Group assignments by content
-        const assignmentMap = new Map<string, ContentDrawerAssignment>();
-        
-        (assignmentsData || []).forEach(a => {
-          const contentKey = `${a.production_id}-${a.production_type}`;
-          const content = normalizeStoredContent(a.production_data, {
-            productionId: String(a.production_id),
-            productionType: String(a.production_type),
-          });
-
-          const rating = (a as any).rating as number | null;
-          const comment = (a as any).comment as string | null;
-          
-          const existing = assignmentMap.get(contentKey);
-          if (existing) {
-            if (DEFAULT_DRAWER_IDS.includes(a.drawer_id as DefaultDrawerId)) {
-              existing.defaultDrawer = a.drawer_id as DefaultDrawerId;
-              // Rating e comment são vinculados à gaveta padrão "watched"
-              if (a.drawer_id === 'watched') {
-                existing.rating = rating;
-                existing.comment = comment;
-              }
-            } else {
-              existing.customDrawers.push(a.drawer_id);
-            }
-          } else {
-            assignmentMap.set(contentKey, {
-              contentId: content.id,
-              content,
-              defaultDrawer: DEFAULT_DRAWER_IDS.includes(a.drawer_id as DefaultDrawerId) 
-                ? a.drawer_id as DefaultDrawerId 
-                : null,
-              customDrawers: DEFAULT_DRAWER_IDS.includes(a.drawer_id as DefaultDrawerId) 
-                ? [] 
-                : [a.drawer_id],
-              rating: a.drawer_id === 'watched' ? rating : null,
-              comment: a.drawer_id === 'watched' ? comment : null
-            });
-          }
-        });
-
-        setAssignments(Array.from(assignmentMap.values()));
+        await refetchAssignments();
       } catch (error) {
         console.error('Error fetching drawer data:', error);
       } finally {
@@ -173,7 +182,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
     };
 
     fetchData();
-  }, [user]);
+  }, [user, refetchAssignments]);
 
   const isDefaultDrawer = (drawerId: string): boolean => {
     return DEFAULT_DRAWER_IDS.includes(drawerId as DefaultDrawerId);
@@ -181,11 +190,9 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
 
   // Helper function to enrich content with full TMDB data
   const enrichContent = async (content: Content): Promise<Content> => {
-    // Check if content already has complete data
     const needsEnrichment = !content.genres?.length || !content.director || !content.availableOn?.length;
     if (!needsEnrichment) return content;
 
-    // Extract TMDB ID from content.id (supports: tmdb-movie-123, movie-123, tmdb-tv-123, tv-123)
     const parsedId = extractTmdbInfoFromId(content.id);
     if (!parsedId) return content;
 
@@ -231,29 +238,45 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  /** Find the DB production_id for a content, checking existing assignments first */
+  const resolveProductionId = (content: Content): string => {
+    const existing = assignments.find(a => a.contentId === content.id);
+    if (existing) return existing.productionId;
+    // For new content, use content.id as production_id (this becomes the canonical DB key)
+    return content.id;
+  };
+
+  const resolveProductionType = (content: Content): string => {
+    const existing = assignments.find(a => a.contentId === content.id);
+    if (existing) return existing.productionType;
+    return content.type === 'movie' ? 'movie' : 'tv';
+  };
+
   // Internal function to actually save to watched drawer with rating
   const saveToWatchedDrawer = useCallback(async (content: Content, rating: number, comment: string) => {
     if (!user) return;
 
-    const productionType = content.type === 'movie' ? 'movie' : 'tv';
-    const productionId = content.id;
+    const productionType = resolveProductionType(content);
+    const productionId = resolveProductionId(content);
 
-    // Enrich content before saving
     const enrichedContent = await enrichContent(content);
 
+    writeLock.current = true;
     try {
-      // First, remove any existing default drawer assignment for this content
+      // Delete all default drawer assignments for this content
       for (const defaultId of DEFAULT_DRAWER_IDS) {
-        await supabase
+        const { error: delError } = await supabase
           .from('user_drawer_assignments')
           .delete()
           .eq('user_id', user.id)
           .eq('production_id', productionId)
           .eq('production_type', productionType)
           .eq('drawer_id', defaultId);
+        
+        if (delError) console.error(`Error deleting ${defaultId} assignment:`, delError);
       }
 
-      // Insert with rating and comment
+      // Insert into watched with rating
       const { error } = await supabase
         .from('user_drawer_assignments')
         .insert({
@@ -266,24 +289,21 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
           comment: comment || null
         } as any);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error inserting watched assignment:', error);
+        throw error;
+      }
 
-      // Update local state
-      setAssignments(prev => {
-        const existing = prev.find(a => a.contentId === content.id);
-        if (existing) {
-          return prev.map(a => 
-            a.contentId === content.id 
-              ? { ...a, defaultDrawer: 'watched' as DefaultDrawerId, content: enrichedContent, rating, comment }
-              : a
-          );
-        }
-        return [...prev, { contentId: content.id, content: enrichedContent, defaultDrawer: 'watched' as DefaultDrawerId, customDrawers: [], rating, comment }];
-      });
+      console.log(`✅ Saved to watched: ${content.title} (production_id=${productionId}, rating=${rating})`);
+
+      // Refetch from DB to ensure consistency
+      await refetchAssignments();
     } catch (error) {
       console.error('Error saving to watched drawer:', error);
+    } finally {
+      writeLock.current = false;
     }
-  }, [user]);
+  }, [user, assignments, refetchAssignments]);
 
   const setDefaultDrawer = useCallback(async (content: Content, drawerId: DefaultDrawerId | null) => {
     if (!user) return;
@@ -304,25 +324,27 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
       });
     }
 
-    const productionType = content.type === 'movie' ? 'movie' : 'tv';
-    const productionId = content.id;
+    const productionType = resolveProductionType(content);
+    const productionId = resolveProductionId(content);
 
-    // Enrich content before saving
     const enrichedContent = drawerId ? await enrichContent(content) : content;
 
+    writeLock.current = true;
     try {
-      // First, remove any existing default drawer assignment for this content
+      // Delete all default drawer assignments for this content
       for (const defaultId of DEFAULT_DRAWER_IDS) {
-        await supabase
+        const { error: delError } = await supabase
           .from('user_drawer_assignments')
           .delete()
           .eq('user_id', user.id)
           .eq('production_id', productionId)
           .eq('production_type', productionType)
           .eq('drawer_id', defaultId);
+        
+        if (delError) console.error(`Error deleting ${defaultId} assignment:`, delError);
       }
 
-      // If a new drawer is specified, insert it
+      // Insert the new assignment if specified
       if (drawerId) {
         const { error } = await supabase
           .from('user_drawer_assignments')
@@ -334,31 +356,22 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
             production_data: enrichedContent as unknown as Record<string, unknown>
           } as any);
 
-        if (error) throw error;
+        if (error) {
+          console.error('Error inserting default drawer assignment:', error);
+          throw error;
+        }
       }
 
-      // Update local state
-      setAssignments(prev => {
-        const existing = prev.find(a => a.contentId === content.id);
-        if (existing) {
-          if (drawerId === null) {
-            if (existing.customDrawers.length === 0) {
-              return prev.filter(a => a.contentId !== content.id);
-            }
-          }
-          return prev.map(a => 
-            a.contentId === content.id 
-              ? { ...a, defaultDrawer: drawerId, content: enrichedContent, rating: null }
-              : a
-          );
-        }
-        if (drawerId === null) return prev;
-        return [...prev, { contentId: content.id, content: enrichedContent, defaultDrawer: drawerId, customDrawers: [], rating: null, comment: null }];
-      });
+      console.log(`✅ Set default drawer: ${content.title} → ${drawerId || 'removed'} (production_id=${productionId})`);
+
+      // Refetch from DB to ensure consistency
+      await refetchAssignments();
     } catch (error) {
       console.error('Error setting default drawer:', error);
+    } finally {
+      writeLock.current = false;
     }
-  }, [user, saveToWatchedDrawer]);
+  }, [user, assignments, saveToWatchedDrawer, refetchAssignments]);
 
   const confirmWatchedRating = useCallback((rating: number, comment: string) => {
     if (pendingWatchedAssignment) {
@@ -379,12 +392,12 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
   const addToCustomDrawer = useCallback(async (content: Content, drawerId: string) => {
     if (!user) return;
 
-    const productionType = content.type === 'movie' ? 'movie' : 'tv';
-    const productionId = content.id;
+    const productionType = resolveProductionType(content);
+    const productionId = resolveProductionId(content);
 
-    // Enrich content before saving
     const enrichedContent = await enrichContent(content);
 
+    writeLock.current = true;
     try {
       const { error } = await supabase
         .from('user_drawer_assignments')
@@ -396,25 +409,19 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
           production_data: enrichedContent as unknown as Record<string, unknown>
         } as any);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error adding to custom drawer:', error);
+        throw error;
+      }
 
-      // Update local state
-      setAssignments(prev => {
-        const existing = prev.find(a => a.contentId === content.id);
-        if (existing) {
-          if (existing.customDrawers.includes(drawerId)) return prev;
-          return prev.map(a => 
-            a.contentId === content.id 
-              ? { ...a, customDrawers: [...a.customDrawers, drawerId], content: enrichedContent }
-              : a
-          );
-        }
-        return [...prev, { contentId: content.id, content: enrichedContent, defaultDrawer: null, customDrawers: [drawerId], rating: null, comment: null }];
-      });
+      console.log(`✅ Added to custom drawer ${drawerId}: ${content.title} (production_id=${productionId})`);
+      await refetchAssignments();
     } catch (error) {
       console.error('Error adding to custom drawer:', error);
+    } finally {
+      writeLock.current = false;
     }
-  }, [user]);
+  }, [user, assignments, refetchAssignments]);
 
   const removeFromCustomDrawer = useCallback(async (contentId: string, drawerId: string) => {
     if (!user) return;
@@ -422,31 +429,29 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
     const assignment = assignments.find(a => a.contentId === contentId);
     if (!assignment) return;
 
-    const productionType = assignment.content.type === 'movie' ? 'movie' : 'tv';
-
+    writeLock.current = true;
     try {
       const { error } = await supabase
         .from('user_drawer_assignments')
         .delete()
         .eq('user_id', user.id)
-        .eq('production_id', contentId)
-        .eq('production_type', productionType)
+        .eq('production_id', assignment.productionId)
+        .eq('production_type', assignment.productionType)
         .eq('drawer_id', drawerId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error removing from custom drawer:', error);
+        throw error;
+      }
 
-      // Update local state
-      setAssignments(prev => 
-        prev.map(a => 
-          a.contentId === contentId 
-            ? { ...a, customDrawers: a.customDrawers.filter(id => id !== drawerId) }
-            : a
-        ).filter(a => a.defaultDrawer !== null || a.customDrawers.length > 0)
-      );
+      console.log(`✅ Removed from custom drawer ${drawerId}: ${contentId} (production_id=${assignment.productionId})`);
+      await refetchAssignments();
     } catch (error) {
       console.error('Error removing from custom drawer:', error);
+    } finally {
+      writeLock.current = false;
     }
-  }, [user, assignments]);
+  }, [user, assignments, refetchAssignments]);
 
   const isInCustomDrawer = (contentId: string, drawerId: string): boolean => {
     return assignments.find(a => a.contentId === contentId)?.customDrawers.includes(drawerId) || false;
@@ -474,69 +479,80 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
     if (!user) return;
 
     const assignment = assignments.find(a => a.contentId === contentId);
-    if (!assignment || assignment.defaultDrawer !== 'watched') return;
+    if (!assignment) {
+      console.warn(`setContentRating: no assignment found for ${contentId}`);
+      return;
+    }
+    
+    // Rating is only saved on the 'watched' drawer row
+    if (assignment.defaultDrawer !== 'watched') {
+      console.warn(`setContentRating: content ${contentId} is not in 'watched' drawer (currently in '${assignment.defaultDrawer}')`);
+      return;
+    }
 
-    const productionType = assignment.content.type === 'movie' ? 'movie' : 'tv';
-
+    writeLock.current = true;
     try {
-      const { error } = await supabase
+      const { error, count } = await supabase
         .from('user_drawer_assignments')
         .update({ rating } as any)
         .eq('user_id', user.id)
-        .eq('production_id', contentId)
-        .eq('production_type', productionType)
+        .eq('production_id', assignment.productionId)
+        .eq('production_type', assignment.productionType)
         .eq('drawer_id', 'watched');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error setting rating:', error);
+        throw error;
+      }
 
-      // Update local state
-      setAssignments(prev => 
-        prev.map(a => 
-          a.contentId === contentId 
-            ? { ...a, rating }
-            : a
-        )
-      );
+      console.log(`✅ Rating set: ${contentId} = ${rating} (production_id=${assignment.productionId})`);
+      await refetchAssignments();
     } catch (error) {
       console.error('Error setting rating:', error);
+    } finally {
+      writeLock.current = false;
     }
-  }, [user, assignments]);
+  }, [user, assignments, refetchAssignments]);
 
   const setContentComment = useCallback(async (contentId: string, comment: string) => {
     if (!user) return;
 
     const assignment = assignments.find(a => a.contentId === contentId);
-    if (!assignment) return;
+    if (!assignment) {
+      console.warn(`setContentComment: no assignment found for ${contentId}`);
+      return;
+    }
 
-    // Encontrar qual gaveta usar para salvar o comentário
+    // Save comment on the watched drawer row if it exists, otherwise the current default drawer
     const drawerId = assignment.defaultDrawer || assignment.customDrawers[0];
-    if (!drawerId) return;
+    if (!drawerId) {
+      console.warn(`setContentComment: no drawer found for ${contentId}`);
+      return;
+    }
 
-    const productionType = assignment.content.type === 'movie' ? 'movie' : 'tv';
-
+    writeLock.current = true;
     try {
       const { error } = await supabase
         .from('user_drawer_assignments')
         .update({ comment } as any)
         .eq('user_id', user.id)
-        .eq('production_id', contentId)
-        .eq('production_type', productionType)
+        .eq('production_id', assignment.productionId)
+        .eq('production_type', assignment.productionType)
         .eq('drawer_id', drawerId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error setting comment:', error);
+        throw error;
+      }
 
-      // Update local state
-      setAssignments(prev => 
-        prev.map(a => 
-          a.contentId === contentId 
-            ? { ...a, comment }
-            : a
-        )
-      );
+      console.log(`✅ Comment set for ${contentId} in drawer ${drawerId} (production_id=${assignment.productionId})`);
+      await refetchAssignments();
     } catch (error) {
       console.error('Error setting comment:', error);
+    } finally {
+      writeLock.current = false;
     }
-  }, [user, assignments]);
+  }, [user, assignments, refetchAssignments]);
 
   const getDrawerContents = (drawerId: string): Content[] => {
     if (isDefaultDrawer(drawerId)) {
@@ -581,7 +597,6 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
     if (!user) return;
 
     try {
-      // Delete drawer
       const { error: drawerError } = await supabase
         .from('user_custom_drawers')
         .delete()
@@ -590,25 +605,18 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
 
       if (drawerError) throw drawerError;
 
-      // Delete all assignments to this drawer
       await supabase
         .from('user_drawer_assignments')
         .delete()
         .eq('user_id', user.id)
         .eq('drawer_id', drawerId);
 
-      // Update local state
       setCustomDrawers(prev => prev.filter(d => d.id !== drawerId));
-      setAssignments(prev => 
-        prev.map(a => ({
-          ...a,
-          customDrawers: a.customDrawers.filter(id => id !== drawerId)
-        })).filter(a => a.defaultDrawer !== null || a.customDrawers.length > 0)
-      );
+      await refetchAssignments();
     } catch (error) {
       console.error('Error removing custom drawer:', error);
     }
-  }, [user]);
+  }, [user, refetchAssignments]);
 
   return (
     <DrawerContext.Provider value={{
