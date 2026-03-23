@@ -161,7 +161,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
         
         const director = creditsData.crew.find(c => c.job === 'Director');
         const newContent: Content = {
-          id: `tmdb-movie-${details.id}`,
+          id: `movie-${details.id}`,
           type: 'movie',
           title: details.title,
           originalTitle: details.title,
@@ -194,7 +194,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
         ]);
         
         const newContent: Content = {
-          id: `tmdb-tv-${details.id}`,
+          id: `tv-${details.id}`,
           type: 'series',
           title: details.name,
           originalTitle: details.name,

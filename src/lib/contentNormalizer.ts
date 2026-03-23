@@ -101,6 +101,37 @@ export const extractTmdbInfoFromId = (
   return null;
 };
 
+const normalizeContentId = (
+  rawId: unknown,
+  productionId: string | undefined,
+  mediaType: MediaType,
+): string => {
+  const rawString = toStringValue(rawId);
+  const parsedFromRawId = extractTmdbInfoFromId(rawString);
+  if (parsedFromRawId) {
+    return `${parsedFromRawId.mediaType}-${parsedFromRawId.tmdbId}`;
+  }
+
+  const parsedFromProductionId = extractTmdbInfoFromId(productionId);
+  if (parsedFromProductionId) {
+    return `${parsedFromProductionId.mediaType}-${parsedFromProductionId.tmdbId}`;
+  }
+
+  if (typeof rawId === "number") {
+    return `${mediaType}-${rawId}`;
+  }
+
+  if (rawString && /^\d+$/.test(rawString)) {
+    return `${mediaType}-${rawString}`;
+  }
+
+  if (productionId && /^\d+$/.test(productionId)) {
+    return `${mediaType}-${productionId}`;
+  }
+
+  return rawString || productionId || `${mediaType}-${Date.now()}`;
+};
+
 export function normalizeStoredContent(
   rawData: unknown,
   options?: { productionId?: string; productionType?: string },
@@ -108,17 +139,7 @@ export function normalizeStoredContent(
   const data = isRecord(rawData) ? rawData : {};
 
   const mediaType = normalizeMediaType(data.type, options?.productionType);
-  const parsedFromRawId = extractTmdbInfoFromId(data.id);
-  const parsedFromProductionId = extractTmdbInfoFromId(options?.productionId);
-  const numericId =
-    typeof data.id === "number"
-      ? data.id
-      : parsedFromRawId?.tmdbId || parsedFromProductionId?.tmdbId;
-
-  const normalizedId =
-    toStringValue(data.id) ||
-    options?.productionId ||
-    (numericId ? `${mediaType}-${numericId}` : `${mediaType}-${Date.now()}`);
+  const normalizedId = normalizeContentId(data.id, options?.productionId, mediaType);
 
   const watchProviders = isRecord(data.watch_providers)
     ? (data.watch_providers as TMDBWatchProvidersResult)
