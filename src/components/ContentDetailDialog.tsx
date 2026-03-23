@@ -128,10 +128,23 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
 
   if (!content) return null;
 
-  const handlePersonClick = (person: PersonInfo) => {
-    if (person.id) {
+  const handlePersonClick = async (person: PersonInfo | null, fallbackName?: string) => {
+    if (person?.id) {
       setSelectedPerson({ id: person.id, name: person.name });
       setIsPersonDialogOpen(true);
+      return;
+    }
+    // Fallback: search by name on-demand if person info wasn't pre-loaded
+    const nameToSearch = fallbackName || person?.name;
+    if (!nameToSearch) return;
+    try {
+      const results = await searchPerson(nameToSearch);
+      if (results.length > 0) {
+        setSelectedPerson({ id: results[0].id, name: results[0].name });
+        setIsPersonDialogOpen(true);
+      }
+    } catch (err) {
+      console.error('Error searching person:', err);
     }
   };
 
