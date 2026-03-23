@@ -223,6 +223,7 @@ export default function Auth() {
     setEmail("");
     setPassword("");
     setUsername("");
+    setHandle("");
   };
 
   if (checkingSession) {
