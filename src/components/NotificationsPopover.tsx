@@ -61,8 +61,14 @@ export function NotificationsPopover() {
     }
   };
 
+  const handleOpenChange = (open: boolean) => {
+    if (open && unreadCount > 0) {
+      markAllAsRead.mutate();
+    }
+  };
+
   return (
-    <Popover>
+    <Popover onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
