@@ -72,6 +72,10 @@ export function PersonDetailDialog({
           <div className="flex items-center justify-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
+        ) : error ? (
+          <div className="flex items-center justify-center h-64 text-sm text-muted-foreground">
+            {error}
+          </div>
         ) : (
           <div className="flex flex-col h-full">
             {/* Header com foto e info */}
