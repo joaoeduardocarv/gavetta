@@ -158,13 +158,18 @@ export function getTMDBProfileUrl(path: string | null): string {
 
 async function callTMDBFunction<T>(action: string, params: Record<string, string> = {}): Promise<T> {
   const queryParams = new URLSearchParams({ action, ...params });
-  
+
+  // Get the user's session token for authenticated edge function calls
+  const { supabase } = await import('@/integrations/supabase/client');
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
   const response = await fetch(
     `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tmdb?${queryParams}`,
     {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     }
