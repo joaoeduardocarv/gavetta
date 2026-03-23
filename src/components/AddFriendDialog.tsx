@@ -101,7 +101,7 @@ export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar por username..."
+                placeholder="Buscar por @usuario..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSearch()}
