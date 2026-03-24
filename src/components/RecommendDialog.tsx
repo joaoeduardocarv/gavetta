@@ -43,7 +43,7 @@ export function RecommendDialog({ content, open, onOpenChange }: RecommendDialog
     try {
       // Build production_data from content
       const productionData = {
-        id: content.tmdbId || content.id,
+        id: content.id,
         title: content.title,
         poster_path: content.posterUrl?.includes("image.tmdb.org")
           ? content.posterUrl.replace("https://image.tmdb.org/t/p/w500", "")
@@ -56,7 +56,7 @@ export function RecommendDialog({ content, open, onOpenChange }: RecommendDialog
       const { error: recError } = await supabase.from("recommendations").insert({
         sender_id: user.id,
         receiver_id: selectedFriend.id,
-        production_id: String(content.tmdbId || content.id),
+        production_id: content.id,
         production_type: content.type === "movie" ? "movie" : "tv",
         production_data: productionData,
         comment: comment.trim() || null,
