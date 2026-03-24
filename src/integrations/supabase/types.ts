@@ -107,6 +107,42 @@ export type Database = {
         }
         Relationships: []
       }
+      recommendations: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          is_read: boolean
+          production_data: Json
+          production_id: string
+          production_type: string
+          receiver_id: string
+          sender_id: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          production_data: Json
+          production_id: string
+          production_type: string
+          receiver_id: string
+          sender_id: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          production_data?: Json
+          production_id?: string
+          production_type?: string
+          receiver_id?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
       shared_drawer_members: {
         Row: {
           created_at: string
