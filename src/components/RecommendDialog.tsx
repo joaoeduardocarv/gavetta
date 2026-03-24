@@ -4,17 +4,12 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Search, Send, Check } from "lucide-react";
+import { ArrowLeft, Search, Send, Check, Loader2 } from "lucide-react";
 import { Content } from "@/lib/mockData";
 import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
-
-interface Friend {
-  id: number;
-  name: string;
-  username: string;
-  avatar: string;
-}
+import { useFriendships, FriendProfile } from "@/hooks/useFriendships";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 interface RecommendDialogProps {
   content: Content | null;
@@ -22,50 +17,89 @@ interface RecommendDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-// Mock friends - em produção viria do backend
-const mockFriends: Friend[] = [
-  { id: 1, name: "Ana Silva", username: "@anasilva", avatar: "" },
-  { id: 2, name: "João Santos", username: "@joaosantos", avatar: "" },
-  { id: 3, name: "Maria Costa", username: "@mariacosta", avatar: "" },
-  { id: 4, name: "Pedro Lima", username: "@pedrolima", avatar: "" },
-  { id: 5, name: "Carla Souza", username: "@carlasouza", avatar: "" },
-];
-
 export function RecommendDialog({ content, open, onOpenChange }: RecommendDialogProps) {
   const { toast } = useToast();
-  const [selectedFriend, setSelectedFriend] = useState<Friend | null>(null);
+  const { user } = useAuth();
+  const { friends, friendsLoading } = useFriendships();
+  const [selectedFriend, setSelectedFriend] = useState<FriendProfile | null>(null);
   const [comment, setComment] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [sending, setSending] = useState(false);
 
-  const filteredFriends = mockFriends.filter(
+  const filteredFriends = friends.filter(
     (friend) =>
-      friend.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      friend.username.toLowerCase().includes(searchQuery.toLowerCase())
+      (friend.username || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
-
-  const handleSelectFriend = (friend: Friend) => {
-    setSelectedFriend(friend);
-  };
 
   const handleBack = () => {
     setSelectedFriend(null);
     setComment("");
   };
 
-  const handleSendRecommendation = () => {
-    if (!selectedFriend || !content) return;
+  const handleSendRecommendation = async () => {
+    if (!selectedFriend || !content || !user?.id) return;
 
-    // Aqui seria a lógica para enviar a indicação ao backend
-    toast({
-      title: "Indicação enviada!",
-      description: `Você indicou "${content.title}" para ${selectedFriend.name}.`,
-    });
+    setSending(true);
+    try {
+      // Build production_data from content
+      const productionData = {
+        id: content.tmdbId || content.id,
+        title: content.title,
+        poster_path: content.posterUrl?.includes("image.tmdb.org")
+          ? content.posterUrl.replace("https://image.tmdb.org/t/p/w500", "")
+          : content.posterUrl,
+        media_type: content.type === "movie" ? "movie" : "tv",
+        release_date: content.releaseDate,
+      };
 
-    // Reset e fechar
-    setSelectedFriend(null);
-    setComment("");
-    setSearchQuery("");
-    onOpenChange(false);
+      // Insert recommendation
+      const { error: recError } = await supabase.from("recommendations").insert({
+        sender_id: user.id,
+        receiver_id: selectedFriend.id,
+        production_id: String(content.tmdbId || content.id),
+        production_type: content.type === "movie" ? "movie" : "tv",
+        production_data: productionData,
+        comment: comment.trim() || null,
+      });
+
+      if (recError) throw recError;
+
+      // Get sender profile for notification message
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("username")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      // Send notification
+      await supabase.from("notifications").insert({
+        user_id: selectedFriend.id,
+        type: "recommendation",
+        title: "Nova indicação!",
+        message: `${profile?.username || "Alguém"} indicou "${content.title}" para você${comment.trim() ? `: "${comment.trim()}"` : ""}`,
+        related_user_id: user.id,
+        related_content_id: String(content.tmdbId || content.id),
+      });
+
+      toast({
+        title: "Indicação enviada!",
+        description: `Você indicou "${content.title}" para ${selectedFriend.username || "seu amigo"}.`,
+      });
+
+      // Reset and close
+      setSelectedFriend(null);
+      setComment("");
+      setSearchQuery("");
+      onOpenChange(false);
+    } catch (error: any) {
+      toast({
+        title: "Erro ao enviar indicação",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSending(false);
+    }
   };
 
   const handleClose = (isOpen: boolean) => {
@@ -94,7 +128,7 @@ export function RecommendDialog({ content, open, onOpenChange }: RecommendDialog
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             )}
-            {selectedFriend ? `Indicar para ${selectedFriend.name}` : "Indicar para um amigo"}
+            {selectedFriend ? `Indicar para ${selectedFriend.username || "amigo"}` : "Indicar para um amigo"}
           </DialogTitle>
         </DialogHeader>
 
@@ -113,7 +147,6 @@ export function RecommendDialog({ content, open, onOpenChange }: RecommendDialog
         </div>
 
         {!selectedFriend ? (
-          /* Lista de amigos */
           <div className="space-y-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -126,26 +159,31 @@ export function RecommendDialog({ content, open, onOpenChange }: RecommendDialog
             </div>
 
             <div className="space-y-2 max-h-64 overflow-y-auto">
-              {filteredFriends.length === 0 ? (
+              {friendsLoading ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : filteredFriends.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-4">
-                  Nenhum amigo encontrado
+                  {friends.length === 0
+                    ? "Você ainda não tem amigos adicionados"
+                    : "Nenhum amigo encontrado"}
                 </p>
               ) : (
                 filteredFriends.map((friend) => (
                   <button
                     key={friend.id}
-                    onClick={() => handleSelectFriend(friend)}
+                    onClick={() => setSelectedFriend(friend)}
                     className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-accent/10 transition-colors text-left"
                   >
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src={friend.avatar} alt={friend.name} />
+                      <AvatarImage src={friend.avatar_url || ""} alt={friend.username || ""} />
                       <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                        {friend.name.split(" ").map((n) => n[0]).join("")}
+                        {(friend.username || "?").slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm">{friend.name}</p>
-                      <p className="text-xs text-muted-foreground">{friend.username}</p>
+                      <p className="font-medium text-sm">{friend.username || "Usuário"}</p>
                     </div>
                   </button>
                 ))
@@ -153,18 +191,16 @@ export function RecommendDialog({ content, open, onOpenChange }: RecommendDialog
             </div>
           </div>
         ) : (
-          /* Tela de comentário */
           <div className="space-y-4">
             <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-lg border border-primary/20">
               <Avatar className="h-10 w-10">
-                <AvatarImage src={selectedFriend.avatar} alt={selectedFriend.name} />
+                <AvatarImage src={selectedFriend.avatar_url || ""} alt={selectedFriend.username || ""} />
                 <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                  {selectedFriend.name.split(" ").map((n) => n[0]).join("")}
+                  {(selectedFriend.username || "?").slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1">
-                <p className="font-medium text-sm">{selectedFriend.name}</p>
-                <p className="text-xs text-muted-foreground">{selectedFriend.username}</p>
+                <p className="font-medium text-sm">{selectedFriend.username || "Usuário"}</p>
               </div>
               <Check className="h-5 w-5 text-primary" />
             </div>
@@ -183,8 +219,8 @@ export function RecommendDialog({ content, open, onOpenChange }: RecommendDialog
               </p>
             </div>
 
-            <Button className="w-full gap-2" onClick={handleSendRecommendation}>
-              <Send className="h-4 w-4" />
+            <Button className="w-full gap-2" onClick={handleSendRecommendation} disabled={sending}>
+              {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               Enviar Indicação
             </Button>
           </div>
