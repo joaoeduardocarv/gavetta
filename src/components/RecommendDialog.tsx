@@ -78,7 +78,7 @@ export function RecommendDialog({ content, open, onOpenChange }: RecommendDialog
         title: "Nova indicação!",
         message: `${profile?.username || "Alguém"} indicou "${content.title}" para você${comment.trim() ? `: "${comment.trim()}"` : ""}`,
         related_user_id: user.id,
-        related_content_id: String(content.tmdbId || content.id),
+        related_content_id: content.id,
       });
 
       toast({
