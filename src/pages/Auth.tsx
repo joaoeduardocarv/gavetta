@@ -153,6 +153,7 @@ export default function Auth() {
         data: {
           username: username.trim(),
           handle: handle.trim().toLowerCase(),
+          avatar_url: selectedAvatar,
         },
       },
     });
