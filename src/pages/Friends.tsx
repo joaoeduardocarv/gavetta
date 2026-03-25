@@ -13,6 +13,7 @@ import { useFriendships, FriendProfile } from "@/hooks/useFriendships";
 import { AddFriendDialog } from "@/components/AddFriendDialog";
 import { FriendRequestsCard } from "@/components/FriendRequestsCard";
 import { ActivityFeed } from "@/components/ActivityFeed";
+import { resolveAvatarSrc } from "@/components/AvatarPickerDialog";
 
 export default function Friends() {
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
