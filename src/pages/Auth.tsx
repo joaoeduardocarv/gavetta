@@ -123,6 +123,15 @@ export default function Auth() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!selectedAvatar) {
+      toast({
+        variant: "destructive",
+        title: "Escolha um avatar",
+        description: "Selecione um avatar para continuar.",
+      });
+      return;
+    }
+
     const validation = signupSchema.safeParse({ email, password, username, handle });
     if (!validation.success) {
       toast({
