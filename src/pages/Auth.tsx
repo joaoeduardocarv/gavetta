@@ -12,6 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, User, AtSign, Loader2, CheckCircle2 } from "lucide-react";
 import gavetaLogo from "@/assets/gavettalogo.png";
 import { z } from "zod";
+import { allAvatars } from "@/components/AvatarPickerDialog";
+import { cn } from "@/lib/utils";
 
 const loginSchema = z.object({
   email: z.string().trim().email({ message: "Email inválido" }),
