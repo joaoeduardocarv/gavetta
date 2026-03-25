@@ -38,6 +38,7 @@ export default function Auth() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmationEmail, setConfirmationEmail] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [selectedAvatar, setSelectedAvatar] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
