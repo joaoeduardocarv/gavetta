@@ -147,19 +147,27 @@ export default function Auth() {
     setLoading(false);
 
     if (error) {
+      let description = error.message;
       if (error.message.includes("already registered")) {
-        toast({
-          variant: "destructive",
-          title: "Erro ao cadastrar",
-          description: "Este email já está cadastrado. Tente fazer login.",
-        });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Erro ao cadastrar",
-          description: error.message,
-        });
+        description = "Este email já está cadastrado. Tente fazer login.";
+      } else if (error.message.includes("Invalid username")) {
+        description = "Nome inválido: use apenas letras, números, espaços, _ e -. Mínimo 2, máximo 50 caracteres.";
+      } else if (error.message.includes("Invalid handle")) {
+        description = "@ inválido: use apenas letras minúsculas, números e _. Mínimo 3, máximo 30 caracteres.";
+      } else if (error.message.includes("Invalid avatar_url")) {
+        description = "URL do avatar inválida.";
+      } else if (error.message.includes("Password should be at least")) {
+        description = "A senha deve ter pelo menos 6 caracteres.";
+      } else if (error.message.includes("Unable to validate email")) {
+        description = "Email inválido. Verifique e tente novamente.";
+      } else if (error.message.includes("duplicate key") && error.message.includes("handle")) {
+        description = "Este @ já está em uso. Escolha outro nome de usuário.";
       }
+      toast({
+        variant: "destructive",
+        title: "Erro ao cadastrar",
+        description,
+      });
     } else if (data.user && !data.session) {
       // User created but needs email confirmation
       setConfirmationEmail(email);
