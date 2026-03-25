@@ -460,6 +460,33 @@ export default function Auth() {
                     </div>
                   </div>
 
+                  {/* Avatar Picker */}
+                  <div className="space-y-2">
+                    <Label>Escolha seu avatar <span className="text-destructive">*</span></Label>
+                    <div className="grid grid-cols-6 gap-2 max-h-[140px] overflow-y-auto p-1">
+                      {allAvatars.map((avatar) => (
+                        <button
+                          key={avatar.id}
+                          type="button"
+                          onClick={() => setSelectedAvatar(avatar.id)}
+                          disabled={isAnyLoading}
+                          className={cn(
+                            "aspect-square rounded-full overflow-hidden border-2 transition-all duration-150 hover:scale-105",
+                            selectedAvatar === avatar.id
+                              ? "border-primary ring-2 ring-primary/50"
+                              : "border-transparent hover:border-muted-foreground/30"
+                          )}
+                          title={avatar.name}
+                        >
+                          <img src={avatar.src} alt={avatar.name} className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                    {!selectedAvatar && (
+                      <p className="text-xs text-muted-foreground">Toque em um personagem para selecioná-lo.</p>
+                    )}
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Senha</Label>
                     <div className="relative">
