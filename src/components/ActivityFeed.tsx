@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Star, Film, Tv, Activity } from "lucide-react";
+import { resolveAvatarSrc } from "@/components/AvatarPickerDialog";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState } from "react";
@@ -105,7 +106,7 @@ function ActivityCard({
     >
       {/* User Avatar */}
       <Avatar className="h-10 w-10 flex-shrink-0">
-        <AvatarImage src={activity.avatar_url || ""} alt={activity.username || ""} />
+        <AvatarImage src={resolveAvatarSrc(activity.avatar_url)} alt={activity.username || ""} />
         <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
           {activity.username?.slice(0, 2).toUpperCase() || "??"}
         </AvatarFallback>

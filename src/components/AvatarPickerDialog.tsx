@@ -75,6 +75,13 @@ export function getAvatarById(avatarId: string): AvatarOption | undefined {
   return undefined;
 }
 
+/** Resolves an avatar_url (which may be an avatar id like "joker" or a full URL) to an image src */
+export function resolveAvatarSrc(avatarUrl: string | null | undefined): string {
+  if (!avatarUrl) return "";
+  const avatar = getAvatarById(avatarUrl);
+  return avatar?.src || "";
+}
+
 function getCroppedBlob(image: HTMLImageElement, crop: Crop, zoom: number): Promise<Blob> {
   const canvas = document.createElement("canvas");
   const scaleX = image.naturalWidth / image.width;

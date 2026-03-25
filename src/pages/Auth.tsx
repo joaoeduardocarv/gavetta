@@ -12,6 +12,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, User, AtSign, Loader2, CheckCircle2 } from "lucide-react";
 import gavetaLogo from "@/assets/gavettalogo.png";
 import { z } from "zod";
+import { allAvatars } from "@/components/AvatarPickerDialog";
+import { cn } from "@/lib/utils";
 
 const loginSchema = z.object({
   email: z.string().trim().email({ message: "Email inválido" }),
@@ -36,6 +38,7 @@ export default function Auth() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmationEmail, setConfirmationEmail] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [selectedAvatar, setSelectedAvatar] = useState("");
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
@@ -120,6 +123,15 @@ export default function Auth() {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!selectedAvatar) {
+      toast({
+        variant: "destructive",
+        title: "Escolha um avatar",
+        description: "Selecione um avatar para continuar.",
+      });
+      return;
+    }
+
     const validation = signupSchema.safeParse({ email, password, username, handle });
     if (!validation.success) {
       toast({
@@ -141,6 +153,7 @@ export default function Auth() {
         data: {
           username: username.trim(),
           handle: handle.trim().toLowerCase(),
+          avatar_url: selectedAvatar,
         },
       },
     });
@@ -445,6 +458,33 @@ export default function Auth() {
                         disabled={isAnyLoading}
                       />
                     </div>
+                  </div>
+
+                  {/* Avatar Picker */}
+                  <div className="space-y-2">
+                    <Label>Escolha seu avatar <span className="text-destructive">*</span></Label>
+                    <div className="grid grid-cols-6 gap-2 max-h-[140px] overflow-y-auto p-1">
+                      {allAvatars.map((avatar) => (
+                        <button
+                          key={avatar.id}
+                          type="button"
+                          onClick={() => setSelectedAvatar(avatar.id)}
+                          disabled={isAnyLoading}
+                          className={cn(
+                            "aspect-square rounded-full overflow-hidden border-2 transition-all duration-150 hover:scale-105",
+                            selectedAvatar === avatar.id
+                              ? "border-primary ring-2 ring-primary/50"
+                              : "border-transparent hover:border-muted-foreground/30"
+                          )}
+                          title={avatar.name}
+                        >
+                          <img src={avatar.src} alt={avatar.name} className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                    {!selectedAvatar && (
+                      <p className="text-xs text-muted-foreground">Toque em um personagem para selecioná-lo.</p>
+                    )}
                   </div>
 
                   <div className="space-y-2">
