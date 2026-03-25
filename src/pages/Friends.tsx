@@ -176,7 +176,7 @@ function FriendCard({
   return (
     <div className="flex items-center gap-3 p-4 bg-card rounded-lg border border-border hover:bg-accent/5 hover:border-accent/50 transition-all duration-200">
       <Avatar className="h-12 w-12 flex-shrink-0">
-        <AvatarImage src={friend.avatar_url || ""} alt={friend.username || ""} />
+        <AvatarImage src={resolveAvatarSrc(friend.avatar_url)} alt={friend.username || ""} />
         <AvatarFallback className="bg-primary/10 text-primary font-semibold">
           {friend.username?.slice(0, 2).toUpperCase() || "??"}
         </AvatarFallback>

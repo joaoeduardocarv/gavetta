@@ -134,7 +134,7 @@ export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
                   className="flex items-center gap-3 p-3 rounded-lg border bg-card"
                 >
                   <Avatar className="h-10 w-10">
-                    <AvatarImage src={resultUser.avatar_url || ""} alt={resultUser.username || ""} />
+                    <AvatarImage src={resolveAvatarSrc(resultUser.avatar_url)} alt={resultUser.username || ""} />
                     <AvatarFallback className="bg-primary/10 text-primary text-xs">
                       {resultUser.username?.slice(0, 2).toUpperCase() || "??"}
                     </AvatarFallback>
