@@ -3,6 +3,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Star, Film, Tv, Activity } from "lucide-react";
+import { resolveAvatarSrc } from "@/components/AvatarPickerDialog";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useState } from "react";
