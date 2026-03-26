@@ -53,7 +53,11 @@ export function useStoryShare() {
     ctx.fillRect(0, 0, STORY_WIDTH, STORY_HEIGHT);
 
     // Carregar pôster via fetch (evita CORS)
-    const posterUrl = content.posterUrl;
+    let posterUrl = content.posterUrl;
+    // Resolve TMDB relative paths to full URLs
+    if (posterUrl && posterUrl.startsWith("/")) {
+      posterUrl = getTMDBImageUrl(posterUrl, "w780");
+    }
     if (posterUrl) {
       const posterImg = await fetchImageAsBlob(posterUrl);
       if (posterImg) {
