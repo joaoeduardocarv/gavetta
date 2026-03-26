@@ -6,10 +6,11 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Share2, Lock, Star, Film, Tv, Eye, Clock, Trophy, Loader2, User, CheckCircle } from "lucide-react";
+import { Share2, Lock, Star, Film, Tv, Eye, Clock, Trophy, Loader2, User, CheckCircle, UserPlus } from "lucide-react";
 import { getTMDBImageUrl } from "@/lib/tmdb";
 import { useToast } from "@/hooks/use-toast";
 import gavetaIcon from "@/assets/gaveta-icon.png";
+import gavetaLogo from "@/assets/gavettalogo.png";
 
 interface ProfileData {
   id: string;
