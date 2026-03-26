@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { getTMDBImageUrl } from "@/lib/tmdb";
 import gavetaLogo from "@/assets/gavettalogo.png";
 
 interface StoryShareContent {
