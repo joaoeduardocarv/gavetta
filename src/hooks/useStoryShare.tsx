@@ -163,8 +163,12 @@ export function useStoryShare() {
     ctx.fillStyle = sepGradient;
     ctx.fillRect(STORY_WIDTH / 2 - 100, separatorY, 200, 2);
 
-    // Link / CTA na parte inferior
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    // CTA na parte inferior
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText('Crie sua conta grátis!', STORY_WIDTH / 2, STORY_HEIGHT - 170);
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
     ctx.font = '500 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.fillText('gavetta.lovable.app', STORY_WIDTH / 2, STORY_HEIGHT - 120);
 
