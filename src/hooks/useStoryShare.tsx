@@ -56,7 +56,7 @@ export function useStoryShare() {
     let posterUrl = content.posterUrl;
     // Resolve TMDB relative paths to full URLs
     if (posterUrl && posterUrl.startsWith("/")) {
-      posterUrl = getTMDBImageUrl(posterUrl, "w780");
+      posterUrl = getTMDBImageUrl(posterUrl, "w500");
     }
     if (posterUrl) {
       const posterImg = await fetchImageAsBlob(posterUrl);
