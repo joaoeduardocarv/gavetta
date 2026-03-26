@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { getTMDBImageUrl } from "@/lib/tmdb";
 import gavetaLogo from "@/assets/gavettalogo.png";
 
 interface StoryShareContent {
@@ -52,7 +53,11 @@ export function useStoryShare() {
     ctx.fillRect(0, 0, STORY_WIDTH, STORY_HEIGHT);
 
     // Carregar pôster via fetch (evita CORS)
-    const posterUrl = content.posterUrl;
+    let posterUrl = content.posterUrl;
+    // Resolve TMDB relative paths to full URLs
+    if (posterUrl && posterUrl.startsWith("/")) {
+      posterUrl = getTMDBImageUrl(posterUrl, "w500");
+    }
     if (posterUrl) {
       const posterImg = await fetchImageAsBlob(posterUrl);
       if (posterImg) {
