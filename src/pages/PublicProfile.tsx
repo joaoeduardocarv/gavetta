@@ -151,10 +151,15 @@ export default function PublicProfile() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Top bar with logo */}
+      <div className="flex items-center justify-center py-4 border-b border-border/50">
+        <img src={gavetaLogo} alt="Gavetta" className="h-7 dark:brightness-0 dark:invert" />
+      </div>
+
       {/* Hero header */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/20 via-primary/5 to-background" />
-        <div className="relative px-6 pt-10 pb-6 flex flex-col items-center text-center">
+        <div className="relative px-6 pt-8 pb-6 flex flex-col items-center text-center">
           <Avatar className="h-24 w-24 ring-4 ring-primary/30 shadow-lg">
             {avatarData ? (
               <AvatarImage src={avatarData.src} alt={avatarData.name} className="object-cover" />
@@ -164,10 +169,16 @@ export default function PublicProfile() {
           </Avatar>
           <h1 className="mt-4 text-2xl font-bold text-foreground">{profile.username}</h1>
           <p className="text-sm text-muted-foreground mt-1">Perfil público no Gavetta</p>
-          <Button variant="outline" size="sm" className="mt-4 gap-2" onClick={handleShare}>
-            <Share2 className="h-4 w-4" />
-            Compartilhar perfil
-          </Button>
+          <div className="flex gap-2 mt-4">
+            <Button size="sm" className="gap-2" onClick={() => window.open("https://gavetta.lovable.app", "_blank")}>
+              <UserPlus className="h-4 w-4" />
+              Adicionar aos amigos
+            </Button>
+            <Button variant="outline" size="sm" className="gap-2" onClick={handleShare}>
+              <Share2 className="h-4 w-4" />
+              Compartilhar
+            </Button>
+          </div>
         </div>
       </div>
 
