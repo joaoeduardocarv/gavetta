@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -64,8 +66,19 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
   } = useDrawers();
   
   const [comment, setComment] = useState("");
+  const [userHandle, setUserHandle] = useState<string | null>(null);
   const [isRecommendDialogOpen, setIsRecommendDialogOpen] = useState(false);
   const [isDrawerMenuOpen, setIsDrawerMenuOpen] = useState(false);
+
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user?.id) {
+      supabase.from('profiles').select('handle').eq('id', user.id).single().then(({ data }) => {
+        setUserHandle(data?.handle ?? null);
+      });
+    }
+  }, [user?.id]);
   
   // Estado para pessoa selecionada
   const [selectedPerson, setSelectedPerson] = useState<{ id: number; name: string } | null>(null);
@@ -639,6 +652,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                   backdropUrl: content.backdropUrl,
                   type: content.type === 'movie' ? 'movie' : 'series',
                   rating: contentDrawers.rating,
+                  userHandle: userHandle,
                 })}
                 disabled={isGeneratingStory}
               >

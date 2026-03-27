@@ -9,6 +9,7 @@ interface StoryShareContent {
   backdropUrl?: string;
   type: 'movie' | 'series';
   rating?: number | null;
+  userHandle?: string | null;
 }
 
 export function useStoryShare() {
@@ -208,6 +209,13 @@ export function useStoryShare() {
     sepGradient.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = sepGradient;
     ctx.fillRect(STORY_WIDTH / 2 - 100, separatorY, 200, 2);
+
+    // Handle do usuário
+    if (content.userHandle) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      ctx.font = '500 30px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.fillText(`@${content.userHandle}`, STORY_WIDTH / 2, separatorY + 50);
+    }
 
     // CTA na parte inferior
     ctx.fillStyle = '#ffffff';
