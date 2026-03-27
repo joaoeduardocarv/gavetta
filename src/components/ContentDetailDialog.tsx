@@ -652,6 +652,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                   backdropUrl: content.backdropUrl,
                   type: content.type === 'movie' ? 'movie' : 'series',
                   rating: contentDrawers.rating,
+                  userHandle: userHandle,
                 })}
                 disabled={isGeneratingStory}
               >
