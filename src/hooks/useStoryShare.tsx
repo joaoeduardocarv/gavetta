@@ -8,6 +8,7 @@ interface StoryShareContent {
   posterUrl?: string;
   backdropUrl?: string;
   type: 'movie' | 'series';
+  rating?: number | null;
 }
 
 export function useStoryShare() {
