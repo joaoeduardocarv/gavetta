@@ -66,8 +66,19 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
   } = useDrawers();
   
   const [comment, setComment] = useState("");
+  const [userHandle, setUserHandle] = useState<string | null>(null);
   const [isRecommendDialogOpen, setIsRecommendDialogOpen] = useState(false);
   const [isDrawerMenuOpen, setIsDrawerMenuOpen] = useState(false);
+
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user?.id) {
+      supabase.from('profiles').select('handle').eq('id', user.id).single().then(({ data }) => {
+        setUserHandle(data?.handle ?? null);
+      });
+    }
+  }, [user?.id]);
   
   // Estado para pessoa selecionada
   const [selectedPerson, setSelectedPerson] = useState<{ id: number; name: string } | null>(null);
