@@ -8,6 +8,7 @@ interface StoryShareContent {
   posterUrl?: string;
   backdropUrl?: string;
   type: 'movie' | 'series';
+  rating?: number | null;
 }
 
 export function useStoryShare() {
@@ -122,6 +123,46 @@ export function useStoryShare() {
     ctx.font = '500 30px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     const typeLabel = content.type === 'movie' ? '🎬 Filme' : '📺 Série';
     ctx.fillText(typeLabel, STORY_WIDTH / 2, 230);
+
+    // Rating do usuário (se existir)
+    if (content.rating && content.rating > 0) {
+      const ratingY = 280;
+      const starSize = 28;
+      const starGap = 6;
+      const totalStars = 10;
+      const totalWidth = totalStars * starSize + (totalStars - 1) * starGap;
+      const startX = (STORY_WIDTH - totalWidth) / 2;
+
+      for (let i = 0; i < totalStars; i++) {
+        const cx = startX + i * (starSize + starGap) + starSize / 2;
+        const cy = ratingY;
+        if (i < content.rating) {
+          ctx.fillStyle = '#eab308'; // yellow-500
+        } else {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        }
+        // Draw star shape
+        const spikes = 5;
+        const outerRadius = starSize / 2;
+        const innerRadius = outerRadius * 0.4;
+        ctx.beginPath();
+        for (let j = 0; j < spikes * 2; j++) {
+          const radius = j % 2 === 0 ? outerRadius : innerRadius;
+          const angle = (Math.PI / 2 * -1) + (Math.PI / spikes) * j;
+          const x = cx + Math.cos(angle) * radius;
+          const y = cy + Math.sin(angle) * radius;
+          if (j === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Rating text
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.fillText(`${content.rating}/10`, STORY_WIDTH / 2, ratingY + 50);
+    }
 
     // Título
     ctx.fillStyle = '#ffffff';
