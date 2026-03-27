@@ -210,6 +210,13 @@ export function useStoryShare() {
     ctx.fillStyle = sepGradient;
     ctx.fillRect(STORY_WIDTH / 2 - 100, separatorY, 200, 2);
 
+    // Handle do usuário
+    if (content.userHandle) {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+      ctx.font = '500 30px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+      ctx.fillText(`@${content.userHandle}`, STORY_WIDTH / 2, separatorY + 50);
+    }
+
     // CTA na parte inferior
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
