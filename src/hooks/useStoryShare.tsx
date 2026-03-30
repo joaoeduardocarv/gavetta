@@ -139,6 +139,30 @@ export function useStoryShare() {
         const posterY = 350;
         const radius = 24;
 
+        // Glow colorido ao redor do pôster usando cor dominante do backdrop
+        const { r, g, b } = dominantColor;
+        ctx.save();
+        ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 0.7)`;
+        ctx.shadowBlur = 60;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.15)`;
+        // Desenhar rect arredondado para gerar o glow
+        const glowPad = 8;
+        ctx.beginPath();
+        ctx.moveTo(posterX - glowPad + radius, posterY - glowPad);
+        ctx.lineTo(posterX + posterWidth + glowPad - radius, posterY - glowPad);
+        ctx.quadraticCurveTo(posterX + posterWidth + glowPad, posterY - glowPad, posterX + posterWidth + glowPad, posterY - glowPad + radius);
+        ctx.lineTo(posterX + posterWidth + glowPad, posterY + posterHeight + glowPad - radius);
+        ctx.quadraticCurveTo(posterX + posterWidth + glowPad, posterY + posterHeight + glowPad, posterX + posterWidth + glowPad - radius, posterY + posterHeight + glowPad);
+        ctx.lineTo(posterX - glowPad + radius, posterY + posterHeight + glowPad);
+        ctx.quadraticCurveTo(posterX - glowPad, posterY + posterHeight + glowPad, posterX - glowPad, posterY + posterHeight + glowPad - radius);
+        ctx.lineTo(posterX - glowPad, posterY - glowPad + radius);
+        ctx.quadraticCurveTo(posterX - glowPad, posterY - glowPad, posterX - glowPad + radius, posterY - glowPad);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
         // Sombra do pôster
         ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
         ctx.shadowBlur = 40;
