@@ -46,13 +46,63 @@ export function useStoryShare() {
 
     if (!ctx) return null;
 
-    // Fundo gradiente escuro
+    // Fundo gradiente escuro base
     const gradient = ctx.createLinearGradient(0, 0, 0, STORY_HEIGHT);
     gradient.addColorStop(0, '#0f0f1a');
     gradient.addColorStop(0.5, '#1a1a2e');
     gradient.addColorStop(1, '#0d0d1a');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, STORY_WIDTH, STORY_HEIGHT);
+
+    // Backdrop com blur como fundo (glassmorphism)
+    let backdropUrl = content.backdropUrl;
+    if (backdropUrl && backdropUrl.startsWith("/")) {
+      backdropUrl = getTMDBImageUrl(backdropUrl, "w500");
+    }
+    if (backdropUrl) {
+      const backdropImg = await fetchImageAsBlob(backdropUrl);
+      if (backdropImg) {
+        // Criar canvas temporário para aplicar blur
+        const blurCanvas = document.createElement('canvas');
+        blurCanvas.width = STORY_WIDTH;
+        blurCanvas.height = STORY_HEIGHT;
+        const blurCtx = blurCanvas.getContext('2d');
+        if (blurCtx) {
+          // Desenhar backdrop cobrindo todo o canvas (cover)
+          const imgRatio = backdropImg.width / backdropImg.height;
+          const canvasRatio = STORY_WIDTH / STORY_HEIGHT;
+          let drawWidth, drawHeight, drawX, drawY;
+          if (imgRatio > canvasRatio) {
+            drawHeight = STORY_HEIGHT;
+            drawWidth = STORY_HEIGHT * imgRatio;
+            drawX = (STORY_WIDTH - drawWidth) / 2;
+            drawY = 0;
+          } else {
+            drawWidth = STORY_WIDTH;
+            drawHeight = STORY_WIDTH / imgRatio;
+            drawX = 0;
+            drawY = (STORY_HEIGHT - drawHeight) / 2;
+          }
+          blurCtx.filter = 'blur(40px) saturate(1.4)';
+          blurCtx.drawImage(backdropImg, drawX, drawY, drawWidth, drawHeight);
+          blurCtx.filter = 'none';
+
+          // Desenhar backdrop com blur no canvas principal
+          ctx.globalAlpha = 0.5;
+          ctx.drawImage(blurCanvas, 0, 0);
+          ctx.globalAlpha = 1.0;
+
+          // Overlay escuro para contraste
+          const overlayGradient = ctx.createLinearGradient(0, 0, 0, STORY_HEIGHT);
+          overlayGradient.addColorStop(0, 'rgba(15, 15, 26, 0.7)');
+          overlayGradient.addColorStop(0.4, 'rgba(26, 26, 46, 0.5)');
+          overlayGradient.addColorStop(0.7, 'rgba(26, 26, 46, 0.5)');
+          overlayGradient.addColorStop(1, 'rgba(13, 13, 26, 0.8)');
+          ctx.fillStyle = overlayGradient;
+          ctx.fillRect(0, 0, STORY_WIDTH, STORY_HEIGHT);
+        }
+      }
+    }
 
     // Carregar pôster via fetch (evita CORS)
     let posterUrl = content.posterUrl;
