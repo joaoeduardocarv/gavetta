@@ -57,7 +57,7 @@ export function useStoryShare() {
     // Backdrop com blur como fundo (glassmorphism)
     let backdropUrl = content.backdropUrl;
     if (backdropUrl && backdropUrl.startsWith("/")) {
-      backdropUrl = getTMDBImageUrl(backdropUrl, "w1280");
+      backdropUrl = getTMDBImageUrl(backdropUrl, "w500");
     }
     if (backdropUrl) {
       const backdropImg = await fetchImageAsBlob(backdropUrl);
