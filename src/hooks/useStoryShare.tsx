@@ -59,16 +59,38 @@ export function useStoryShare() {
     if (backdropUrl && backdropUrl.startsWith("/")) {
       backdropUrl = getTMDBImageUrl(backdropUrl, "w500");
     }
+    let dominantColor = { r: 100, g: 80, b: 180 }; // fallback purple
     if (backdropUrl) {
       const backdropImg = await fetchImageAsBlob(backdropUrl);
       if (backdropImg) {
+        // Extrair cor dominante do backdrop
+        const sampleCanvas = document.createElement('canvas');
+        sampleCanvas.width = 50;
+        sampleCanvas.height = 50;
+        const sampleCtx = sampleCanvas.getContext('2d');
+        if (sampleCtx) {
+          sampleCtx.drawImage(backdropImg, 0, 0, 50, 50);
+          const imageData = sampleCtx.getImageData(0, 0, 50, 50).data;
+          let rSum = 0, gSum = 0, bSum = 0, count = 0;
+          for (let i = 0; i < imageData.length; i += 16) {
+            rSum += imageData[i];
+            gSum += imageData[i + 1];
+            bSum += imageData[i + 2];
+            count++;
+          }
+          dominantColor = {
+            r: Math.round(rSum / count),
+            g: Math.round(gSum / count),
+            b: Math.round(bSum / count),
+          };
+        }
+
         // Criar canvas temporário para aplicar blur
         const blurCanvas = document.createElement('canvas');
         blurCanvas.width = STORY_WIDTH;
         blurCanvas.height = STORY_HEIGHT;
         const blurCtx = blurCanvas.getContext('2d');
         if (blurCtx) {
-          // Desenhar backdrop cobrindo todo o canvas (cover)
           const imgRatio = backdropImg.width / backdropImg.height;
           const canvasRatio = STORY_WIDTH / STORY_HEIGHT;
           let drawWidth, drawHeight, drawX, drawY;
@@ -87,12 +109,10 @@ export function useStoryShare() {
           blurCtx.drawImage(backdropImg, drawX, drawY, drawWidth, drawHeight);
           blurCtx.filter = 'none';
 
-          // Desenhar backdrop com blur no canvas principal
           ctx.globalAlpha = 0.5;
           ctx.drawImage(blurCanvas, 0, 0);
           ctx.globalAlpha = 1.0;
 
-          // Overlay escuro para contraste
           const overlayGradient = ctx.createLinearGradient(0, 0, 0, STORY_HEIGHT);
           overlayGradient.addColorStop(0, 'rgba(15, 15, 26, 0.7)');
           overlayGradient.addColorStop(0.4, 'rgba(26, 26, 46, 0.5)');
@@ -103,7 +123,6 @@ export function useStoryShare() {
         }
       }
     }
-
     // Carregar pôster via fetch (evita CORS)
     let posterUrl = content.posterUrl;
     // Resolve TMDB relative paths to full URLs
@@ -119,6 +138,30 @@ export function useStoryShare() {
         const posterX = (STORY_WIDTH - posterWidth) / 2;
         const posterY = 350;
         const radius = 24;
+
+        // Glow colorido ao redor do pôster usando cor dominante do backdrop
+        const { r, g, b } = dominantColor;
+        ctx.save();
+        ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 0.7)`;
+        ctx.shadowBlur = 60;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        ctx.fillStyle = `rgba(${r}, ${g}, ${b}, 0.15)`;
+        // Desenhar rect arredondado para gerar o glow
+        const glowPad = 8;
+        ctx.beginPath();
+        ctx.moveTo(posterX - glowPad + radius, posterY - glowPad);
+        ctx.lineTo(posterX + posterWidth + glowPad - radius, posterY - glowPad);
+        ctx.quadraticCurveTo(posterX + posterWidth + glowPad, posterY - glowPad, posterX + posterWidth + glowPad, posterY - glowPad + radius);
+        ctx.lineTo(posterX + posterWidth + glowPad, posterY + posterHeight + glowPad - radius);
+        ctx.quadraticCurveTo(posterX + posterWidth + glowPad, posterY + posterHeight + glowPad, posterX + posterWidth + glowPad - radius, posterY + posterHeight + glowPad);
+        ctx.lineTo(posterX - glowPad + radius, posterY + posterHeight + glowPad);
+        ctx.quadraticCurveTo(posterX - glowPad, posterY + posterHeight + glowPad, posterX - glowPad, posterY + posterHeight + glowPad - radius);
+        ctx.lineTo(posterX - glowPad, posterY - glowPad + radius);
+        ctx.quadraticCurveTo(posterX - glowPad, posterY - glowPad, posterX - glowPad + radius, posterY - glowPad);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
 
         // Sombra do pôster
         ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
