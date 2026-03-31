@@ -12,6 +12,7 @@ import { AvatarPickerDialog, getAvatarById } from "@/components/AvatarPickerDial
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import { ProfileStats } from "@/components/ProfileStats";
+import { NotificationSettingsDialog } from "@/components/NotificationSettingsDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
