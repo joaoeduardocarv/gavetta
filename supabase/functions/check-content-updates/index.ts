@@ -199,6 +199,7 @@ serve(async (req) => {
               } else if (newEpisodes > oldEpisodes) {
                 const diff = newEpisodes - oldEpisodes;
                 for (const userId of prod.userIds) {
+                  if (!userWants(userId, 'new_episodes')) continue;
                   notifications.push({
                     user_id: userId,
                     type: 'new_episodes',
