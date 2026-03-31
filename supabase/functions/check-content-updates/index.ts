@@ -104,6 +104,36 @@ serve(async (req) => {
 
     console.log(`Checking ${productionMap.size} unique productions for updates...`);
 
+    // Fetch all user notification preferences
+    const allUserIds = new Set<string>();
+    for (const prod of productionMap.values()) {
+      for (const uid of prod.userIds) allUserIds.add(uid);
+    }
+
+    const { data: prefsData } = await supabase
+      .from('notification_preferences')
+      .select('user_id, streaming_changes, new_seasons, new_episodes, upcoming_content')
+      .in('user_id', [...allUserIds]);
+
+    const userPrefs = new Map<string, Record<string, boolean>>();
+    for (const p of prefsData || []) {
+      userPrefs.set(p.user_id, p);
+    }
+
+    // Helper: check if user wants this notification type
+    const userWants = (userId: string, type: string): boolean => {
+      const p = userPrefs.get(userId);
+      if (!p) return true; // default: all enabled
+      const map: Record<string, string> = {
+        streaming_change: 'streaming_changes',
+        new_season: 'new_seasons',
+        new_episodes: 'new_episodes',
+        upcoming_content: 'upcoming_content',
+      };
+      const col = map[type];
+      return col ? (p[col] !== false) : true;
+    };
+
     let notificationsCreated = 0;
     const entries = [...productionMap.entries()];
 
