@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, Check, UserPlus, ThumbsUp, Film, Trash2, Users, CheckCircle, X } from "lucide-react";
+import { Bell, Check, UserPlus, ThumbsUp, Film, Trash2, Users, CheckCircle, X, Tv, Calendar, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
