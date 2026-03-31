@@ -287,6 +287,7 @@ export default function Profile() {
       />
       <EditProfileDialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen} />
       <ChangePasswordDialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen} />
+      <NotificationSettingsDialog open={isNotifSettingsOpen} onOpenChange={setIsNotifSettingsOpen} />
     </div>
   );
 }
