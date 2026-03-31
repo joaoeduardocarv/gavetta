@@ -187,6 +187,7 @@ serve(async (req) => {
 
               if (newSeasons > oldSeasons) {
                 for (const userId of prod.userIds) {
+                  if (!userWants(userId, 'new_season')) continue;
                   notifications.push({
                     user_id: userId,
                     type: 'new_season',
