@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, Check, UserPlus, ThumbsUp, Film, Trash2, Users, CheckCircle, X } from "lucide-react";
+import { Bell, Check, UserPlus, ThumbsUp, Film, Trash2, Users, CheckCircle, X, Tv, Calendar, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -25,6 +25,14 @@ const getNotificationIcon = (type: Notification["type"]) => {
       return <Film className="h-4 w-4 text-accent" />;
     case "shared_drawer_invite":
       return <Users className="h-4 w-4 text-purple-500" />;
+    case "streaming_change":
+      return <RefreshCw className="h-4 w-4 text-blue-500" />;
+    case "new_season":
+      return <Tv className="h-4 w-4 text-green-500" />;
+    case "new_episodes":
+      return <Tv className="h-4 w-4 text-emerald-400" />;
+    case "upcoming_content":
+      return <Calendar className="h-4 w-4 text-orange-500" />;
     default:
       return <Bell className="h-4 w-4 text-muted-foreground" />;
   }
