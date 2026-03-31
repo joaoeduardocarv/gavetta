@@ -21,6 +21,7 @@ export default function Profile() {
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [isNotifSettingsOpen, setIsNotifSettingsOpen] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState<string>("joker");
   const [isLoading, setIsLoading] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
