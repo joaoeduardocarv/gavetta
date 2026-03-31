@@ -220,6 +220,7 @@ serve(async (req) => {
                   const diffDays = (airDateObj.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
                   if (diffDays > 0 && diffDays <= 7) {
                     for (const userId of prod.userIds) {
+                      if (!userWants(userId, 'upcoming_content')) continue;
                       notifications.push({
                         user_id: userId,
                         type: 'upcoming_content',
