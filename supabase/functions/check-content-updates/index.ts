@@ -164,6 +164,7 @@ serve(async (req) => {
               if (removed.length > 0) message += `Removido de: ${removed.join(', ')}.`;
 
               for (const userId of prod.userIds) {
+                if (!userWants(userId, 'streaming_change')) continue;
                 notifications.push({
                   user_id: userId,
                   type: 'streaming_change',
