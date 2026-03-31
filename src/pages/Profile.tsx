@@ -12,6 +12,7 @@ import { AvatarPickerDialog, getAvatarById } from "@/components/AvatarPickerDial
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import { ProfileStats } from "@/components/ProfileStats";
+import { NotificationSettingsDialog } from "@/components/NotificationSettingsDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -20,6 +21,7 @@ export default function Profile() {
   const [isAvatarPickerOpen, setIsAvatarPickerOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [isNotifSettingsOpen, setIsNotifSettingsOpen] = useState(false);
   const [selectedAvatar, setSelectedAvatar] = useState<string>("joker");
   const [isLoading, setIsLoading] = useState(true);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -186,19 +188,19 @@ export default function Profile() {
             )}
 
             {/* Notificações */}
-            <div className="flex items-center justify-between py-3 px-1">
+            <button
+              onClick={() => setIsNotifSettingsOpen(true)}
+              className="w-full flex items-center justify-between py-3 px-1 rounded-md hover:bg-muted/50 transition-colors"
+            >
               <div className="flex items-center gap-3">
                 <Bell className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="text-sm font-medium text-foreground">Notificações</p>
-                  <p className="text-xs text-muted-foreground">Pedidos de amizade e recomendações</p>
+                <div className="text-left">
+                  <p className="text-sm font-medium text-foreground">Notificações de conteúdo</p>
+                  <p className="text-xs text-muted-foreground">Streaming, temporadas e episódios</p>
                 </div>
               </div>
-              <Switch
-                checked={notificationsEnabled}
-                onCheckedChange={setNotificationsEnabled}
-              />
-            </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </button>
 
             {/* Perfil Público */}
             <div className="flex items-center justify-between py-3 px-1">
@@ -285,6 +287,7 @@ export default function Profile() {
       />
       <EditProfileDialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen} />
       <ChangePasswordDialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen} />
+      <NotificationSettingsDialog open={isNotifSettingsOpen} onOpenChange={setIsNotifSettingsOpen} />
     </div>
   );
 }

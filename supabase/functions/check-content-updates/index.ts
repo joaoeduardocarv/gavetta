@@ -104,6 +104,36 @@ serve(async (req) => {
 
     console.log(`Checking ${productionMap.size} unique productions for updates...`);
 
+    // Fetch all user notification preferences
+    const allUserIds = new Set<string>();
+    for (const prod of productionMap.values()) {
+      for (const uid of prod.userIds) allUserIds.add(uid);
+    }
+
+    const { data: prefsData } = await supabase
+      .from('notification_preferences')
+      .select('user_id, streaming_changes, new_seasons, new_episodes, upcoming_content')
+      .in('user_id', [...allUserIds]);
+
+    const userPrefs = new Map<string, Record<string, boolean>>();
+    for (const p of prefsData || []) {
+      userPrefs.set(p.user_id, p);
+    }
+
+    // Helper: check if user wants this notification type
+    const userWants = (userId: string, type: string): boolean => {
+      const p = userPrefs.get(userId);
+      if (!p) return true; // default: all enabled
+      const map: Record<string, string> = {
+        streaming_change: 'streaming_changes',
+        new_season: 'new_seasons',
+        new_episodes: 'new_episodes',
+        upcoming_content: 'upcoming_content',
+      };
+      const col = map[type];
+      return col ? (p[col] !== false) : true;
+    };
+
     let notificationsCreated = 0;
     const entries = [...productionMap.entries()];
 
@@ -134,6 +164,7 @@ serve(async (req) => {
               if (removed.length > 0) message += `Removido de: ${removed.join(', ')}.`;
 
               for (const userId of prod.userIds) {
+                if (!userWants(userId, 'streaming_change')) continue;
                 notifications.push({
                   user_id: userId,
                   type: 'streaming_change',
@@ -156,6 +187,7 @@ serve(async (req) => {
 
               if (newSeasons > oldSeasons) {
                 for (const userId of prod.userIds) {
+                  if (!userWants(userId, 'new_season')) continue;
                   notifications.push({
                     user_id: userId,
                     type: 'new_season',
@@ -167,6 +199,7 @@ serve(async (req) => {
               } else if (newEpisodes > oldEpisodes) {
                 const diff = newEpisodes - oldEpisodes;
                 for (const userId of prod.userIds) {
+                  if (!userWants(userId, 'new_episodes')) continue;
                   notifications.push({
                     user_id: userId,
                     type: 'new_episodes',
@@ -187,6 +220,7 @@ serve(async (req) => {
                   const diffDays = (airDateObj.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
                   if (diffDays > 0 && diffDays <= 7) {
                     for (const userId of prod.userIds) {
+                      if (!userWants(userId, 'upcoming_content')) continue;
                       notifications.push({
                         user_id: userId,
                         type: 'upcoming_content',
