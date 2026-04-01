@@ -179,12 +179,12 @@ serve(async (req) => {
             if (mediaType === 'tv') {
               const oldSeasons = (prod.oldData.number_of_seasons as number) || 0;
               const newSeasons = (details.number_of_seasons as number) || 0;
-              const oldEpisodes = (prod.oldData.number_of_episodes as number) || 0;
-              const newEpisodes = (details.number_of_episodes as number) || 0;
 
-              // Check for next season info (next_episode_to_air)
+              const lastEpisode = details.last_episode_to_air as Record<string, unknown> | null;
               const nextEpisode = details.next_episode_to_air as Record<string, unknown> | null;
+              const oldLastEpisode = prod.oldData.last_episode_to_air as Record<string, unknown> | null;
 
+              // Detect new season
               if (newSeasons > oldSeasons) {
                 for (const userId of prod.userIds) {
                   if (!userWants(userId, 'new_season')) continue;
@@ -196,36 +196,51 @@ serve(async (req) => {
                     related_content_id: prod.productionId,
                   });
                 }
-              } else if (newEpisodes > oldEpisodes) {
-                const diff = newEpisodes - oldEpisodes;
-                for (const userId of prod.userIds) {
-                  if (!userWants(userId, 'new_episodes')) continue;
-                  notifications.push({
-                    user_id: userId,
-                    type: 'new_episodes',
-                    title: `🆕 ${title}`,
-                    message: `${diff} novo${diff > 1 ? 's' : ''} episódio${diff > 1 ? 's' : ''} disponíve${diff > 1 ? 'is' : 'l'}!`,
-                    related_content_id: prod.productionId,
-                  });
+              }
+
+              // Detect new episode aired using last_episode_to_air
+              if (lastEpisode) {
+                const newEpNum = lastEpisode.episode_number as number;
+                const newSeasonNum = lastEpisode.season_number as number;
+                const oldEpNum = oldLastEpisode ? (oldLastEpisode.episode_number as number) : 0;
+                const oldSeasonNum = oldLastEpisode ? (oldLastEpisode.season_number as number) : 0;
+
+                const isNewEpisode = !oldLastEpisode ||
+                  newSeasonNum > oldSeasonNum ||
+                  (newSeasonNum === oldSeasonNum && newEpNum > oldEpNum);
+
+                if (isNewEpisode) {
+                  const epName = lastEpisode.name as string || '';
+                  for (const userId of prod.userIds) {
+                    if (!userWants(userId, 'new_episodes')) continue;
+                    notifications.push({
+                      user_id: userId,
+                      type: 'new_episodes',
+                      title: `🆕 ${title}`,
+                      message: `S${String(newSeasonNum).padStart(2, '0')}E${String(newEpNum).padStart(2, '0')}${epName ? ` — ${epName}` : ''} já disponível!`,
+                      related_content_id: prod.productionId,
+                    });
+                  }
                 }
               }
 
-              // Upcoming season/episode
-              if (nextEpisode && nextEpisode.season_number && (nextEpisode.season_number as number) > oldSeasons) {
+              // Upcoming episode within 7 days
+              if (nextEpisode) {
                 const airDate = nextEpisode.air_date as string | undefined;
                 if (airDate) {
-                  // Only notify if air date is within next 7 days
                   const airDateObj = new Date(airDate);
                   const now = new Date();
                   const diffDays = (airDateObj.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
                   if (diffDays > 0 && diffDays <= 7) {
+                    const nextSeasonNum = nextEpisode.season_number as number;
+                    const nextEpNum = nextEpisode.episode_number as number;
                     for (const userId of prod.userIds) {
                       if (!userWants(userId, 'upcoming_content')) continue;
                       notifications.push({
                         user_id: userId,
                         type: 'upcoming_content',
                         title: `📅 Em breve: ${title}`,
-                        message: `Novo episódio em ${airDate}!`,
+                        message: `S${String(nextSeasonNum).padStart(2, '0')}E${String(nextEpNum).padStart(2, '0')} em ${new Date(airDate).toLocaleDateString('pt-BR')}!`,
                         related_content_id: prod.productionId,
                       });
                     }
@@ -233,6 +248,7 @@ serve(async (req) => {
                 }
               }
             }
+
 
             // Insert notifications (deduplicate: don't send same notification twice in 24h)
             for (const notif of notifications) {
@@ -267,6 +283,7 @@ serve(async (req) => {
                   watch_providers: newProviders,
                   number_of_seasons: details.number_of_seasons,
                   number_of_episodes: details.number_of_episodes,
+                  last_episode_to_air: details.last_episode_to_air,
                   status: details.status,
                   next_episode_to_air: details.next_episode_to_air,
                   _last_update_check: new Date().toISOString(),
