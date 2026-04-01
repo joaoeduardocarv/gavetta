@@ -283,6 +283,7 @@ serve(async (req) => {
                   watch_providers: newProviders,
                   number_of_seasons: details.number_of_seasons,
                   number_of_episodes: details.number_of_episodes,
+                  last_episode_to_air: details.last_episode_to_air,
                   status: details.status,
                   next_episode_to_air: details.next_episode_to_air,
                   _last_update_check: new Date().toISOString(),
