@@ -249,54 +249,6 @@ serve(async (req) => {
               }
             }
 
-              if (newSeasons > oldSeasons) {
-                for (const userId of prod.userIds) {
-                  if (!userWants(userId, 'new_season')) continue;
-                  notifications.push({
-                    user_id: userId,
-                    type: 'new_season',
-                    title: `🎬 Nova temporada: ${title}`,
-                    message: `A temporada ${newSeasons} está disponível!`,
-                    related_content_id: prod.productionId,
-                  });
-                }
-              } else if (newEpisodes > oldEpisodes) {
-                const diff = newEpisodes - oldEpisodes;
-                for (const userId of prod.userIds) {
-                  if (!userWants(userId, 'new_episodes')) continue;
-                  notifications.push({
-                    user_id: userId,
-                    type: 'new_episodes',
-                    title: `🆕 ${title}`,
-                    message: `${diff} novo${diff > 1 ? 's' : ''} episódio${diff > 1 ? 's' : ''} disponíve${diff > 1 ? 'is' : 'l'}!`,
-                    related_content_id: prod.productionId,
-                  });
-                }
-              }
-
-              // Upcoming season/episode
-              if (nextEpisode && nextEpisode.season_number && (nextEpisode.season_number as number) > oldSeasons) {
-                const airDate = nextEpisode.air_date as string | undefined;
-                if (airDate) {
-                  // Only notify if air date is within next 7 days
-                  const airDateObj = new Date(airDate);
-                  const now = new Date();
-                  const diffDays = (airDateObj.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
-                  if (diffDays > 0 && diffDays <= 7) {
-                    for (const userId of prod.userIds) {
-                      if (!userWants(userId, 'upcoming_content')) continue;
-                      notifications.push({
-                        user_id: userId,
-                        type: 'upcoming_content',
-                        title: `📅 Em breve: ${title}`,
-                        message: `Novo episódio em ${airDate}!`,
-                        related_content_id: prod.productionId,
-                      });
-                    }
-                  }
-                }
-              }
-            }
 
             // Insert notifications (deduplicate: don't send same notification twice in 24h)
             for (const notif of notifications) {
