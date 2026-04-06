@@ -80,18 +80,34 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
       onClick={onClick}
       className="flex items-center gap-4 p-4 bg-card rounded-lg border border-border transition-all duration-200 hover:bg-accent/5 hover:border-accent/50 active:scale-[0.98]"
     >
-      <Avatar className="h-14 w-14 flex-shrink-0 rounded-lg">
-        {content.posterUrl && (
-          <AvatarImage 
-            src={posterSrc} 
-            alt={safeTitle}
-            className="object-cover"
-          />
+      <div className="relative flex-shrink-0">
+        <Avatar className="h-14 w-14 rounded-lg">
+          {content.posterUrl && (
+            <AvatarImage 
+              src={posterSrc} 
+              alt={safeTitle}
+              className="object-cover"
+            />
+          )}
+          <AvatarFallback className="rounded-lg bg-muted">
+            <Icon className="h-7 w-7 text-muted-foreground" />
+          </AvatarFallback>
+        </Avatar>
+        {contentNotif && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="absolute -top-1.5 -right-1.5 bg-accent text-accent-foreground rounded-full p-0.5 shadow-md animate-pulse">
+                  <Bell className="h-3 w-3" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-[200px] text-xs">
+                <p>{contentNotif.message || contentNotif.title}</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
-        <AvatarFallback className="rounded-lg bg-muted">
-          <Icon className="h-7 w-7 text-muted-foreground" />
-        </AvatarFallback>
-      </Avatar>
+      </div>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
