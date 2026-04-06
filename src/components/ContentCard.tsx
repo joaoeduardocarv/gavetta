@@ -1,4 +1,4 @@
-import { Archive, Star, Film, Tv, Check, Clock, Play } from "lucide-react";
+import { Archive, Star, Film, Tv, Check, Clock, Play, Bell } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { cn } from "@/lib/utils";
@@ -6,6 +6,8 @@ import type { Content } from "@/lib/mockData";
 import { DrawerPickerPopover } from "./DrawerPickerPopover";
 import { useDrawers } from "@/contexts/DrawerContext";
 import { getTMDBImageUrl } from "@/lib/tmdb";
+import { useContentNotifications } from "@/hooks/useContentNotifications";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "./ui/tooltip";
 
 interface ContentCardProps {
   content: Content;
