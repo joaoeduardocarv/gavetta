@@ -176,9 +176,6 @@ export function NotificationsPopover() {
                         {notification.message && (
                           <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
                             {formatRelativeDate(notification.message)}
-                          </p>
-                        )}
-                          </p>
                         )}
                         <p className="text-xs text-muted-foreground mt-1">
                           {formatDistanceToNow(new Date(notification.created_at), {
