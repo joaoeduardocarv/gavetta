@@ -240,7 +240,7 @@ serve(async (req) => {
                         user_id: userId,
                         type: 'upcoming_content',
                         title: `📅 Em breve: ${title}`,
-                        message: `S${String(nextSeasonNum).padStart(2, '0')}E${String(nextEpNum).padStart(2, '0')} em ${new Date(airDate).toLocaleDateString('pt-BR')}!`,
+                        message: `S${String(nextSeasonNum).padStart(2, '0')}E${String(nextEpNum).padStart(2, '0')} estreia em %%${airDate}%%!`,
                         related_content_id: prod.productionId,
                       });
                     }
