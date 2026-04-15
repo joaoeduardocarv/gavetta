@@ -1,7 +1,7 @@
 import { Archive, Star, Film, Tv, Check, Clock, Play, Bell } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { cn } from "@/lib/utils";
+import { cn, formatRelativeDate } from "@/lib/utils";
 import type { Content } from "@/lib/mockData";
 import { DrawerPickerPopover } from "./DrawerPickerPopover";
 import { useDrawers } from "@/contexts/DrawerContext";
@@ -102,7 +102,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
                 </div>
               </TooltipTrigger>
               <TooltipContent side="top" className="max-w-[200px] text-xs">
-                <p>{contentNotif.message || contentNotif.title}</p>
+                <p>{formatRelativeDate(contentNotif.message || contentNotif.title)}</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
