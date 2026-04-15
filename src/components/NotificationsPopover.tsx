@@ -14,6 +14,7 @@ import { Content } from "@/lib/mockData";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeStoredContent } from "@/lib/contentNormalizer";
 import { ContentDetailDialog } from "./ContentDetailDialog";
+import { formatRelativeDate } from "@/lib/utils";
 
 const getNotificationIcon = (type: Notification["type"]) => {
   switch (type) {
@@ -174,7 +175,7 @@ export function NotificationsPopover() {
                         <p className="text-sm font-medium">{notification.title}</p>
                         {notification.message && (
                           <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
-                            {notification.message}
+                            {formatRelativeDate(notification.message)}
                           </p>
                         )}
                         <p className="text-xs text-muted-foreground mt-1">
