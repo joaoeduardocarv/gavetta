@@ -209,7 +209,17 @@ serve(async (req) => {
                   newSeasonNum > oldSeasonNum ||
                   (newSeasonNum === oldSeasonNum && newEpNum > oldEpNum);
 
-                if (isNewEpisode) {
+                // Only notify if the episode aired within the last 7 days
+                const epAirDate = lastEpisode.air_date as string | undefined;
+                let airedRecently = false;
+                if (epAirDate) {
+                  const epAirDateObj = new Date(epAirDate);
+                  const now = new Date();
+                  const daysSinceAired = (now.getTime() - epAirDateObj.getTime()) / (1000 * 60 * 60 * 24);
+                  airedRecently = daysSinceAired >= 0 && daysSinceAired <= 7;
+                }
+
+                if (isNewEpisode && airedRecently) {
                   const epName = lastEpisode.name as string || '';
                   for (const userId of prod.userIds) {
                     if (!userWants(userId, 'new_episodes')) continue;
