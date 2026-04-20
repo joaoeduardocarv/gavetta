@@ -279,7 +279,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_profile_visible_to_viewer: {
+        Args: { _profile_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never
