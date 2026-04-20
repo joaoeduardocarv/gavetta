@@ -127,11 +127,18 @@ serve(async (req) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Error in gnews function:', errorMessage);
+    let clientMsg = 'An unexpected error occurred.';
+    if (error instanceof Error) {
+      const m = error.message.toLowerCase();
+      if (m.includes('timeout') || m.includes('abort')) clientMsg = 'Service temporarily unavailable.';
+      else if (m.includes('key') || m.includes('config') || m.includes('credential')) clientMsg = 'Service configuration error.';
+      else if (m.includes('api') || m.includes('fetch')) clientMsg = 'Unable to retrieve data. Try again.';
+    }
     return new Response(
-      JSON.stringify({ error: errorMessage, news: [] }),
-      { 
-        status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      JSON.stringify({ error: clientMsg, news: [] }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }

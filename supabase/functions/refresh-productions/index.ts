@@ -72,18 +72,56 @@ async function enrichProduction(productionId: string, productionType: string): P
   }
 }
 
+function sanitizeError(error: unknown): string {
+  if (error instanceof Error) {
+    const msg = error.message.toLowerCase();
+    if (msg.includes('timeout') || msg.includes('abort')) return 'Service temporarily unavailable.';
+    if (msg.includes('key') || msg.includes('config') || msg.includes('credential')) return 'Service configuration error.';
+    if (msg.includes('api') || msg.includes('fetch')) return 'Unable to retrieve data. Try again.';
+  }
+  return 'An unexpected error occurred.';
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // Require either a valid CRON_SECRET or a valid authenticated JWT.
+    const authHeader = req.headers.get('Authorization') ?? '';
+    const cronSecret = Deno.env.get('CRON_SECRET');
+    const isCronCall = !!cronSecret && authHeader === `Bearer ${cronSecret}`;
+
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
 
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       throw new Error('Missing Supabase credentials');
     }
+
+    if (!isCronCall) {
+      // Validate JWT for user-triggered manual refresh
+      if (!authHeader.startsWith('Bearer ')) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY ?? '', {
+        global: { headers: { Authorization: authHeader } },
+      });
+      const token = authHeader.replace('Bearer ', '');
+      const { data: claimsData, error: authError } = await userClient.auth.getClaims(token);
+      if (authError || !claimsData?.claims) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     if (!TMDB_TOKEN) {
       throw new Error('Missing TMDB_TOKEN');
     }
@@ -171,7 +209,7 @@ serve(async (req) => {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('Refresh error:', errorMessage);
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: sanitizeError(error) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

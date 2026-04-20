@@ -45,11 +45,7 @@ export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
     try {
       const cleanQuery = searchQuery.replace(/^@/, '').trim().toLowerCase();
       const { data, error } = await supabase
-        .from("profiles")
-        .select("id, username, avatar_url, handle")
-        .ilike("handle", `%${cleanQuery}%`)
-        .neq("id", user?.id)
-        .limit(10);
+        .rpc("search_profiles_by_handle", { _query: cleanQuery });
 
       if (error) throw error;
 
