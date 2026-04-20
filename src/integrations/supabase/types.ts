@@ -283,6 +283,15 @@ export type Database = {
         Args: { _profile_id: string }
         Returns: boolean
       }
+      search_profiles_by_handle: {
+        Args: { _query: string }
+        Returns: {
+          avatar_url: string
+          handle: string
+          id: string
+          username: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
