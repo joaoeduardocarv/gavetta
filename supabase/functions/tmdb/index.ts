@@ -358,8 +358,15 @@ serve(async (req) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     console.error('TMDB Edge Function error:', errorMessage);
+    let clientMsg = 'An unexpected error occurred.';
+    if (error instanceof Error) {
+      const m = error.message.toLowerCase();
+      if (m.includes('timeout') || m.includes('abort')) clientMsg = 'Service temporarily unavailable.';
+      else if (m.includes('key') || m.includes('config') || m.includes('credential')) clientMsg = 'Service configuration error.';
+      else if (m.includes('api') || m.includes('fetch')) clientMsg = 'Unable to retrieve data. Try again.';
+    }
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: clientMsg }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
