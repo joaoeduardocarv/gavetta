@@ -274,6 +274,33 @@ export type Database = {
         }
         Relationships: []
       }
+      watched_episodes: {
+        Row: {
+          episode_number: number
+          id: string
+          season_number: number
+          tmdb_tv_id: number
+          user_id: string
+          watched_at: string
+        }
+        Insert: {
+          episode_number: number
+          id?: string
+          season_number: number
+          tmdb_tv_id: number
+          user_id: string
+          watched_at?: string
+        }
+        Update: {
+          episode_number?: number
+          id?: string
+          season_number?: number
+          tmdb_tv_id?: number
+          user_id?: string
+          watched_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

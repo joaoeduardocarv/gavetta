@@ -7,6 +7,8 @@ import { DrawerPickerPopover } from "./DrawerPickerPopover";
 import { useDrawers } from "@/contexts/DrawerContext";
 import { getTMDBImageUrl } from "@/lib/tmdb";
 import { useContentNotifications } from "@/hooks/useContentNotifications";
+import { useWatchedEpisodeCount } from "@/hooks/useWatchedEpisodes";
+import { extractTmdbInfoFromId } from "@/lib/contentNormalizer";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "./ui/tooltip";
 
 interface ContentCardProps {
@@ -44,10 +46,16 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
   const StatusIcon = content.status ? statusIcons[content.status] : null;
   const { getContentDrawers } = useDrawers();
   const { getContentNotification } = useContentNotifications();
-  
+
   const { defaultDrawer, customDrawers } = getContentDrawers(content.id);
   const isInAnyDrawer = defaultDrawer !== null || customDrawers.length > 0;
   const contentNotif = getContentNotification(content.id);
+
+  // Episode-watched progress (series only)
+  const isSeries = content.type === 'series' || content.type === 'tv';
+  const parsedTmdb = isSeries ? extractTmdbInfoFromId(content.id) : null;
+  const tmdbTvId = parsedTmdb?.mediaType === 'tv' ? parsedTmdb.tmdbId : null;
+  const watchedEpCount = useWatchedEpisodeCount(tmdbTvId);
 
   const posterSrc =
     typeof content.posterUrl === "string"
@@ -141,6 +149,12 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
               <Star className="h-3 w-3 fill-accent" />
               <span className="text-xs font-semibold">{content.rating.toFixed(1)}</span>
             </div>
+          )}
+          {isSeries && watchedEpCount > 0 && (
+            <Badge variant="outline" className="gap-1 text-xs border-primary/30 text-primary">
+              <Check className="h-3 w-3" />
+              {watchedEpCount} ep{watchedEpCount > 1 ? 's' : ''}
+            </Badge>
           )}
         </div>
         
