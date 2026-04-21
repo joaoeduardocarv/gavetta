@@ -13,6 +13,7 @@ import { Film, Tv, Calendar, Star, Share2, MessageCircle, Archive, Check, Play, 
 import { useStoryShare } from "@/hooks/useStoryShare";
 import { RecommendDialog } from "./RecommendDialog";
 import { PersonDetailDialog } from "./PersonDetailDialog";
+import { SeasonsAccordion } from "./SeasonsAccordion";
 import { Content } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 import { useDrawers, DEFAULT_DRAWER_IDS, DefaultDrawerId } from "@/contexts/DrawerContext";
