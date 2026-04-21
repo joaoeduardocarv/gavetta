@@ -4,7 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Check } from "lucide-react";
+import { Loader2, Check, CheckCheck } from "lucide-react";
 import { getTVDetails, getSeasonEpisodes, type TMDBEpisode, type TMDBSeason } from "@/lib/tmdb";
 import { useWatchedEpisodes } from "@/hooks/useWatchedEpisodes";
 import { cn } from "@/lib/utils";
@@ -42,6 +42,7 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
     isWatched,
     toggleEpisode,
     markSeason,
+    markAllSeasons,
     unmarkSeason,
     watchedCountForSeason,
     totalWatched,
@@ -117,6 +118,26 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
         </div>
         <Progress value={overallPercent} className="h-2" />
       </div>
+
+      {/* Mark whole series as watched */}
+      {totalEpisodes > 0 && totalWatched < totalEpisodes && (
+        <Button
+          size="sm"
+          variant="default"
+          className="w-full gap-2"
+          onClick={() =>
+            markAllSeasons(
+              seasons.map((s) => ({
+                season_number: s.season_number,
+                episode_count: s.episode_count ?? 0,
+              }))
+            )
+          }
+        >
+          <CheckCheck className="h-4 w-4" />
+          Marcar todos os episódios como assistidos
+        </Button>
+      )}
 
       <Accordion type="single" collapsible onValueChange={handleAccordionChange}>
         {seasons.map((season) => {
