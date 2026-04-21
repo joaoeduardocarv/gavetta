@@ -149,6 +149,29 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
       .catch(console.error);
   }, [content?.id, open]);
 
+  // Reset auto-move attempt when content changes
+  useEffect(() => {
+    autoMoveAttemptedRef.current = null;
+  }, [content?.id]);
+
+  // Triggered by SeasonsAccordion as the user marks episodes
+  const handleSeriesProgress = useCallback(
+    (info: { totalEpisodes: number; totalWatched: number }) => {
+      if (!content) return;
+      if (info.totalEpisodes === 0 || info.totalWatched < info.totalEpisodes) return;
+      if (contentDrawers.defaultDrawer === 'watched') return;
+      // Avoid re-triggering during the same dialog session
+      if (autoMoveAttemptedRef.current === content.id) return;
+      autoMoveAttemptedRef.current = content.id;
+      toast({
+        title: "Série completa! 🎉",
+        description: "Avalie agora para mover para 'Assistido'.",
+      });
+      setDefaultDrawer(content, 'watched');
+    },
+    [content, contentDrawers.defaultDrawer, setDefaultDrawer, toast]
+  );
+
   if (!content) return null;
 
   const handlePersonClick = async (person: PersonInfo | null, fallbackName?: string) => {
