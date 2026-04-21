@@ -601,6 +601,21 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                   {content.synopsis}
                 </p>
               </div>
+
+              {/* Temporadas e episódios — apenas séries */}
+              {(content.type === 'series' || content.type === 'tv') && (() => {
+                const parsed = extractTmdbInfoFromId(content.id);
+                if (!parsed || parsed.mediaType !== 'tv') return null;
+                return (
+                  <div>
+                    <Label className="text-sm font-semibold mb-2 block">Temporadas e Episódios</Label>
+                    <SeasonsAccordion
+                      tmdbTvId={parsed.tmdbId}
+                      onProgressChange={handleSeriesProgress}
+                    />
+                  </div>
+                );
+              })()}
             </div>
 
             <Separator />
