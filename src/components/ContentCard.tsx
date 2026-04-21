@@ -150,6 +150,12 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
               <span className="text-xs font-semibold">{content.rating.toFixed(1)}</span>
             </div>
           )}
+          {isSeries && watchedEpCount > 0 && (
+            <Badge variant="outline" className="gap-1 text-xs border-primary/30 text-primary">
+              <Check className="h-3 w-3" />
+              {watchedEpCount} ep{watchedEpCount > 1 ? 's' : ''}
+            </Badge>
+          )}
         </div>
         
         <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
