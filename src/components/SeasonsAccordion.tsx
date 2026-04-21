@@ -119,6 +119,26 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
         <Progress value={overallPercent} className="h-2" />
       </div>
 
+      {/* Mark whole series as watched */}
+      {totalEpisodes > 0 && totalWatched < totalEpisodes && (
+        <Button
+          size="sm"
+          variant="default"
+          className="w-full gap-2"
+          onClick={() =>
+            markAllSeasons(
+              seasons.map((s) => ({
+                season_number: s.season_number,
+                episode_count: s.episode_count ?? 0,
+              }))
+            )
+          }
+        >
+          <CheckCheck className="h-4 w-4" />
+          Marcar todos os episódios como assistidos
+        </Button>
+      )}
+
       <Accordion type="single" collapsible onValueChange={handleAccordionChange}>
         {seasons.map((season) => {
           const watchedCount = watchedCountForSeason(season.season_number);
