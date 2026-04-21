@@ -70,6 +70,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
   const [userHandle, setUserHandle] = useState<string | null>(null);
   const [isRecommendDialogOpen, setIsRecommendDialogOpen] = useState(false);
   const [isDrawerMenuOpen, setIsDrawerMenuOpen] = useState(false);
+  const autoMoveAttemptedRef = useRef<string | null>(null);
 
   const { user } = useAuth();
 
