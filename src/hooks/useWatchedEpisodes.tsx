@@ -177,7 +177,49 @@ export function useWatchedEpisodes(tmdbTvId: number | null) {
         setWatched(previous);
       }
     },
-    [user, tmdbTvId, watched]
+      [user, tmdbTvId, watched]
+  );
+
+  /**
+   * Marks every episode of the entire series as watched, given the list of seasons
+   * with their episode counts. Skips already-watched episodes. Excludes season 0 (specials).
+   */
+  const markAllSeasons = useCallback(
+    async (seasonsInfo: { season_number: number; episode_count: number }[]) => {
+      if (!user || tmdbTvId == null) return;
+      const toAdd: { season: number; episode: number }[] = [];
+      seasonsInfo.forEach(({ season_number, episode_count }) => {
+        if (season_number <= 0 || !episode_count) return;
+        for (let ep = 1; ep <= episode_count; ep++) {
+          if (!watched.has(makeKey(season_number, ep))) {
+            toAdd.push({ season: season_number, episode: ep });
+          }
+        }
+      });
+      if (toAdd.length === 0) return;
+
+      // Optimistic
+      setWatched((prev) => {
+        const next = new Set(prev);
+        toAdd.forEach(({ season, episode }) => next.add(makeKey(season, episode)));
+        return next;
+      });
+
+      try {
+        const rows = toAdd.map(({ season, episode }) => ({
+          user_id: user.id,
+          tmdb_tv_id: tmdbTvId,
+          season_number: season,
+          episode_number: episode,
+        }));
+        const { error } = await supabase.from("watched_episodes").insert(rows);
+        if (error) throw error;
+      } catch (err) {
+        console.error("Error marking all seasons:", err);
+        await refetch();
+      }
+    },
+    [user, tmdbTvId, watched, refetch]
   );
 
   return {
