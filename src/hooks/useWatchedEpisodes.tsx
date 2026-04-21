@@ -227,6 +227,7 @@ export function useWatchedEpisodes(tmdbTvId: number | null) {
     isWatched,
     toggleEpisode,
     markSeason,
+    markAllSeasons,
     unmarkSeason,
     watchedCountForSeason,
     totalWatched,

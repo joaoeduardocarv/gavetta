@@ -4,7 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Check } from "lucide-react";
+import { Loader2, Check, CheckCheck } from "lucide-react";
 import { getTVDetails, getSeasonEpisodes, type TMDBEpisode, type TMDBSeason } from "@/lib/tmdb";
 import { useWatchedEpisodes } from "@/hooks/useWatchedEpisodes";
 import { cn } from "@/lib/utils";
@@ -42,6 +42,7 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
     isWatched,
     toggleEpisode,
     markSeason,
+    markAllSeasons,
     unmarkSeason,
     watchedCountForSeason,
     totalWatched,
