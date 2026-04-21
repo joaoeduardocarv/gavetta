@@ -46,10 +46,16 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
   const StatusIcon = content.status ? statusIcons[content.status] : null;
   const { getContentDrawers } = useDrawers();
   const { getContentNotification } = useContentNotifications();
-  
+
   const { defaultDrawer, customDrawers } = getContentDrawers(content.id);
   const isInAnyDrawer = defaultDrawer !== null || customDrawers.length > 0;
   const contentNotif = getContentNotification(content.id);
+
+  // Episode-watched progress (series only)
+  const isSeries = content.type === 'series' || content.type === 'tv';
+  const parsedTmdb = isSeries ? extractTmdbInfoFromId(content.id) : null;
+  const tmdbTvId = parsedTmdb?.mediaType === 'tv' ? parsedTmdb.tmdbId : null;
+  const watchedEpCount = useWatchedEpisodeCount(tmdbTvId);
 
   const posterSrc =
     typeof content.posterUrl === "string"
