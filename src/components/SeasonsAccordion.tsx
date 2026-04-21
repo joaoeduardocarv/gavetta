@@ -140,7 +140,7 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
                         </Badge>
                       )}
                       {allWatched && (
-                        <Badge variant="secondary" className="gap-1 text-xs bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/20">
+                        <Badge variant="secondary" className="gap-1 text-xs bg-primary/10 text-primary border-primary/20">
                           <Check className="h-3 w-3" />
                           Completo
                         </Badge>
