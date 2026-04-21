@@ -7,6 +7,8 @@ import { DrawerPickerPopover } from "./DrawerPickerPopover";
 import { useDrawers } from "@/contexts/DrawerContext";
 import { getTMDBImageUrl } from "@/lib/tmdb";
 import { useContentNotifications } from "@/hooks/useContentNotifications";
+import { useWatchedEpisodeCount } from "@/hooks/useWatchedEpisodes";
+import { extractTmdbInfoFromId } from "@/lib/contentNormalizer";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "./ui/tooltip";
 
 interface ContentCardProps {
