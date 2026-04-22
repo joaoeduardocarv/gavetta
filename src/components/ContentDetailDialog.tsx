@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -70,7 +70,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
   const [userHandle, setUserHandle] = useState<string | null>(null);
   const [isRecommendDialogOpen, setIsRecommendDialogOpen] = useState(false);
   const [isDrawerMenuOpen, setIsDrawerMenuOpen] = useState(false);
-  const autoMoveAttemptedRef = useRef<string | null>(null);
+  
 
   const { user } = useAuth();
 
@@ -149,28 +149,8 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
       .catch(console.error);
   }, [content?.id, open]);
 
-  // Reset auto-move attempt when content changes
-  useEffect(() => {
-    autoMoveAttemptedRef.current = null;
-  }, [content?.id]);
-
-  // Triggered by SeasonsAccordion as the user marks episodes
-  const handleSeriesProgress = useCallback(
-    (info: { totalEpisodes: number; totalWatched: number }) => {
-      if (!content) return;
-      if (info.totalEpisodes === 0 || info.totalWatched < info.totalEpisodes) return;
-      if (contentDrawers.defaultDrawer === 'watched') return;
-      // Avoid re-triggering during the same dialog session
-      if (autoMoveAttemptedRef.current === content.id) return;
-      autoMoveAttemptedRef.current = content.id;
-      toast({
-        title: "Série completa! 🎉",
-        description: "Avalie agora para mover para 'Assistido'.",
-      });
-      setDefaultDrawer(content, 'watched');
-    },
-    [content, contentDrawers.defaultDrawer, setDefaultDrawer, toast]
-  );
+  // Note: marking all episodes does NOT auto-move the series to "Assistido".
+  // New seasons/episodes may be released later, so the user keeps full control.
 
   if (!content) return null;
 
@@ -611,7 +591,6 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                     <Label className="text-sm font-semibold mb-2 block">Temporadas e Episódios</Label>
                     <SeasonsAccordion
                       tmdbTvId={parsed.tmdbId}
-                      onProgressChange={handleSeriesProgress}
                     />
                   </div>
                 );
