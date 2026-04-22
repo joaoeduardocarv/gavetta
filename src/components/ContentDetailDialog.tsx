@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -70,7 +70,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
   const [userHandle, setUserHandle] = useState<string | null>(null);
   const [isRecommendDialogOpen, setIsRecommendDialogOpen] = useState(false);
   const [isDrawerMenuOpen, setIsDrawerMenuOpen] = useState(false);
-  const autoMoveAttemptedRef = useRef<string | null>(null);
+  
 
   const { user } = useAuth();
 
