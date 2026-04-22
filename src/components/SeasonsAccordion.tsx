@@ -116,16 +116,26 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
   if (seasons.length === 0) return null;
 
   const overallPercent = totalEpisodes > 0 ? Math.round((totalWatched / totalEpisodes) * 100) : 0;
+  const seriesRating = getEffectiveSeriesRating(seasons.map((s) => s.season_number));
 
   return (
     <div className="space-y-3">
-      {/* Overall progress */}
+      {/* Overall progress + series-level rating */}
       <div className="space-y-1.5">
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center justify-between text-sm gap-2">
           <span className="font-medium text-foreground">Progresso</span>
-          <span className="text-muted-foreground">
-            {totalWatched} / {totalEpisodes} episódios
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground text-xs">
+              {totalWatched} / {totalEpisodes} eps
+            </span>
+            <RatingPicker
+              value={seriesRating.value}
+              isAverage={seriesRating.isAverage}
+              label="Sua nota para a série inteira"
+              size="default"
+              onChange={(v) => setSeriesRating(v)}
+            />
+          </div>
         </div>
         <Progress value={overallPercent} className="h-2" />
       </div>
