@@ -7,6 +7,8 @@ import { Progress } from "@/components/ui/progress";
 import { Loader2, Check, CheckCheck } from "lucide-react";
 import { getTVDetails, getSeasonEpisodes, type TMDBEpisode, type TMDBSeason } from "@/lib/tmdb";
 import { useWatchedEpisodes } from "@/hooks/useWatchedEpisodes";
+import { useEpisodeRatings } from "@/hooks/useEpisodeRatings";
+import { RatingPicker } from "@/components/RatingPicker";
 import { cn } from "@/lib/utils";
 
 interface SeasonsAccordionProps {
