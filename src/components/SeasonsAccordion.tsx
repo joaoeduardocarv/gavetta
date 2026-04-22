@@ -50,6 +50,15 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
     totalWatched,
   } = useWatchedEpisodes(tmdbTvId);
 
+  const {
+    getStoredEpisodeRating,
+    getEffectiveSeasonRating,
+    getEffectiveSeriesRating,
+    setEpisodeRating,
+    setSeasonRating,
+    setSeriesRating,
+  } = useEpisodeRatings(tmdbTvId);
+
   // Load season list
   useEffect(() => {
     let cancelled = false;
