@@ -591,7 +591,6 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                     <Label className="text-sm font-semibold mb-2 block">Temporadas e Episódios</Label>
                     <SeasonsAccordion
                       tmdbTvId={parsed.tmdbId}
-                      onProgressChange={handleSeriesProgress}
                     />
                   </div>
                 );
