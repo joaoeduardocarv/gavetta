@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      episode_ratings: {
+        Row: {
+          created_at: string
+          episode_number: number | null
+          id: string
+          rating: number
+          season_number: number | null
+          tmdb_tv_id: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          episode_number?: number | null
+          id?: string
+          rating: number
+          season_number?: number | null
+          tmdb_tv_id: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          episode_number?: number | null
+          id?: string
+          rating?: number
+          season_number?: number | null
+          tmdb_tv_id?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       friendships: {
         Row: {
           addressee_id: string
