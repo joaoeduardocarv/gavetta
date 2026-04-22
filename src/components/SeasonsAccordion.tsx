@@ -7,6 +7,8 @@ import { Progress } from "@/components/ui/progress";
 import { Loader2, Check, CheckCheck } from "lucide-react";
 import { getTVDetails, getSeasonEpisodes, type TMDBEpisode, type TMDBSeason } from "@/lib/tmdb";
 import { useWatchedEpisodes } from "@/hooks/useWatchedEpisodes";
+import { useEpisodeRatings } from "@/hooks/useEpisodeRatings";
+import { RatingPicker } from "@/components/RatingPicker";
 import { cn } from "@/lib/utils";
 
 interface SeasonsAccordionProps {
@@ -47,6 +49,15 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
     watchedCountForSeason,
     totalWatched,
   } = useWatchedEpisodes(tmdbTvId);
+
+  const {
+    getStoredEpisodeRating,
+    getEffectiveSeasonRating,
+    getEffectiveSeriesRating,
+    setEpisodeRating,
+    setSeasonRating,
+    setSeriesRating,
+  } = useEpisodeRatings(tmdbTvId);
 
   // Load season list
   useEffect(() => {
@@ -105,16 +116,26 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
   if (seasons.length === 0) return null;
 
   const overallPercent = totalEpisodes > 0 ? Math.round((totalWatched / totalEpisodes) * 100) : 0;
+  const seriesRating = getEffectiveSeriesRating(seasons.map((s) => s.season_number));
 
   return (
     <div className="space-y-3">
-      {/* Overall progress */}
+      {/* Overall progress + series-level rating */}
       <div className="space-y-1.5">
-        <div className="flex items-center justify-between text-sm">
+        <div className="flex items-center justify-between text-sm gap-2">
           <span className="font-medium text-foreground">Progresso</span>
-          <span className="text-muted-foreground">
-            {totalWatched} / {totalEpisodes} episódios
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground text-xs">
+              {totalWatched} / {totalEpisodes} eps
+            </span>
+            <RatingPicker
+              value={seriesRating.value}
+              isAverage={seriesRating.isAverage}
+              label="Sua nota para a série inteira"
+              size="default"
+              onChange={(v) => setSeriesRating(v)}
+            />
+          </div>
         </div>
         <Progress value={overallPercent} className="h-2" />
       </div>
@@ -147,6 +168,7 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
           const year = season.air_date ? new Date(season.air_date).getFullYear() : null;
           const episodes = episodesBySeason[season.season_number];
           const isLoadingEps = loadingSeason === season.season_number;
+          const seasonRating = getEffectiveSeasonRating(season.season_number);
 
           return (
             <AccordionItem key={season.id} value={`season-${season.season_number}`}>
@@ -170,6 +192,15 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {watchedCount} / {epCount} episódios
                     </p>
+                  </div>
+                  {/* Season rating chip — stops trigger toggle on click */}
+                  <div onClick={(e) => e.stopPropagation()} className="shrink-0">
+                    <RatingPicker
+                      value={seasonRating.value}
+                      isAverage={seasonRating.isAverage}
+                      label={`Sua nota para ${season.name}`}
+                      onChange={(v) => setSeasonRating(season.season_number, v)}
+                    />
                   </div>
                 </div>
               </AccordionTrigger>
@@ -206,6 +237,7 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
                       {episodes.map((ep) => {
                         const watched = isWatched(season.season_number, ep.episode_number);
                         const airInfo = formatEpisodeAirDate(ep.air_date);
+                        const epRating = getStoredEpisodeRating(season.season_number, ep.episode_number);
                         return (
                           <li
                             key={ep.id}
@@ -245,6 +277,19 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
                               {ep.overview && (
                                 <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{ep.overview}</p>
                               )}
+                            </div>
+                            {/* Episode rating — only enabled if watched */}
+                            <div className="shrink-0 mt-0.5">
+                              <RatingPicker
+                                value={epRating ?? null}
+                                disabled={!watched}
+                                label={
+                                  watched
+                                    ? `Sua nota para o episódio ${ep.episode_number}`
+                                    : "Marque como assistido para avaliar"
+                                }
+                                onChange={(v) => setEpisodeRating(season.season_number, ep.episode_number, v)}
+                              />
                             </div>
                           </li>
                         );
