@@ -200,6 +200,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
           cast: creditsData.cast.slice(0, 10).map(c => c.name),
           availableOn: extractStreamingNames(providers),
           rating: Math.round(details.vote_average * 10) / 10,
+          isInTheaters: details.isInTheaters,
         };
         
         // Atualizar o conteúdo atual com os novos dados
