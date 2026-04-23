@@ -255,13 +255,18 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
                         if (allWatched) {
                           unmarkSeason(season.season_number);
                         } else if (episodes) {
-                          markSeason(season.season_number, episodes.map((ep) => ep.episode_number));
+                          const aired = episodes
+                            .filter((ep) => hasAired(ep.air_date))
+                            .map((ep) => ep.episode_number);
+                          if (aired.length > 0) {
+                            markSeason(season.season_number, aired);
+                          }
                         }
                       }}
                       disabled={!episodes}
                       className="flex-1"
                     >
-                      {allWatched ? "Desmarcar temporada" : "Marcar temporada inteira"}
+                      {allWatched ? "Desmarcar temporada" : "Marcar episódios lançados"}
                     </Button>
                   </div>
 
