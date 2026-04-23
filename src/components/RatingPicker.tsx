@@ -94,7 +94,8 @@ export function RatingPicker({
                 onClick={(e) => {
                   e.stopPropagation();
                   onChange(n);
-                  setOpen(false);
+                  // Small delay so user sees the selected stars fill in before closing
+                  setTimeout(() => setOpen(false), 400);
                 }}
                 aria-label={`${n} de 10`}
                 className="p-0.5 transition-transform hover:scale-110"
