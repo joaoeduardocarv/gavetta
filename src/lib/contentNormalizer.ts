@@ -201,5 +201,6 @@ export function normalizeStoredContent(
         : extractStreamingLogos(watchProviders),
     rating: ratingValue,
     status,
+    isInTheaters: typeof data.isInTheaters === "boolean" ? data.isInTheaters : undefined,
   };
 }
