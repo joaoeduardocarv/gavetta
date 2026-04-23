@@ -39,6 +39,8 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
   const [isLoadingSeasons, setIsLoadingSeasons] = useState(true);
   const [episodesBySeason, setEpisodesBySeason] = useState<Record<number, TMDBEpisode[]>>({});
   const [loadingSeason, setLoadingSeason] = useState<number | null>(null);
+  /** Key "season:episode" of the rating picker that should be auto-opened (just-watched episode). */
+  const [autoOpenRatingKey, setAutoOpenRatingKey] = useState<string | null>(null);
 
   const {
     isWatched,
@@ -293,7 +295,14 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
                             <Checkbox
                               checked={watched}
                               disabled={airInfo?.isFuture && airInfo.label !== "Hoje"}
-                              onCheckedChange={() => toggleEpisode(season.season_number, ep.episode_number)}
+                              onCheckedChange={async () => {
+                                const wasWatched = watched;
+                                await toggleEpisode(season.season_number, ep.episode_number);
+                                // After marking as watched, auto-open the rating picker
+                                if (!wasWatched) {
+                                  setAutoOpenRatingKey(`${season.season_number}:${ep.episode_number}`);
+                                }
+                              }}
                               className="mt-0.5"
                               aria-label={`Marcar episódio ${ep.episode_number} como assistido`}
                             />
@@ -324,16 +333,29 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
                             </div>
                             {/* Episode rating — only enabled if watched */}
                             <div className="shrink-0 mt-0.5">
-                              <RatingPicker
-                                value={epRating ?? null}
-                                disabled={!watched}
-                                label={
-                                  watched
-                                    ? `Sua nota para o episódio ${ep.episode_number}`
-                                    : "Marque como assistido para avaliar"
-                                }
-                                onChange={(v) => setEpisodeRating(season.season_number, ep.episode_number, v)}
-                              />
+                              {(() => {
+                                const epKey = `${season.season_number}:${ep.episode_number}`;
+                                const isAutoOpen = autoOpenRatingKey === epKey;
+                                return (
+                                  <RatingPicker
+                                    value={epRating ?? null}
+                                    disabled={!watched}
+                                    label={
+                                      watched
+                                        ? `Sua nota para o episódio ${ep.episode_number}`
+                                        : "Marque como assistido para avaliar"
+                                    }
+                                    open={isAutoOpen ? true : undefined}
+                                    onOpenChange={(o) => {
+                                      if (!o && isAutoOpen) setAutoOpenRatingKey(null);
+                                    }}
+                                    onChange={(v) => {
+                                      setEpisodeRating(season.season_number, ep.episode_number, v);
+                                      if (isAutoOpen) setAutoOpenRatingKey(null);
+                                    }}
+                                  />
+                                );
+                              })()}
                             </div>
                           </li>
                         );

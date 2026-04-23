@@ -15,6 +15,9 @@ interface RatingPickerProps {
   label: string;
   /** Compact = chip-style trigger; full = always shows 10 stars (used in headers). */
   size?: "compact" | "default";
+  /** Optional controlled open state — when provided, parent manages open/close. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
   onChange: (value: number | null) => void;
 }
 
@@ -28,10 +31,18 @@ export function RatingPicker({
   disabled = false,
   label,
   size = "compact",
+  open: controlledOpen,
+  onOpenChange,
   onChange,
 }: RatingPickerProps) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [hover, setHover] = useState<number | null>(null);
+
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = (v: boolean) => {
+    if (onOpenChange) onOpenChange(v);
+    else setInternalOpen(v);
+  };
 
   const display = hover ?? value ?? 0;
 
