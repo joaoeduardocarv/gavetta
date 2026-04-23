@@ -152,12 +152,21 @@ export default function Trending() {
     setIsLoadingNews(true);
     setNewsError(null);
     try {
+      // Edge function requires a real user JWT (validates `sub` claim).
+      // Sending the anon publishable key fails with "missing sub claim", so use the session token.
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (!accessToken) {
+        throw new Error('Sem sessão ativa');
+      }
+
       const response = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gnews?action=movies&lang=pt&country=br&max=10`,
         {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            Authorization: `Bearer ${accessToken}`,
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             'Content-Type': 'application/json',
           },
         }
