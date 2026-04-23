@@ -180,8 +180,39 @@ serve(async (req) => {
       
       case 'getMovieDetails': {
         const movieId = url.searchParams.get('movieId');
-        const response = await fetchTMDB(`/movie/${movieId}?language=pt-BR`);
-        data = await response.json();
+        // Append release_dates so we can detect if the movie is currently in theaters in BR.
+        const response = await fetchTMDB(`/movie/${movieId}?language=pt-BR&append_to_response=release_dates`);
+        const result = await response.json();
+
+        // Compute `isInTheaters` for Brazil from the release_dates payload.
+        // TMDB type codes: 1=Premiere, 2=Theatrical (limited), 3=Theatrical, 4=Digital, 5=Physical, 6=TV
+        let isInTheaters = false;
+        try {
+          const brEntry = result?.release_dates?.results?.find((r: { iso_3166_1: string }) => r.iso_3166_1 === 'BR');
+          const theatricalDates: string[] = (brEntry?.release_dates ?? [])
+            .filter((rd: { type: number; release_date: string }) => rd.type === 2 || rd.type === 3)
+            .map((rd: { release_date: string }) => rd.release_date)
+            .filter(Boolean);
+
+          if (theatricalDates.length > 0) {
+            // Earliest theatrical release in BR
+            const earliest = theatricalDates.sort()[0];
+            const releaseTime = new Date(earliest).getTime();
+            const now = Date.now();
+            // Average theatrical window ≈ 45 days; we use 60 to be slightly inclusive,
+            // but only mark as "in theaters" if the release date is in the past or today.
+            const SIXTY_DAYS_MS = 60 * 24 * 60 * 60 * 1000;
+            if (!isNaN(releaseTime) && releaseTime <= now && now - releaseTime <= SIXTY_DAYS_MS) {
+              isInTheaters = true;
+            }
+          }
+        } catch (err) {
+          console.warn('Failed to compute isInTheaters:', err);
+        }
+
+        // Strip the heavy release_dates blob from the response — we only need the boolean.
+        const { release_dates: _omit, ...rest } = result;
+        data = { ...rest, isInTheaters };
         break;
       }
       
