@@ -88,6 +88,52 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
     }
   }, [totalWatched, totalEpisodes, onProgressChange]);
 
+  /** True if an episode has already aired (air date <= today) or has no date. */
+  const hasAired = (airDate: string | null | undefined): boolean => {
+    if (!airDate) return false; // unknown date → treat as not yet aired (safer)
+    const ep = new Date(airDate + "T00:00:00");
+    if (isNaN(ep.getTime())) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return ep.getTime() <= today.getTime();
+  };
+
+  const handleMarkAllAired = async () => {
+    // Ensure every season's episodes are loaded so we can filter by air date
+    const missing = seasons.filter((s) => !episodesBySeason[s.season_number]);
+    let loaded = episodesBySeason;
+    if (missing.length > 0) {
+      try {
+        const results = await Promise.all(
+          missing.map((s) =>
+            getSeasonEpisodes(tmdbTvId, s.season_number).then((eps) => ({
+              season: s.season_number,
+              eps,
+            }))
+          )
+        );
+        loaded = { ...episodesBySeason };
+        results.forEach(({ season, eps }) => {
+          loaded[season] = eps;
+        });
+        setEpisodesBySeason(loaded);
+      } catch (err) {
+        console.error("Error loading episodes for mark-all:", err);
+        return;
+      }
+    }
+
+    // Build list of aired episodes per season and mark each
+    for (const s of seasons) {
+      const eps = loaded[s.season_number];
+      if (!eps) continue;
+      const airedNumbers = eps.filter((ep) => hasAired(ep.air_date)).map((ep) => ep.episode_number);
+      if (airedNumbers.length > 0) {
+        await markSeason(s.season_number, airedNumbers);
+      }
+    }
+  };
+
   const handleAccordionChange = async (value: string) => {
     if (!value) return;
     const seasonNumber = Number(value.replace("season-", ""));
@@ -140,23 +186,16 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
         <Progress value={overallPercent} className="h-2" />
       </div>
 
-      {/* Mark whole series as watched */}
+      {/* Mark whole series as watched (skips unreleased episodes) */}
       {totalEpisodes > 0 && totalWatched < totalEpisodes && (
         <Button
           size="sm"
           variant="default"
           className="w-full gap-2"
-          onClick={() =>
-            markAllSeasons(
-              seasons.map((s) => ({
-                season_number: s.season_number,
-                episode_count: s.episode_count ?? 0,
-              }))
-            )
-          }
+          onClick={handleMarkAllAired}
         >
           <CheckCheck className="h-4 w-4" />
-          Marcar todos os episódios como assistidos
+          Marcar episódios já lançados como assistidos
         </Button>
       )}
 
@@ -216,13 +255,18 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
                         if (allWatched) {
                           unmarkSeason(season.season_number);
                         } else if (episodes) {
-                          markSeason(season.season_number, episodes.map((ep) => ep.episode_number));
+                          const aired = episodes
+                            .filter((ep) => hasAired(ep.air_date))
+                            .map((ep) => ep.episode_number);
+                          if (aired.length > 0) {
+                            markSeason(season.season_number, aired);
+                          }
                         }
                       }}
                       disabled={!episodes}
                       className="flex-1"
                     >
-                      {allWatched ? "Desmarcar temporada" : "Marcar temporada inteira"}
+                      {allWatched ? "Desmarcar temporada" : "Marcar episódios lançados"}
                     </Button>
                   </div>
 
