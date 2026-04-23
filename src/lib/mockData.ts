@@ -12,6 +12,8 @@ export interface Content {
   cast?: string[];
   availableOn?: string[];
   watchProviderLogos?: { name: string; logoPath: string }[];
+  /** True when the movie is currently in theaters (within ~60 days of theatrical release in BR). */
+  isInTheaters?: boolean;
   rating?: number;
   status?: 'watched' | 'watching' | 'to_watch';
   isFavorite?: boolean;

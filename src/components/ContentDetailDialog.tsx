@@ -200,6 +200,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
           cast: creditsData.cast.slice(0, 10).map(c => c.name),
           availableOn: extractStreamingNames(providers),
           rating: Math.round(details.vote_average * 10) / 10,
+          isInTheaters: details.isInTheaters,
         };
         
         // Atualizar o conteúdo atual com os novos dados
@@ -562,11 +563,19 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                 </div>
               )}
 
-              {content.availableOn && content.availableOn.length > 0 && (
+              {(content.isInTheaters || (content.availableOn && content.availableOn.length > 0)) && (
                 <div>
                   <Label className="text-sm font-semibold">Disponível em</Label>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    {content.availableOn.map((platform) => (
+                    {content.isInTheaters && (
+                      <Badge
+                        variant="default"
+                        className="bg-accent/20 text-accent-foreground border border-accent/30 hover:bg-accent/30"
+                      >
+                        🎬 Em cartaz nos cinemas
+                      </Badge>
+                    )}
+                    {content.availableOn?.map((platform) => (
                       <Badge key={platform} variant="outline">
                         {platform}
                       </Badge>

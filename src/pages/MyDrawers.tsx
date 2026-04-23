@@ -113,6 +113,7 @@ export default function MyDrawers() {
             cast: creditsData.cast.slice(0, 10).map(c => c.name),
             availableOn: extractStreamingNames(providers),
             rating: Math.round(details.vote_average * 10) / 10,
+            isInTheaters: details.isInTheaters,
           };
           
           setSelectedContent(enrichedContent);

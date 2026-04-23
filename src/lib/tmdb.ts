@@ -20,6 +20,8 @@ export interface TMDBMovieDetails extends TMDBMovie {
   budget: number;
   revenue: number;
   production_companies: { id: number; name: string; logo_path: string | null }[];
+  /** True if the movie is currently in theaters in Brazil (within ~60 days of theatrical release). */
+  isInTheaters?: boolean;
 }
 
 export interface TMDBTVShow {

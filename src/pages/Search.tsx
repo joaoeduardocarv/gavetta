@@ -323,7 +323,8 @@ export default function Search() {
           genres: details.genres.map(g => g.name),
           director: director?.name,
           cast: credits.cast.slice(0, 10).map(c => c.name),
-          availableOn: streamingNames.length > 0 ? streamingNames : undefined
+          availableOn: streamingNames.length > 0 ? streamingNames : undefined,
+          isInTheaters: details.isInTheaters,
         });
       } else {
         const [details, credits, providers] = await Promise.all([
