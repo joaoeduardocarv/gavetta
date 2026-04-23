@@ -39,6 +39,8 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
   const [isLoadingSeasons, setIsLoadingSeasons] = useState(true);
   const [episodesBySeason, setEpisodesBySeason] = useState<Record<number, TMDBEpisode[]>>({});
   const [loadingSeason, setLoadingSeason] = useState<number | null>(null);
+  /** Key "season:episode" of the rating picker that should be auto-opened (just-watched episode). */
+  const [autoOpenRatingKey, setAutoOpenRatingKey] = useState<string | null>(null);
 
   const {
     isWatched,
