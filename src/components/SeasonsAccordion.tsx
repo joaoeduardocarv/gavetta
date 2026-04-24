@@ -281,17 +281,18 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
                   ) : episodes ? (
                     <ul className="space-y-2">
                       {episodes.map((ep) => {
-                        const watched = isWatched(season.season_number, ep.episode_number);
+                        const aired = hasAired(ep.air_date);
+                        // Never treat unreleased episodes as watched, even if stored.
+                        const watched = aired && isWatched(season.season_number, ep.episode_number);
                         const airInfo = formatEpisodeAirDate(ep.air_date);
                         const epRating = getStoredEpisodeRating(season.season_number, ep.episode_number);
-                        const aired = hasAired(ep.air_date);
                         return (
                           <li
                             key={ep.id}
                             className={cn(
                               "flex items-start gap-3 p-2 rounded-md border border-border/50 transition-colors",
                               watched && "bg-muted/50",
-                              !aired && !watched && "opacity-60"
+                              !aired && "opacity-60"
                             )}
                           >
                             <Checkbox
