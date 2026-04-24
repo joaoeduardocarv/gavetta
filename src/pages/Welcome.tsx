@@ -156,15 +156,17 @@ export default function Welcome() {
               </div>
             </div>
 
-            <div className="relative mx-auto w-full max-w-md lg:max-w-none">
-              <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-primary/30 to-accent/20 blur-3xl" aria-hidden="true" />
-              <img
-                src={mockupApp}
-                alt="App Gavetta com gavetas e filmes brasileiros"
-                width={1024}
-                height={1024}
-                className="relative w-full drop-shadow-2xl"
-              />
+            <div className="relative mx-auto w-full max-w-[300px]">
+              <div className="absolute inset-0 -z-10 scale-110 bg-gradient-to-tr from-primary/30 to-accent/20 blur-3xl" aria-hidden="true" />
+              <div className="relative overflow-hidden rounded-[2.5rem] border-[10px] border-foreground/10 bg-background shadow-2xl ring-1 ring-foreground/5">
+                <img
+                  src={mockupApp}
+                  alt="Tela de Gavetas do app Gavetta"
+                  width={390}
+                  height={844}
+                  className="block w-full"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -225,16 +227,18 @@ export default function Welcome() {
       <section className="border-y border-border/40 bg-card/30 py-20 md:py-28">
         <div className="container mx-auto max-w-6xl px-4">
           <div className="grid items-center gap-12 lg:grid-cols-2">
-            <div className="relative order-2 mx-auto w-full max-w-sm lg:order-1 lg:max-w-md">
-              <div className="absolute inset-0 -z-10 bg-gradient-to-br from-accent/30 to-primary/20 blur-3xl" aria-hidden="true" />
-              <img
-                src={mockupSeries}
-                alt="Controle de episódios e temporadas"
-                width={1024}
-                height={1024}
-                loading="lazy"
-                className="relative w-full drop-shadow-2xl"
-              />
+            <div className="relative order-2 mx-auto w-full max-w-[280px] lg:order-1">
+              <div className="absolute inset-0 -z-10 scale-110 bg-gradient-to-br from-accent/30 to-primary/20 blur-3xl" aria-hidden="true" />
+              <div className="relative overflow-hidden rounded-[2.5rem] border-[10px] border-foreground/10 bg-background shadow-2xl ring-1 ring-foreground/5">
+                <img
+                  src={mockupSeries}
+                  alt="Tela Em Alta com filmes e séries no app"
+                  width={390}
+                  height={844}
+                  loading="lazy"
+                  className="block w-full"
+                />
+              </div>
             </div>
             <div className="order-1 lg:order-2">
               <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
@@ -298,16 +302,18 @@ export default function Welcome() {
                 </li>
               </ul>
             </div>
-            <div className="relative mx-auto w-full max-w-sm lg:max-w-md">
-              <div className="absolute inset-0 -z-10 bg-gradient-to-tl from-primary/30 to-accent/20 blur-3xl" aria-hidden="true" />
-              <img
-                src={mockupSocial}
-                alt="Feed social do Gavetta com amigos e recomendações"
-                width={1024}
-                height={1024}
-                loading="lazy"
-                className="relative w-full drop-shadow-2xl"
-              />
+            <div className="relative mx-auto w-full max-w-[280px]">
+              <div className="absolute inset-0 -z-10 scale-110 bg-gradient-to-tl from-primary/30 to-accent/20 blur-3xl" aria-hidden="true" />
+              <div className="relative overflow-hidden rounded-[2.5rem] border-[10px] border-foreground/10 bg-background shadow-2xl ring-1 ring-foreground/5">
+                <img
+                  src={mockupSocial}
+                  alt="Feed social do Gavetta com atividades de amigos"
+                  width={390}
+                  height={844}
+                  loading="lazy"
+                  className="block w-full"
+                />
+              </div>
             </div>
           </div>
         </div>
