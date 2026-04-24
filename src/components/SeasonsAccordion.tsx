@@ -54,6 +54,7 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
 
   const {
     getStoredEpisodeRating,
+    getEffectiveEpisodeRating,
     getEffectiveSeasonRating,
     getEffectiveSeriesRating,
     setEpisodeRating,
