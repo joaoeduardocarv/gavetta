@@ -76,18 +76,21 @@ export function useEpisodeRatings(tmdbTvId: number | null) {
     [ratings]
   );
 
-  // ---------- Computed (with averages + top-down inheritance) ----------
+  // ---------- Computed (explicit-wins, then top-down inheritance, then bottom-up average) ----------
   /**
-   * Returns the effective season rating using this priority:
-   *  1. Explicit season rating (manual override)
-   *  2. Average of stored episode ratings for the season
-   *  3. Inherited from the explicit series rating (top-down)
+   * Effective season rating priority:
+   *  1. Explicit season rating
+   *  2. Explicit series rating (top-down inheritance — explicit always wins)
+   *  3. Average of stored episode ratings for the season (bottom-up)
    */
   const getEffectiveSeasonRating = useCallback(
     (season: number): { value: number | null; isAverage: boolean } => {
       const explicit = getStoredSeasonRating(season);
       if (explicit != null) return { value: explicit, isAverage: false };
-      // Average of stored episode ratings for this season
+      // Top-down: inherit from explicit series rating before falling back to averages
+      const series = getStoredSeriesRating();
+      if (series != null) return { value: series, isAverage: true };
+      // Bottom-up: average of stored episode ratings for this season
       const eps: number[] = [];
       ratings.forEach((value, key) => {
         const [s, e] = key.split(":");
@@ -97,19 +100,16 @@ export function useEpisodeRatings(tmdbTvId: number | null) {
         const avg = eps.reduce((a, b) => a + b, 0) / eps.length;
         return { value: Math.round(avg * 10) / 10, isAverage: true };
       }
-      // Inherit from explicit series rating
-      const series = getStoredSeriesRating();
-      if (series != null) return { value: series, isAverage: true };
       return { value: null, isAverage: false };
     },
     [ratings, getStoredSeasonRating, getStoredSeriesRating]
   );
 
   /**
-   * Returns the effective rating for an individual episode:
+   * Effective episode rating priority:
    *  1. Explicit episode rating
-   *  2. Inherited from explicit season rating
-   *  3. Inherited from explicit series rating
+   *  2. Explicit season rating (top-down)
+   *  3. Explicit series rating (top-down)
    */
   const getEffectiveEpisodeRating = useCallback(
     (season: number, episode: number): { value: number | null; isAverage: boolean } => {
@@ -125,9 +125,9 @@ export function useEpisodeRatings(tmdbTvId: number | null) {
   );
 
   /**
-   * Returns the explicit series rating, or the average of effective season
-   * ratings (which themselves may be averages of episodes).
-   * `seasonNumbers` lets us know which seasons exist (excluding specials).
+   * Effective series rating priority:
+   *  1. Explicit series rating
+   *  2. Average of effective season ratings (bottom-up)
    */
   const getEffectiveSeriesRating = useCallback(
     (seasonNumbers: number[]): { value: number | null; isAverage: boolean } => {
