@@ -1,6 +1,13 @@
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   Film,
   Tv,
@@ -13,6 +20,8 @@ import {
   Flag,
   CheckCircle2,
   ArrowRight,
+  Shield,
+  Zap,
 } from "lucide-react";
 import logo from "@/assets/gavettalogo.png";
 import heroBg from "@/assets/landing-hero-bg.jpg";
@@ -89,9 +98,72 @@ const stats = [
   { value: "∞", label: "Gavetas por usuário" },
 ];
 
+const faqs = [
+  {
+    q: "O Gavetta é grátis mesmo?",
+    a: "Sim. 100% grátis e sem cartão de crédito. Crie sua conta, organize filmes e séries e use todos os recursos sem pagar nada.",
+  },
+  {
+    q: "Qual a diferença entre o Gavetta e o Letterboxd?",
+    a: "O Letterboxd só rastreia filmes. No Gavetta você acompanha séries episódio por episódio, temporada por temporada, com herança inteligente de avaliação. Além disso, somos brasileiros e damos destaque ao cinema nacional.",
+  },
+  {
+    q: "Posso seguir meus amigos?",
+    a: "Sim. O Gavetta é uma rede social cinéfila: siga amigos, veja o que estão assistindo, troque recomendações diretas e crie gavetas compartilhadas.",
+  },
+  {
+    q: "Os dados de filmes e séries são confiáveis?",
+    a: "Usamos a base do TMDB (a mesma de grandes apps internacionais), com sincronização constante para trazer lançamentos, elenco e episódios atualizados.",
+  },
+  {
+    q: "Funciona no celular?",
+    a: "Sim. O Gavetta é mobile-first: foi desenhado para o celular, mas funciona em qualquer dispositivo via navegador.",
+  },
+  {
+    q: "Como funcionam as gavetas?",
+    a: "Gavetas são listas para organizar filmes e séries. Você tem as padrão (Para Assistir, Assistindo, Assistidos) e pode criar quantas gavetas personalizadas quiser.",
+  },
+];
+
 export default function Welcome() {
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <Helmet>
+        <title>Gavetta · Organize seus filmes e séries — feito no Brasil</title>
+        <meta
+          name="description"
+          content="Organize filmes e séries em gavetas, avalie episódio por episódio e siga amigos. O app brasileiro de gestão cinéfila. Grátis, sem cartão."
+        />
+        <link rel="canonical" href="https://gavetta.lovable.app/welcome" />
+        <meta property="og:title" content="Gavetta · Organize seus filmes e séries" />
+        <meta
+          property="og:description"
+          content="O app brasileiro para organizar filmes e séries. Avalie episódio por episódio. Grátis."
+        />
+        <meta property="og:url" content="https://gavetta.lovable.app/welcome" />
+        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
+      </Helmet>
+
+      {/* Urgency / announcement bar */}
+      <div className="w-full border-b border-primary/20 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 py-2 text-center text-xs">
+        <span className="inline-flex items-center justify-center gap-2 px-4">
+          <Zap className="h-3 w-3 text-accent" aria-hidden="true" />
+          <span className="text-foreground/90">
+            Beta aberto · grátis para sempre para os primeiros usuários
+          </span>
+        </span>
+      </div>
+
       {/* Top Nav */}
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
@@ -166,9 +238,10 @@ export default function Welcome() {
                   src={mockupApp}
                   srcSet={`${mockupApp360} 360w, ${mockupApp} 390w`}
                   sizes="(max-width: 640px) 260px, 300px"
-                  alt="Tela de Gavetas do app Gavetta"
+                  alt="Tela de Gavetas do app Gavetta com filmes brasileiros organizados"
                   width={390}
                   height={844}
+                  fetchPriority="high"
                   className="block w-full"
                 />
               </div>
@@ -360,6 +433,32 @@ export default function Welcome() {
         </div>
       </section>
 
+      {/* FAQ */}
+      <section className="py-20 md:py-24" id="faq">
+        <div className="container mx-auto max-w-3xl px-4">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+              Perguntas frequentes
+            </h2>
+            <p className="mt-3 text-muted-foreground">
+              Tudo que você precisa saber antes de criar sua conta.
+            </p>
+          </div>
+          <Accordion type="single" collapsible className="mt-10">
+            {faqs.map((f, i) => (
+              <AccordionItem key={i} value={`faq-${i}`} className="border-border/50">
+                <AccordionTrigger className="text-left text-base font-semibold">
+                  {f.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  {f.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+      </section>
+
       {/* Final CTA */}
       <section className="relative overflow-hidden py-24 md:py-32">
         <div className="absolute left-1/2 top-1/2 -z-10 h-[400px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 blur-[120px]" aria-hidden="true" />
@@ -371,18 +470,29 @@ export default function Welcome() {
             </span>
           </h2>
           <p className="mt-6 text-lg text-muted-foreground">
-            Crie sua conta em segundos. É grátis, é brasileiro e é seu.
+            Crie sua conta em menos de 30 segundos. É grátis, é brasileiro e é seu.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button asChild size="lg" className="w-full shadow-glow sm:w-auto">
-              <Link to="/auth">
-                Começar grátis
+              <Link to="/auth" aria-label="Criar conta gratuita no Gavetta">
+                Começar grátis agora
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="w-full sm:w-auto">
               <Link to="/auth">Já tenho conta</Link>
             </Button>
+          </div>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <Shield className="h-3.5 w-3.5 text-accent" /> Seus dados são privados
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-accent" /> Sem cartão de crédito
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Zap className="h-3.5 w-3.5 text-accent" /> Cadastro em 30s
+            </span>
           </div>
         </div>
       </section>
