@@ -98,9 +98,72 @@ const stats = [
   { value: "∞", label: "Gavetas por usuário" },
 ];
 
+const faqs = [
+  {
+    q: "O Gavetta é grátis mesmo?",
+    a: "Sim. 100% grátis e sem cartão de crédito. Crie sua conta, organize filmes e séries e use todos os recursos sem pagar nada.",
+  },
+  {
+    q: "Qual a diferença entre o Gavetta e o Letterboxd?",
+    a: "O Letterboxd só rastreia filmes. No Gavetta você acompanha séries episódio por episódio, temporada por temporada, com herança inteligente de avaliação. Além disso, somos brasileiros e damos destaque ao cinema nacional.",
+  },
+  {
+    q: "Posso seguir meus amigos?",
+    a: "Sim. O Gavetta é uma rede social cinéfila: siga amigos, veja o que estão assistindo, troque recomendações diretas e crie gavetas compartilhadas.",
+  },
+  {
+    q: "Os dados de filmes e séries são confiáveis?",
+    a: "Usamos a base do TMDB (a mesma de grandes apps internacionais), com sincronização constante para trazer lançamentos, elenco e episódios atualizados.",
+  },
+  {
+    q: "Funciona no celular?",
+    a: "Sim. O Gavetta é mobile-first: foi desenhado para o celular, mas funciona em qualquer dispositivo via navegador.",
+  },
+  {
+    q: "Como funcionam as gavetas?",
+    a: "Gavetas são listas para organizar filmes e séries. Você tem as padrão (Para Assistir, Assistindo, Assistidos) e pode criar quantas gavetas personalizadas quiser.",
+  },
+];
+
 export default function Welcome() {
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: { "@type": "Answer", text: f.a },
+    })),
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <Helmet>
+        <title>Gavetta · Organize seus filmes e séries — feito no Brasil</title>
+        <meta
+          name="description"
+          content="Organize filmes e séries em gavetas, avalie episódio por episódio e siga amigos. O app brasileiro de gestão cinéfila. Grátis, sem cartão."
+        />
+        <link rel="canonical" href="https://gavetta.lovable.app/welcome" />
+        <meta property="og:title" content="Gavetta · Organize seus filmes e séries" />
+        <meta
+          property="og:description"
+          content="O app brasileiro para organizar filmes e séries. Avalie episódio por episódio. Grátis."
+        />
+        <meta property="og:url" content="https://gavetta.lovable.app/welcome" />
+        <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
+      </Helmet>
+
+      {/* Urgency / announcement bar */}
+      <div className="w-full border-b border-primary/20 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 py-2 text-center text-xs">
+        <span className="inline-flex items-center justify-center gap-2 px-4">
+          <Zap className="h-3 w-3 text-accent" aria-hidden="true" />
+          <span className="text-foreground/90">
+            Beta aberto · grátis para sempre para os primeiros usuários
+          </span>
+        </span>
+      </div>
+
       {/* Top Nav */}
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
