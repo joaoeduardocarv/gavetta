@@ -348,11 +348,14 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
                                 const isAutoOpen = autoOpenRatingKey === epKey;
                                 return (
                                   <RatingPicker
-                                    value={epRating ?? null}
-                                    disabled={!watched}
+                                    value={epRating.value}
+                                    isAverage={epRating.isAverage}
+                                    disabled={!watched && epStored == null && epRating.value == null}
                                     label={
                                       watched
                                         ? `Sua nota para o episódio ${ep.episode_number}`
+                                        : epRating.value != null
+                                        ? `Média herdada: ${epRating.value}`
                                         : "Marque como assistido para avaliar"
                                     }
                                     open={isAutoOpen ? true : undefined}
