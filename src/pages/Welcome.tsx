@@ -237,6 +237,8 @@ export default function Welcome() {
               <div className="relative overflow-hidden rounded-[2.5rem] border-[10px] border-foreground/10 bg-background shadow-2xl ring-1 ring-foreground/5">
                 <img
                   src={mockupSeries}
+                  srcSet={`${mockupSeries360} 360w, ${mockupSeries} 390w`}
+                  sizes="(max-width: 640px) 240px, 280px"
                   alt="Tela Em Alta com filmes e séries no app"
                   width={390}
                   height={844}
