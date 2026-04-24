@@ -17,8 +17,11 @@ import {
 import logo from "@/assets/gavettalogo.png";
 import heroBg from "@/assets/landing-hero-bg.jpg";
 import mockupApp from "@/assets/landing-mockup-app.png";
+import mockupApp360 from "@/assets/landing-mockup-app-360.png";
 import mockupSeries from "@/assets/landing-mockup-series.png";
+import mockupSeries360 from "@/assets/landing-mockup-series-360.png";
 import mockupSocial from "@/assets/landing-mockup-social.png";
+import mockupSocial360 from "@/assets/landing-mockup-social-360.png";
 
 const features = [
   {
@@ -161,6 +164,8 @@ export default function Welcome() {
               <div className="relative overflow-hidden rounded-[2.5rem] border-[10px] border-foreground/10 bg-background shadow-2xl ring-1 ring-foreground/5">
                 <img
                   src={mockupApp}
+                  srcSet={`${mockupApp360} 360w, ${mockupApp} 390w`}
+                  sizes="(max-width: 640px) 260px, 300px"
                   alt="Tela de Gavetas do app Gavetta"
                   width={390}
                   height={844}
@@ -232,6 +237,8 @@ export default function Welcome() {
               <div className="relative overflow-hidden rounded-[2.5rem] border-[10px] border-foreground/10 bg-background shadow-2xl ring-1 ring-foreground/5">
                 <img
                   src={mockupSeries}
+                  srcSet={`${mockupSeries360} 360w, ${mockupSeries} 390w`}
+                  sizes="(max-width: 640px) 240px, 280px"
                   alt="Tela Em Alta com filmes e séries no app"
                   width={390}
                   height={844}
@@ -307,6 +314,8 @@ export default function Welcome() {
               <div className="relative overflow-hidden rounded-[2.5rem] border-[10px] border-foreground/10 bg-background shadow-2xl ring-1 ring-foreground/5">
                 <img
                   src={mockupSocial}
+                  srcSet={`${mockupSocial360} 360w, ${mockupSocial} 390w`}
+                  sizes="(max-width: 640px) 240px, 280px"
                   alt="Feed social do Gavetta com atividades de amigos"
                   width={390}
                   height={844}
