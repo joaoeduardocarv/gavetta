@@ -1,6 +1,15 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  makeKey,
+  getStoredEpisodeRating as pureGetStoredEpisodeRating,
+  getStoredSeasonRating as pureGetStoredSeasonRating,
+  getStoredSeriesRating as pureGetStoredSeriesRating,
+  getEffectiveEpisodeRating as pureGetEffectiveEpisodeRating,
+  getEffectiveSeasonRating as pureGetEffectiveSeasonRating,
+  getEffectiveSeriesRating as pureGetEffectiveSeriesRating,
+} from "@/lib/ratingInheritance";
 
 interface RatingRow {
   season_number: number | null;
@@ -26,9 +35,6 @@ export function useEpisodeRatings(tmdbTvId: number | null) {
   const [ratings, setRatings] = useState<Map<string, number>>(new Map());
   const [isLoading, setIsLoading] = useState(false);
   const fetchKey = useRef<string | null>(null);
-
-  const makeKey = (season: number | null, episode: number | null) =>
-    `${season ?? "S"}:${episode ?? "S"}`;
 
   const refetch = useCallback(async () => {
     if (!user || tmdbTvId == null) {
@@ -64,85 +70,33 @@ export function useEpisodeRatings(tmdbTvId: number | null) {
 
   // ---------- Stored (raw) accessors ----------
   const getStoredEpisodeRating = useCallback(
-    (season: number, episode: number) => ratings.get(makeKey(season, episode)),
+    (season: number, episode: number) =>
+      pureGetStoredEpisodeRating(ratings, season, episode),
     [ratings]
   );
   const getStoredSeasonRating = useCallback(
-    (season: number) => ratings.get(makeKey(season, null)),
+    (season: number) => pureGetStoredSeasonRating(ratings, season),
     [ratings]
   );
   const getStoredSeriesRating = useCallback(
-    () => ratings.get(makeKey(null, null)),
+    () => pureGetStoredSeriesRating(ratings),
     [ratings]
   );
 
-  // ---------- Computed (explicit-wins, then top-down inheritance, then bottom-up average) ----------
-  /**
-   * Effective season rating priority:
-   *  1. Explicit season rating
-   *  2. Explicit series rating (top-down inheritance — explicit always wins)
-   *  3. Average of stored episode ratings for the season (bottom-up)
-   */
+  // ---------- Effective accessors (delegated to pure module — see ratingInheritance.ts) ----------
   const getEffectiveSeasonRating = useCallback(
-    (season: number): { value: number | null; isAverage: boolean } => {
-      const explicit = getStoredSeasonRating(season);
-      if (explicit != null) return { value: explicit, isAverage: false };
-      // Top-down: inherit from explicit series rating before falling back to averages
-      const series = getStoredSeriesRating();
-      if (series != null) return { value: series, isAverage: true };
-      // Bottom-up: average of stored episode ratings for this season
-      const eps: number[] = [];
-      ratings.forEach((value, key) => {
-        const [s, e] = key.split(":");
-        if (s === String(season) && e !== "S") eps.push(value);
-      });
-      if (eps.length > 0) {
-        const avg = eps.reduce((a, b) => a + b, 0) / eps.length;
-        return { value: Math.round(avg * 10) / 10, isAverage: true };
-      }
-      return { value: null, isAverage: false };
-    },
-    [ratings, getStoredSeasonRating, getStoredSeriesRating]
+    (season: number) => pureGetEffectiveSeasonRating(ratings, season),
+    [ratings]
   );
-
-  /**
-   * Effective episode rating priority:
-   *  1. Explicit episode rating
-   *  2. Explicit season rating (top-down)
-   *  3. Explicit series rating (top-down)
-   */
   const getEffectiveEpisodeRating = useCallback(
-    (season: number, episode: number): { value: number | null; isAverage: boolean } => {
-      const explicit = getStoredEpisodeRating(season, episode);
-      if (explicit != null) return { value: explicit, isAverage: false };
-      const seasonExplicit = getStoredSeasonRating(season);
-      if (seasonExplicit != null) return { value: seasonExplicit, isAverage: true };
-      const series = getStoredSeriesRating();
-      if (series != null) return { value: series, isAverage: true };
-      return { value: null, isAverage: false };
-    },
-    [getStoredEpisodeRating, getStoredSeasonRating, getStoredSeriesRating]
+    (season: number, episode: number) =>
+      pureGetEffectiveEpisodeRating(ratings, season, episode),
+    [ratings]
   );
-
-  /**
-   * Effective series rating priority:
-   *  1. Explicit series rating
-   *  2. Average of effective season ratings (bottom-up)
-   */
   const getEffectiveSeriesRating = useCallback(
-    (seasonNumbers: number[]): { value: number | null; isAverage: boolean } => {
-      const explicit = getStoredSeriesRating();
-      if (explicit != null) return { value: explicit, isAverage: false };
-      const seasonValues: number[] = [];
-      seasonNumbers.forEach((s) => {
-        const eff = getEffectiveSeasonRating(s);
-        if (eff.value != null) seasonValues.push(eff.value);
-      });
-      if (seasonValues.length === 0) return { value: null, isAverage: false };
-      const avg = seasonValues.reduce((a, b) => a + b, 0) / seasonValues.length;
-      return { value: Math.round(avg * 10) / 10, isAverage: true };
-    },
-    [getStoredSeriesRating, getEffectiveSeasonRating]
+    (seasonNumbers: number[]) =>
+      pureGetEffectiveSeriesRating(ratings, seasonNumbers),
+    [ratings]
   );
 
   // ---------- Mutations ----------
