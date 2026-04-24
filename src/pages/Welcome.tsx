@@ -17,8 +17,11 @@ import {
 import logo from "@/assets/gavettalogo.png";
 import heroBg from "@/assets/landing-hero-bg.jpg";
 import mockupApp from "@/assets/landing-mockup-app.png";
+import mockupApp360 from "@/assets/landing-mockup-app-360.png";
 import mockupSeries from "@/assets/landing-mockup-series.png";
+import mockupSeries360 from "@/assets/landing-mockup-series-360.png";
 import mockupSocial from "@/assets/landing-mockup-social.png";
+import mockupSocial360 from "@/assets/landing-mockup-social-360.png";
 
 const features = [
   {
