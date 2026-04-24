@@ -1,6 +1,13 @@
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import {
   Film,
   Tv,
@@ -13,6 +20,8 @@ import {
   Flag,
   CheckCircle2,
   ArrowRight,
+  Shield,
+  Zap,
 } from "lucide-react";
 import logo from "@/assets/gavettalogo.png";
 import heroBg from "@/assets/landing-hero-bg.jpg";
