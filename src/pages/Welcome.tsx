@@ -314,6 +314,8 @@ export default function Welcome() {
               <div className="relative overflow-hidden rounded-[2.5rem] border-[10px] border-foreground/10 bg-background shadow-2xl ring-1 ring-foreground/5">
                 <img
                   src={mockupSocial}
+                  srcSet={`${mockupSocial360} 360w, ${mockupSocial} 390w`}
+                  sizes="(max-width: 640px) 240px, 280px"
                   alt="Feed social do Gavetta com atividades de amigos"
                   width={390}
                   height={844}
