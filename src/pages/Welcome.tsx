@@ -156,15 +156,17 @@ export default function Welcome() {
               </div>
             </div>
 
-            <div className="relative mx-auto w-full max-w-md lg:max-w-none">
-              <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-primary/30 to-accent/20 blur-3xl" aria-hidden="true" />
-              <img
-                src={mockupApp}
-                alt="App Gavetta com gavetas e filmes brasileiros"
-                width={1024}
-                height={1024}
-                className="relative w-full drop-shadow-2xl"
-              />
+            <div className="relative mx-auto w-full max-w-[300px]">
+              <div className="absolute inset-0 -z-10 scale-110 bg-gradient-to-tr from-primary/30 to-accent/20 blur-3xl" aria-hidden="true" />
+              <div className="relative overflow-hidden rounded-[2.5rem] border-[10px] border-foreground/10 bg-background shadow-2xl ring-1 ring-foreground/5">
+                <img
+                  src={mockupApp}
+                  alt="Tela de Gavetas do app Gavetta"
+                  width={390}
+                  height={844}
+                  className="block w-full"
+                />
+              </div>
             </div>
           </div>
         </div>
