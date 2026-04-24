@@ -284,18 +284,21 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
                         const watched = isWatched(season.season_number, ep.episode_number);
                         const airInfo = formatEpisodeAirDate(ep.air_date);
                         const epRating = getStoredEpisodeRating(season.season_number, ep.episode_number);
+                        const aired = hasAired(ep.air_date);
                         return (
                           <li
                             key={ep.id}
                             className={cn(
                               "flex items-start gap-3 p-2 rounded-md border border-border/50 transition-colors",
-                              watched && "bg-muted/50"
+                              watched && "bg-muted/50",
+                              !aired && !watched && "opacity-60"
                             )}
                           >
                             <Checkbox
                               checked={watched}
-                              disabled={airInfo?.isFuture && airInfo.label !== "Hoje"}
+                              disabled={!aired}
                               onCheckedChange={async () => {
+                                if (!aired) return;
                                 const wasWatched = watched;
                                 await toggleEpisode(season.season_number, ep.episode_number);
                                 // After marking as watched, auto-open the rating picker
@@ -304,7 +307,11 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
                                 }
                               }}
                               className="mt-0.5"
-                              aria-label={`Marcar episódio ${ep.episode_number} como assistido`}
+                              aria-label={
+                                aired
+                                  ? `Marcar episódio ${ep.episode_number} como assistido`
+                                  : `Episódio ${ep.episode_number} ainda não lançado`
+                              }
                             />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
