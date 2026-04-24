@@ -238,9 +238,10 @@ export default function Welcome() {
                   src={mockupApp}
                   srcSet={`${mockupApp360} 360w, ${mockupApp} 390w`}
                   sizes="(max-width: 640px) 260px, 300px"
-                  alt="Tela de Gavetas do app Gavetta"
+                  alt="Tela de Gavetas do app Gavetta com filmes brasileiros organizados"
                   width={390}
                   height={844}
+                  fetchPriority="high"
                   className="block w-full"
                 />
               </div>
