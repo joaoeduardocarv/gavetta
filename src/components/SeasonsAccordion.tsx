@@ -204,12 +204,16 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
 
       <Accordion type="single" collapsible onValueChange={handleAccordionChange}>
         {seasons.map((season) => {
-          const watchedCount = watchedCountForSeason(season.season_number);
-          const epCount = season.episode_count ?? 0;
-          const allWatched = epCount > 0 && watchedCount >= epCount;
-          const year = season.air_date ? new Date(season.air_date).getFullYear() : null;
           const episodes = episodesBySeason[season.season_number];
           const isLoadingEps = loadingSeason === season.season_number;
+          // Use only aired episodes for accurate counts when episode list is loaded.
+          const airedEpisodes = episodes?.filter((ep) => hasAired(ep.air_date));
+          const epCount = airedEpisodes ? airedEpisodes.length : season.episode_count ?? 0;
+          const watchedCount = airedEpisodes
+            ? airedEpisodes.filter((ep) => isWatched(season.season_number, ep.episode_number)).length
+            : watchedCountForSeason(season.season_number);
+          const allWatched = epCount > 0 && watchedCount >= epCount;
+          const year = season.air_date ? new Date(season.air_date).getFullYear() : null;
           const seasonRating = getEffectiveSeasonRating(season.season_number);
 
           return (
