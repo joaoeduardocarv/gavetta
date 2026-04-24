@@ -286,7 +286,8 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
                         // Never treat unreleased episodes as watched, even if stored.
                         const watched = aired && isWatched(season.season_number, ep.episode_number);
                         const airInfo = formatEpisodeAirDate(ep.air_date);
-                        const epRating = getStoredEpisodeRating(season.season_number, ep.episode_number);
+                        const epRating = getEffectiveEpisodeRating(season.season_number, ep.episode_number);
+                        const epStored = getStoredEpisodeRating(season.season_number, ep.episode_number);
                         return (
                           <li
                             key={ep.id}
