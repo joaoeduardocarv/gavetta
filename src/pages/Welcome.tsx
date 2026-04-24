@@ -164,6 +164,8 @@ export default function Welcome() {
               <div className="relative overflow-hidden rounded-[2.5rem] border-[10px] border-foreground/10 bg-background shadow-2xl ring-1 ring-foreground/5">
                 <img
                   src={mockupApp}
+                  srcSet={`${mockupApp360} 360w, ${mockupApp} 390w`}
+                  sizes="(max-width: 640px) 260px, 300px"
                   alt="Tela de Gavetas do app Gavetta"
                   width={390}
                   height={844}
