@@ -302,16 +302,18 @@ export default function Welcome() {
                 </li>
               </ul>
             </div>
-            <div className="relative mx-auto w-full max-w-sm lg:max-w-md">
-              <div className="absolute inset-0 -z-10 bg-gradient-to-tl from-primary/30 to-accent/20 blur-3xl" aria-hidden="true" />
-              <img
-                src={mockupSocial}
-                alt="Feed social do Gavetta com amigos e recomendações"
-                width={1024}
-                height={1024}
-                loading="lazy"
-                className="relative w-full drop-shadow-2xl"
-              />
+            <div className="relative mx-auto w-full max-w-[280px]">
+              <div className="absolute inset-0 -z-10 scale-110 bg-gradient-to-tl from-primary/30 to-accent/20 blur-3xl" aria-hidden="true" />
+              <div className="relative overflow-hidden rounded-[2.5rem] border-[10px] border-foreground/10 bg-background shadow-2xl ring-1 ring-foreground/5">
+                <img
+                  src={mockupSocial}
+                  alt="Feed social do Gavetta com atividades de amigos"
+                  width={390}
+                  height={844}
+                  loading="lazy"
+                  className="block w-full"
+                />
+              </div>
             </div>
           </div>
         </div>
