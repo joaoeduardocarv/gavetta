@@ -54,6 +54,7 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
 
   const {
     getStoredEpisodeRating,
+    getEffectiveEpisodeRating,
     getEffectiveSeasonRating,
     getEffectiveSeriesRating,
     setEpisodeRating,
@@ -285,7 +286,8 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
                         // Never treat unreleased episodes as watched, even if stored.
                         const watched = aired && isWatched(season.season_number, ep.episode_number);
                         const airInfo = formatEpisodeAirDate(ep.air_date);
-                        const epRating = getStoredEpisodeRating(season.season_number, ep.episode_number);
+                        const epRating = getEffectiveEpisodeRating(season.season_number, ep.episode_number);
+                        const epStored = getStoredEpisodeRating(season.season_number, ep.episode_number);
                         return (
                           <li
                             key={ep.id}
@@ -346,11 +348,14 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
                                 const isAutoOpen = autoOpenRatingKey === epKey;
                                 return (
                                   <RatingPicker
-                                    value={epRating ?? null}
-                                    disabled={!watched}
+                                    value={epRating.value}
+                                    isAverage={epRating.isAverage}
+                                    disabled={!watched && epStored == null && epRating.value == null}
                                     label={
                                       watched
                                         ? `Sua nota para o episódio ${ep.episode_number}`
+                                        : epRating.value != null
+                                        ? `Média herdada: ${epRating.value}`
                                         : "Marque como assistido para avaliar"
                                     }
                                     open={isAutoOpen ? true : undefined}
