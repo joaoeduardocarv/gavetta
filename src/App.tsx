@@ -17,6 +17,7 @@ import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import PublicProfile from "./pages/PublicProfile";
+import Welcome from "./pages/Welcome";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
               <GlobalRatingDialog />
               <BrowserRouter>
                 <Routes>
+                  <Route path="/welcome" element={<Welcome />} />
                   <Route path="/auth" element={<Auth />} />
                   <Route path="/" element={<ProtectedRoute><MyDrawers /></ProtectedRoute>} />
                   <Route path="/my-drawers" element={<ProtectedRoute><MyDrawers /></ProtectedRoute>} />
