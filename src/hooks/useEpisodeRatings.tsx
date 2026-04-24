@@ -76,8 +76,13 @@ export function useEpisodeRatings(tmdbTvId: number | null) {
     [ratings]
   );
 
-  // ---------- Computed (with averages) ----------
-  /** Returns the explicit season rating, or the avg of its episode ratings. */
+  // ---------- Computed (with averages + top-down inheritance) ----------
+  /**
+   * Returns the effective season rating using this priority:
+   *  1. Explicit season rating (manual override)
+   *  2. Average of stored episode ratings for the season
+   *  3. Inherited from the explicit series rating (top-down)
+   */
   const getEffectiveSeasonRating = useCallback(
     (season: number): { value: number | null; isAverage: boolean } => {
       const explicit = getStoredSeasonRating(season);
@@ -88,11 +93,35 @@ export function useEpisodeRatings(tmdbTvId: number | null) {
         const [s, e] = key.split(":");
         if (s === String(season) && e !== "S") eps.push(value);
       });
-      if (eps.length === 0) return { value: null, isAverage: false };
-      const avg = eps.reduce((a, b) => a + b, 0) / eps.length;
-      return { value: Math.round(avg * 10) / 10, isAverage: true };
+      if (eps.length > 0) {
+        const avg = eps.reduce((a, b) => a + b, 0) / eps.length;
+        return { value: Math.round(avg * 10) / 10, isAverage: true };
+      }
+      // Inherit from explicit series rating
+      const series = getStoredSeriesRating();
+      if (series != null) return { value: series, isAverage: true };
+      return { value: null, isAverage: false };
     },
-    [ratings, getStoredSeasonRating]
+    [ratings, getStoredSeasonRating, getStoredSeriesRating]
+  );
+
+  /**
+   * Returns the effective rating for an individual episode:
+   *  1. Explicit episode rating
+   *  2. Inherited from explicit season rating
+   *  3. Inherited from explicit series rating
+   */
+  const getEffectiveEpisodeRating = useCallback(
+    (season: number, episode: number): { value: number | null; isAverage: boolean } => {
+      const explicit = getStoredEpisodeRating(season, episode);
+      if (explicit != null) return { value: explicit, isAverage: false };
+      const seasonExplicit = getStoredSeasonRating(season);
+      if (seasonExplicit != null) return { value: seasonExplicit, isAverage: true };
+      const series = getStoredSeriesRating();
+      if (series != null) return { value: series, isAverage: true };
+      return { value: null, isAverage: false };
+    },
+    [getStoredEpisodeRating, getStoredSeasonRating, getStoredSeriesRating]
   );
 
   /**
