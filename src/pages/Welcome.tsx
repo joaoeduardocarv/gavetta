@@ -432,6 +432,32 @@ export default function Welcome() {
         </div>
       </section>
 
+      {/* FAQ */}
+      <section className="py-20 md:py-24" id="faq">
+        <div className="container mx-auto max-w-3xl px-4">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">
+              Perguntas frequentes
+            </h2>
+            <p className="mt-3 text-muted-foreground">
+              Tudo que você precisa saber antes de criar sua conta.
+            </p>
+          </div>
+          <Accordion type="single" collapsible className="mt-10">
+            {faqs.map((f, i) => (
+              <AccordionItem key={i} value={`faq-${i}`} className="border-border/50">
+                <AccordionTrigger className="text-left text-base font-semibold">
+                  {f.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-muted-foreground">
+                  {f.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+      </section>
+
       {/* Final CTA */}
       <section className="relative overflow-hidden py-24 md:py-32">
         <div className="absolute left-1/2 top-1/2 -z-10 h-[400px] w-[700px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/20 blur-[120px]" aria-hidden="true" />
@@ -443,18 +469,29 @@ export default function Welcome() {
             </span>
           </h2>
           <p className="mt-6 text-lg text-muted-foreground">
-            Crie sua conta em segundos. É grátis, é brasileiro e é seu.
+            Crie sua conta em menos de 30 segundos. É grátis, é brasileiro e é seu.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button asChild size="lg" className="w-full shadow-glow sm:w-auto">
-              <Link to="/auth">
-                Começar grátis
+              <Link to="/auth" aria-label="Criar conta gratuita no Gavetta">
+                Começar grátis agora
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="w-full sm:w-auto">
               <Link to="/auth">Já tenho conta</Link>
             </Button>
+          </div>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
+            <span className="inline-flex items-center gap-1.5">
+              <Shield className="h-3.5 w-3.5 text-accent" /> Seus dados são privados
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <CheckCircle2 className="h-3.5 w-3.5 text-accent" /> Sem cartão de crédito
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <Zap className="h-3.5 w-3.5 text-accent" /> Cadastro em 30s
+            </span>
           </div>
         </div>
       </section>
