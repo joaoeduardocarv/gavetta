@@ -317,7 +317,7 @@ export function useStoryShare() {
 
     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
     ctx.font = '500 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    ctx.fillText('gavetta.lovable.app', STORY_WIDTH / 2, STORY_HEIGHT - 120);
+    ctx.fillText('gavetta.com.br', STORY_WIDTH / 2, STORY_HEIGHT - 120);
 
     // Converter para blob
     return new Promise((resolve) => {
@@ -345,7 +345,7 @@ export function useStoryShare() {
         await navigator.share({
           files: [file],
           title: `${content.title} - Gavetta`,
-          text: `Confira "${content.title}" no Gavetta! 🎬\n\nhttps://gavetta.lovable.app`,
+          text: `Confira "${content.title}" no Gavetta! 🎬\n\nhttps://gavetta.com.br`,
         });
 
         toast({
@@ -357,7 +357,7 @@ export function useStoryShare() {
         await navigator.share({
           title: `${content.title} - Gavetta`,
           text: `Confira "${content.title}" no Gavetta! 🎬`,
-          url: 'https://gavetta.lovable.app',
+          url: 'https://gavetta.com.br',
         });
 
         toast({

@@ -144,13 +144,13 @@ export default function Welcome() {
           name="description"
           content="Organize filmes e séries em gavetas, avalie episódio por episódio e siga amigos. O app brasileiro de gestão cinéfila. Grátis, sem cartão."
         />
-        <link rel="canonical" href="https://gavetta.lovable.app/welcome" />
+        <link rel="canonical" href="https://gavetta.com.br/welcome" />
         <meta property="og:title" content="Gavetta · Organize seus filmes e séries" />
         <meta
           property="og:description"
           content="O app brasileiro para organizar filmes e séries. Avalie episódio por episódio. Grátis."
         />
-        <meta property="og:url" content="https://gavetta.lovable.app/welcome" />
+        <meta property="og:url" content="https://gavetta.com.br/welcome" />
         <script type="application/ld+json">{JSON.stringify(faqJsonLd)}</script>
       </Helmet>
 

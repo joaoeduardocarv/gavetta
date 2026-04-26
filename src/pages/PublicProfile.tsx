@@ -170,7 +170,7 @@ export default function PublicProfile() {
           <h1 className="mt-4 text-2xl font-bold text-foreground">{profile.username}</h1>
           <p className="text-sm text-muted-foreground mt-1">Perfil público no Gavetta</p>
           <div className="flex gap-2 mt-4">
-            <Button size="sm" className="gap-2" onClick={() => window.open("https://gavetta.lovable.app", "_blank")}>
+            <Button size="sm" className="gap-2" onClick={() => window.open("https://gavetta.com.br", "_blank")}>
               <UserPlus className="h-4 w-4" />
               Adicionar aos amigos
             </Button>
