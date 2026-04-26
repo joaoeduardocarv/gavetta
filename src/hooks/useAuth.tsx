@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { markSessionVisited } from "@/lib/sessionVisit";
 
 interface AuthContextType {
   user: User | null;
@@ -33,6 +34,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = async () => {
+    // Garante que após o logout o usuário vá para /auth (e não para /welcome).
+    // Se ele fechar e reabrir o navegador, a sessionStorage é limpa e ele
+    // verá o /welcome novamente, conforme comportamento desejado.
+    markSessionVisited();
     await supabase.auth.signOut();
   };
 
