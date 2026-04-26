@@ -1,65 +1,59 @@
-## Diagnóstico
+## Objetivo
 
-Testei o DNS e as respostas HTTP agora:
+Substituir o mockup ilustrativo da seção "Episódio por episódio. Temporada por temporada." (`src/pages/Welcome.tsx`, linha 311) por um **print real** capturado direto do app Gavetta, na tela `/trending` filtrada por **Séries**, no viewport mobile.
 
-- ✅ `https://www.gavetta.com.br` → **HTTP 200** servindo o app Lovable (deployment id `bfa65fc2...`). Funcionando perfeitamente.
-- ❌ `https://gavetta.com.br` (sem www) → **HTTP 421 Misdirected Request** vindo do Cloudflare. O DNS resolve e o tráfego chega no edge, mas o Lovable **não reconhece** o hostname porque o **domínio raiz nunca foi adicionado como Custom Domain** no projeto — só o `www` está cadastrado.
+## Pré-requisito (você)
 
-Confirmação: o painel do projeto lista apenas `https://www.gavetta.com.br` em Custom Domains.
+Antes de eu rodar, me envie no chat:
+- **Email** e **senha** de uma conta de teste do Gavetta com acesso a `/trending`.
 
----
+> Sugestão: se possível, use uma conta que tenha o filtro **Séries** com bons resultados em alta no dia (ex: Stranger Things, Last of Us, etc.) — isso melhora a apresentação na landing.
 
-## O que você precisa fazer (2 passos rápidos no Lovable + Cloudflare)
+## Etapas que vou executar (após receber credenciais)
 
-### Passo 1 — Adicionar o domínio raiz no Lovable
+### 1. Capturar o screenshot real
+- Abrir o preview no viewport **390×844** (iPhone 13/14 — mesma proporção dos assets atuais `mockup-series.png` 390w e `mockup-series-360.png` 360w).
+- Navegar para `/auth`, fazer login com as credenciais de teste.
+- Navegar para `/trending`.
+- Clicar no filtro **Séries** (pill de filtro da página Trending).
+- Aguardar o carregamento dos cards (TMDB API).
+- Tirar screenshot da tela inteira via `browser--screenshot`.
 
-1. **Project Settings → Domains**.
-2. Clique em **Connect Domain**.
-3. Digite **`gavetta.com.br`** (sem o `www`) e confirme.
-4. Como você usa Cloudflare, expanda **Advanced** e marque **"Domain uses Cloudflare or a similar proxy"** (caso o www tenha sido adicionado assim — mantenha o mesmo modo nos dois pra evitar inconsistência).
-5. Anote os registros DNS exibidos (vai ser um A `185.158.133.1` ou um CNAME, dependendo do modo, + um TXT `_lovable`).
+### 2. Mostrar para você aprovar
+- Colocar o screenshot bruto em `/mnt/documents/trending-series-preview.png` e te apresentar como `<lov-artifact>` para você revisar **antes** de eu substituir o asset.
+- Se aprovar → próximo passo. Se não → recapturo com ajustes (filtro semanal/diário, scroll position, etc.).
 
-### Passo 2 — Definir o Primary Domain
+### 3. Processar e gerar os 2 assets responsivos
+- Recortar/redimensionar para **390×844** (asset principal).
+- Gerar versão **360×800** (asset para telas menores, mantendo a mesma proporção e crop).
+- Otimizar PNG (qualidade visual preservada, peso reduzido).
+- Salvar em:
+  - `src/assets/landing-mockup-series.png` (substitui)
+  - `src/assets/landing-mockup-series-360.png` (substitui)
 
-Ainda em **Project Settings → Domains**, defina **`gavetta.com.br`** como **Primary**. O `www` passa a redirecionar pra raiz (boa prática SEO — evita conteúdo duplicado).
+### 4. Validar no Welcome
+- Não preciso editar `Welcome.tsx` — ele já importa esses paths e usa `srcSet`/`sizes` corretamente (verificado nas linhas 311-320).
+- Capturar o `/welcome` final pra confirmar que o novo print aparece bonito dentro do frame de celular (border arredondada `rounded-[2.5rem]`, `border-[10px]`).
 
-> 💡 Alternativa: se você prefere o `www` como principal (também válido), defina `www.gavetta.com.br` como Primary e o raiz redireciona pra ele. Mas precisa adicionar o raiz do mesmo jeito pra não dar 421.
+### 5. QA final
+- Conferir que a imagem não está cortada, esticada ou com texto ilegível dentro do frame mockup.
+- Verificar nos breakpoints: mobile (<640px usa o 360w) e desktop (usa o 390w).
 
-### Passo 3 — Verificar/ajustar o Cloudflare
+## O que NÃO vai mudar
 
-No painel do Cloudflare → DNS → Records, confirme que o registro do domínio raiz (`@`) está cadastrado:
+- Nenhuma alteração em `Welcome.tsx`, copy, layout ou outros assets.
+- Nenhuma mudança em `/trending` ou em qualquer página do app — só captura.
+- A conta de teste que você me passar **não será modificada** (só leitura/navegação).
 
-- **Se você adicionou em modo DNS only no Lovable**: deve ser **A** `@` → `185.158.133.1`, proxy ⚪ **DNS only** (cinza).
-- **Se em modo Proxied**: deve ser o **CNAME** que o Lovable mostrar, com proxy 🟠 ativo, e SSL/TLS em **Full (strict)**.
+## Riscos e mitigações
 
-Se o registro `A @ → 185.158.133.1` já existir mas sem o domínio cadastrado no Lovable, é por isso que dá 421 — o passo 1 resolve.
+| Risco | Mitigação |
+|---|---|
+| Conteúdo "em alta" muda com o tempo e o print fica datado | É inerente a qualquer print real; podemos reagendar uma nova captura quando quiser |
+| Login falhar (Google-only, 2FA, etc.) | Você me confirma que é login por **email/senha**; se for só Google, precisamos de outra estratégia |
+| Conteúdo sensível/pessoal da conta aparecer | Vou usar só `/trending` (lista pública de em alta) — não toco em perfil, drawers ou feed pessoal |
+| Print ficar visualmente ruim | Etapa 2 (sua aprovação) existe justamente pra isso |
 
-Adicione também o **TXT `_lovable`** no Cloudflare (se ainda não existir) com o valor que o Lovable te der no Passo 1.
+## Próximo passo
 
-### Passo 4 — Aguardar verificação (~5 min via Cloudflare)
-
-No painel Lovable, o status passa por **Verifying → Setting up → Active**. SSL automático.
-
----
-
-## O que eu vou fazer (ao aprovar este plano)
-
-Atualizar todas as referências de URL no código pra consolidar autoridade SEO em **`https://gavetta.com.br`** (assumindo que será o Primary). Isso evita conteúdo duplicado entre `gavetta.lovable.app`, `www.gavetta.com.br` e `gavetta.com.br`:
-
-1. **`public/sitemap.xml`** — trocar `https://gavetta.lovable.app/welcome` e `/auth` por `https://gavetta.com.br/welcome` e `/auth`.
-2. **`public/robots.txt`** — atualizar a linha `Sitemap: https://gavetta.com.br/sitemap.xml`.
-3. **`index.html`** — atualizar:
-   - `<link rel="canonical" href="https://gavetta.com.br/" />`
-   - `og:url` → `https://gavetta.com.br/`
-   - `og:image` → `https://gavetta.com.br/og-image.jpg`
-   - `twitter:image` → `https://gavetta.com.br/og-image.jpg`
-   - JSON-LD (`Organization` e `WebApplication`): campos `url`, `@id`, `logo`, `publisher.@id`.
-4. **`src/pages/Welcome.tsx`** — se houver URLs absolutas no JSON-LD `FAQPage` ou nos `<Helmet>` por rota, atualizar pra `gavetta.com.br`.
-
-> ⚠️ Faço essa atualização **independentemente** de você ter completado o Passo 1 ainda — quando o domínio raiz ficar Active, tudo já estará apontando pra ele. Enquanto não estiver, o `www` continua funcionando normalmente (Lovable serve o mesmo app, só não consolida ainda o canonical).
-
----
-
-## Pergunta antes de aprovar
-
-Você quer **`gavetta.com.br`** como Primary (recomendado, mais limpo) ou **`www.gavetta.com.br`**? Isso muda apenas qual URL eu uso como canônica nos arquivos de SEO. Por padrão vou de `gavetta.com.br` (sem www).
+Aprove o plano e cole as credenciais de teste no chat. Aí eu já capturo, te mostro o preview, e finalizo.
