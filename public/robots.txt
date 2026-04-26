@@ -17,4 +17,4 @@ Disallow: /friends
 Disallow: /profile
 Disallow: /auth
 
-Sitemap: https://gavetta.lovable.app/sitemap.xml
+Sitemap: https://gavetta.com.br/sitemap.xml
