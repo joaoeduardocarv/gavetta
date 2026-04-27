@@ -162,6 +162,7 @@ export default function Auth() {
     setLoading(false);
 
     if (error) {
+      setLastSignupError(true);
       const msg = error.message || "";
       let description = msg;
       if (msg.includes("already registered") || msg.includes("already been registered") || msg.includes("User already registered")) {
@@ -191,10 +192,20 @@ export default function Auth() {
       } else if (msg.toLowerCase().includes("rate limit") || msg.includes("over_email_send_rate_limit")) {
         description = "Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente de novo.";
       }
+      const helpUrl = `/signup-help?email=${encodeURIComponent(email)}&handle=${encodeURIComponent(handle)}&username=${encodeURIComponent(username)}`;
       toast({
         variant: "destructive",
         title: "Erro ao cadastrar",
         description,
+        action: (
+          <button
+            type="button"
+            onClick={() => navigate(helpUrl)}
+            className="shrink-0 rounded-md border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20 transition"
+          >
+            Diagnosticar
+          </button>
+        ),
       });
     } else if (data.user && !data.session) {
       // User created but needs email confirmation
@@ -524,6 +535,21 @@ export default function Auth() {
                     {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                     Cadastrar
                   </Button>
+
+                  <Link
+                    to={`/signup-help?email=${encodeURIComponent(email)}&handle=${encodeURIComponent(handle)}&username=${encodeURIComponent(username)}`}
+                    className={cn(
+                      "flex items-center justify-center gap-1.5 text-xs underline-offset-4 hover:underline transition-colors",
+                      lastSignupError
+                        ? "text-destructive font-medium"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    <HelpCircle className="h-3.5 w-3.5" />
+                    {lastSignupError
+                      ? "Algo deu errado. Diagnosticar problema →"
+                      : "Está com problemas? Diagnosticar cadastro"}
+                  </Link>
                 </form>
 
                 <div className="relative my-4">
