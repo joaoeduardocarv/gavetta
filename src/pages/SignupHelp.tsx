@@ -87,7 +87,7 @@ function diagnoseUsername(name: string): FieldDiagnosis {
       hint: "Use no máximo 50 caracteres.",
     };
   }
-  if (!/^[a-zA-Z0-9_\\- ]+$/.test(v)) {
+  if (!/^[a-zA-Z0-9 _-]+$/.test(v)) {
     return {
       status: "error",
       message: "Nome contém caracteres inválidos.",
