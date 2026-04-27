@@ -160,21 +160,34 @@ export default function Auth() {
     setLoading(false);
 
     if (error) {
-      let description = error.message;
-      if (error.message.includes("already registered")) {
+      const msg = error.message || "";
+      let description = msg;
+      if (msg.includes("already registered") || msg.includes("already been registered") || msg.includes("User already registered")) {
         description = "Este email já está cadastrado. Tente fazer login.";
-      } else if (error.message.includes("Invalid username")) {
+      } else if (msg.includes("Invalid username")) {
         description = "Nome inválido: use apenas letras, números, espaços, _ e -. Mínimo 2, máximo 50 caracteres.";
-      } else if (error.message.includes("Invalid handle")) {
+      } else if (msg.includes("Invalid handle")) {
         description = "@ inválido: use apenas letras minúsculas, números e _. Mínimo 3, máximo 30 caracteres.";
-      } else if (error.message.includes("Invalid avatar_url")) {
+      } else if (msg.includes("Invalid avatar_url")) {
         description = "URL do avatar inválida.";
-      } else if (error.message.includes("Password should be at least")) {
+      } else if (msg.toLowerCase().includes("password") && (msg.toLowerCase().includes("weak") || msg.toLowerCase().includes("pwned") || msg.toLowerCase().includes("known"))) {
+        description = "Essa senha é muito comum e já apareceu em vazamentos. Escolha uma senha mais forte (use letras, números e símbolos).";
+      } else if (msg.includes("Password should be at least")) {
         description = "A senha deve ter pelo menos 6 caracteres.";
-      } else if (error.message.includes("Unable to validate email")) {
+      } else if (msg.includes("Unable to validate email") || msg.toLowerCase().includes("invalid email")) {
         description = "Email inválido. Verifique e tente novamente.";
-      } else if (error.message.includes("duplicate key") && error.message.includes("handle")) {
-        description = "Este @ já está em uso. Escolha outro nome de usuário.";
+      } else if (msg.includes("duplicate key")) {
+        if (msg.includes("handle")) {
+          description = "Este @ já está em uso. Escolha outro nome de usuário.";
+        } else if (msg.includes("username")) {
+          description = "Esse nome já está em uso. Escolha outro.";
+        } else {
+          description = "Esse cadastro já existe. Tente outro email ou @.";
+        }
+      } else if (msg.includes("Database error saving new user") || msg.includes("unexpected_failure")) {
+        description = "Não conseguimos criar sua conta agora. Verifique se o @ ou email já estão em uso e tente novamente.";
+      } else if (msg.toLowerCase().includes("rate limit") || msg.includes("over_email_send_rate_limit")) {
+        description = "Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente de novo.";
       }
       toast({
         variant: "destructive",
