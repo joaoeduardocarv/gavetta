@@ -15,6 +15,7 @@ import Search from "./pages/Search";
 import Trending from "./pages/Trending";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
+import SignupHelp from "./pages/SignupHelp";
 import NotFound from "./pages/NotFound";
 import PublicProfile from "./pages/PublicProfile";
 import Welcome from "./pages/Welcome";
@@ -41,6 +42,7 @@ const App = () => (
                 <Routes>
                   <Route path="/welcome" element={<Welcome />} />
                   <Route path="/auth" element={<Auth />} />
+                  <Route path="/signup-help" element={<SignupHelp />} />
                   <Route path="/" element={<ProtectedRoute><MyDrawers /></ProtectedRoute>} />
                   <Route path="/my-drawers" element={<ProtectedRoute><MyDrawers /></ProtectedRoute>} />
                   <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
