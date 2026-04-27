@@ -1,5 +1,5 @@
 import { useState, useEffect, useLayoutEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Lock, User, AtSign, Loader2, CheckCircle2 } from "lucide-react";
+import { Mail, Lock, User, AtSign, Loader2, CheckCircle2, HelpCircle } from "lucide-react";
 import gavetaLogo from "@/assets/gavettalogo.png";
 import { z } from "zod";
 import { allAvatars } from "@/components/AvatarPickerDialog";
@@ -28,10 +28,11 @@ const signupSchema = z.object({
 });
 
 export default function Auth() {
-  const [email, setEmail] = useState("");
+  const [searchParams] = useSearchParams();
+  const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
-  const [handle, setHandle] = useState("");
+  const [username, setUsername] = useState(searchParams.get("username") ?? "");
+  const [handle, setHandle] = useState(searchParams.get("handle") ?? "");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -39,6 +40,7 @@ export default function Auth() {
   const [confirmationEmail, setConfirmationEmail] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
   const [selectedAvatar, setSelectedAvatar] = useState("");
+  const [lastSignupError, setLastSignupError] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
@@ -160,6 +162,7 @@ export default function Auth() {
     setLoading(false);
 
     if (error) {
+      setLastSignupError(true);
       const msg = error.message || "";
       let description = msg;
       if (msg.includes("already registered") || msg.includes("already been registered") || msg.includes("User already registered")) {
@@ -189,10 +192,20 @@ export default function Auth() {
       } else if (msg.toLowerCase().includes("rate limit") || msg.includes("over_email_send_rate_limit")) {
         description = "Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente de novo.";
       }
+      const helpUrl = `/signup-help?email=${encodeURIComponent(email)}&handle=${encodeURIComponent(handle)}&username=${encodeURIComponent(username)}`;
       toast({
         variant: "destructive",
         title: "Erro ao cadastrar",
         description,
+        action: (
+          <button
+            type="button"
+            onClick={() => navigate(helpUrl)}
+            className="shrink-0 rounded-md border border-white/30 bg-white/10 px-3 py-1.5 text-xs font-medium text-white hover:bg-white/20 transition"
+          >
+            Diagnosticar
+          </button>
+        ),
       });
     } else if (data.user && !data.session) {
       // User created but needs email confirmation
@@ -522,6 +535,21 @@ export default function Auth() {
                     {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                     Cadastrar
                   </Button>
+
+                  <Link
+                    to={`/signup-help?email=${encodeURIComponent(email)}&handle=${encodeURIComponent(handle)}&username=${encodeURIComponent(username)}`}
+                    className={cn(
+                      "flex items-center justify-center gap-1.5 text-xs underline-offset-4 hover:underline transition-colors",
+                      lastSignupError
+                        ? "text-destructive font-medium"
+                        : "text-muted-foreground"
+                    )}
+                  >
+                    <HelpCircle className="h-3.5 w-3.5" />
+                    {lastSignupError
+                      ? "Algo deu errado. Diagnosticar problema →"
+                      : "Está com problemas? Diagnosticar cadastro"}
+                  </Link>
                 </form>
 
                 <div className="relative my-4">
