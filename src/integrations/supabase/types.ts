@@ -339,6 +339,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_signup_availability: {
+        Args: { _email?: string; _handle?: string; _username?: string }
+        Returns: Json
+      }
       is_profile_visible_to_viewer: {
         Args: { _profile_id: string }
         Returns: boolean
