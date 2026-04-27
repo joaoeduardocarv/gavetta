@@ -1,5 +1,5 @@
 import { useState, useEffect, useLayoutEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Mail, Lock, User, AtSign, Loader2, CheckCircle2 } from "lucide-react";
+import { Mail, Lock, User, AtSign, Loader2, CheckCircle2, HelpCircle } from "lucide-react";
 import gavetaLogo from "@/assets/gavettalogo.png";
 import { z } from "zod";
 import { allAvatars } from "@/components/AvatarPickerDialog";
@@ -28,10 +28,11 @@ const signupSchema = z.object({
 });
 
 export default function Auth() {
-  const [email, setEmail] = useState("");
+  const [searchParams] = useSearchParams();
+  const [email, setEmail] = useState(searchParams.get("email") ?? "");
   const [password, setPassword] = useState("");
-  const [username, setUsername] = useState("");
-  const [handle, setHandle] = useState("");
+  const [username, setUsername] = useState(searchParams.get("username") ?? "");
+  const [handle, setHandle] = useState(searchParams.get("handle") ?? "");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -39,6 +40,7 @@ export default function Auth() {
   const [confirmationEmail, setConfirmationEmail] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
   const [selectedAvatar, setSelectedAvatar] = useState("");
+  const [lastSignupError, setLastSignupError] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
