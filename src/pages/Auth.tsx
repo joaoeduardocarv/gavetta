@@ -98,6 +98,35 @@ export default function Auth() {
     return () => clearTimeout(timer);
   }, [resendCooldown]);
 
+  // Auto-sugere @ baseado no nome (se usuário ainda não editou o @)
+  const handleUsernameChange = (value: string) => {
+    setUsername(value);
+    if (!handleEdited) {
+      const suggested = normalizeToHandle(value);
+      if (suggested.length >= 3) setHandle(suggested);
+      else setHandle("");
+    }
+  };
+
+  // Pede ao backend uma sugestão de @ única
+  const suggestUniqueHandle = async () => {
+    const base = username.trim() || handle.trim();
+    if (!base) {
+      toast({ variant: "destructive", title: "Digite seu nome primeiro", description: "Precisamos do seu nome para sugerir um @." });
+      return;
+    }
+    setSuggestingHandle(true);
+    const { data, error } = await supabase.rpc("suggest_handle_from_username" as any, { _username: base });
+    setSuggestingHandle(false);
+    if (error || !data) {
+      toast({ variant: "destructive", title: "Não consegui sugerir", description: "Tente digitar um @ manualmente." });
+      return;
+    }
+    setHandle(data as string);
+    setHandleEdited(true);
+    toast({ title: "@ sugerido", description: `Usaremos @${data}. Você pode editar se quiser.` });
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
