@@ -356,6 +356,10 @@ export type Database = {
           username: string
         }[]
       }
+      suggest_handle_from_username: {
+        Args: { _username: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
