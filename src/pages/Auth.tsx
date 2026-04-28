@@ -53,6 +53,8 @@ export default function Auth() {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [selectedAvatar, setSelectedAvatar] = useState("");
   const [lastSignupError, setLastSignupError] = useState(false);
+  const [handleEdited, setHandleEdited] = useState(!!searchParams.get("handle"));
+  const [suggestingHandle, setSuggestingHandle] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
