@@ -27,6 +27,18 @@ const signupSchema = z.object({
   handle: z.string().trim().min(3, { message: "@ deve ter pelo menos 3 caracteres" }).max(30, { message: "@ deve ter no máximo 30 caracteres" }).regex(/^[a-zA-Z0-9_]+$/, { message: "@ só pode conter letras, números e _" }).transform(v => v.toLowerCase()),
 });
 
+// Normaliza nome → handle base (remove acentos, espaços, símbolos)
+function normalizeToHandle(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9_]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 26);
+}
+
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
@@ -41,6 +53,8 @@ export default function Auth() {
   const [resendCooldown, setResendCooldown] = useState(0);
   const [selectedAvatar, setSelectedAvatar] = useState("");
   const [lastSignupError, setLastSignupError] = useState(false);
+  const [handleEdited, setHandleEdited] = useState(!!searchParams.get("handle"));
+  const [suggestingHandle, setSuggestingHandle] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
@@ -83,6 +97,35 @@ export default function Auth() {
     const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
     return () => clearTimeout(timer);
   }, [resendCooldown]);
+
+  // Auto-sugere @ baseado no nome (se usuário ainda não editou o @)
+  const handleUsernameChange = (value: string) => {
+    setUsername(value);
+    if (!handleEdited) {
+      const suggested = normalizeToHandle(value);
+      if (suggested.length >= 3) setHandle(suggested);
+      else setHandle("");
+    }
+  };
+
+  // Pede ao backend uma sugestão de @ única
+  const suggestUniqueHandle = async () => {
+    const base = username.trim() || handle.trim();
+    if (!base) {
+      toast({ variant: "destructive", title: "Digite seu nome primeiro", description: "Precisamos do seu nome para sugerir um @." });
+      return;
+    }
+    setSuggestingHandle(true);
+    const { data, error } = await supabase.rpc("suggest_handle_from_username" as any, { _username: base });
+    setSuggestingHandle(false);
+    if (error || !data) {
+      toast({ variant: "destructive", title: "Não consegui sugerir", description: "Tente digitar um @ manualmente." });
+      return;
+    }
+    setHandle(data as string);
+    setHandleEdited(true);
+    toast({ title: "@ sugerido", description: `Usaremos @${data}. Você pode editar se quiser.` });
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -439,19 +482,30 @@ export default function Auth() {
                       <Input
                         id="signup-username"
                         type="text"
-                        placeholder="Seu nome"
+                        placeholder="Seu nome (ex: João da Silva)"
                         value={username}
-                        onChange={(e) => setUsername(e.target.value)}
+                        onChange={(e) => handleUsernameChange(e.target.value)}
                         className="pl-10"
                         required
                         disabled={isAnyLoading}
                         maxLength={50}
                       />
                     </div>
+                    <p className="text-xs text-muted-foreground">Pode ter acentos, espaços e se repetir entre usuários.</p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="signup-handle">@ Nome de usuário</Label>
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="signup-handle">@ Nome de usuário (único)</Label>
+                      <button
+                        type="button"
+                        onClick={suggestUniqueHandle}
+                        disabled={isAnyLoading || suggestingHandle}
+                        className="text-xs text-primary hover:underline disabled:opacity-50"
+                      >
+                        {suggestingHandle ? "Sugerindo..." : "Sugerir @ disponível"}
+                      </button>
+                    </div>
                     <div className="relative">
                       <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
@@ -459,14 +513,17 @@ export default function Auth() {
                         type="text"
                         placeholder="seu_usuario"
                         value={handle}
-                        onChange={(e) => setHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase())}
+                        onChange={(e) => {
+                          setHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, '').toLowerCase());
+                          setHandleEdited(true);
+                        }}
                         className="pl-10"
                         required
                         disabled={isAnyLoading}
                         maxLength={30}
                       />
                     </div>
-                    <p className="text-xs text-muted-foreground">Apenas letras, números e _ (sem espaços). Seus amigos te encontrarão por esse @.</p>
+                    <p className="text-xs text-muted-foreground">Apenas letras minúsculas, números e _. Seus amigos te encontrarão por esse @.</p>
                   </div>
 
                   <div className="space-y-2">
