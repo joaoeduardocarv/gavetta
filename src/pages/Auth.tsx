@@ -27,6 +27,18 @@ const signupSchema = z.object({
   handle: z.string().trim().min(3, { message: "@ deve ter pelo menos 3 caracteres" }).max(30, { message: "@ deve ter no máximo 30 caracteres" }).regex(/^[a-zA-Z0-9_]+$/, { message: "@ só pode conter letras, números e _" }).transform(v => v.toLowerCase()),
 });
 
+// Normaliza nome → handle base (remove acentos, espaços, símbolos)
+function normalizeToHandle(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9_]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "")
+    .slice(0, 26);
+}
+
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState(searchParams.get("email") ?? "");
