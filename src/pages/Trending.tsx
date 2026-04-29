@@ -205,6 +205,54 @@ export default function Trending() {
     fetchNews();
   }, []);
 
+  // Quando o filtro "Em breve" é ativado, busca detalhes das séries para detectar próxima temporada futura.
+  useEffect(() => {
+    if (!onlyUpcoming || trendingSeries.length === 0) return;
+    const missing = trendingSeries.filter((s) => upcomingMap[s.id] === undefined);
+    if (missing.length === 0) return;
+
+    let cancelled = false;
+    setIsCheckingUpcoming(true);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    Promise.all(
+      missing.map(async (s) => {
+        try {
+          const details = await getTVDetails(s.id);
+          const futureSeasons = details.seasons
+            .filter((sea) => sea.season_number > 0 && sea.air_date)
+            .filter((sea) => {
+              const d = new Date(sea.air_date + "T00:00:00");
+              return !isNaN(d.getTime()) && d.getTime() > today.getTime();
+            })
+            .sort((a, b) => a.air_date.localeCompare(b.air_date));
+          return {
+            id: s.id,
+            isUpcoming: futureSeasons.length > 0,
+            nextDate: futureSeasons[0]?.air_date ?? null,
+          };
+        } catch {
+          return { id: s.id, isUpcoming: false, nextDate: null };
+        }
+      })
+    ).then((results) => {
+      if (cancelled) return;
+      setUpcomingMap((prev) => {
+        const next = { ...prev };
+        results.forEach((r) => {
+          next[r.id] = { isUpcoming: r.isUpcoming, nextDate: r.nextDate };
+        });
+        return next;
+      });
+      setIsCheckingUpcoming(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [onlyUpcoming, trendingSeries, upcomingMap]);
+
   const formatDate = (dateString: string) => {
     try {
       const date = new Date(dateString);
