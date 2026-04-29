@@ -123,6 +123,11 @@ export default function Trending() {
   const [moviesError, setMoviesError] = useState<string | null>(null);
   const [seriesError, setSeriesError] = useState<string | null>(null);
 
+  // Filtro "Em breve" para séries
+  const [onlyUpcoming, setOnlyUpcoming] = useState(false);
+  const [upcomingMap, setUpcomingMap] = useState<Record<number, { isUpcoming: boolean; nextDate: string | null }>>({});
+  const [isCheckingUpcoming, setIsCheckingUpcoming] = useState(false);
+
   const fetchTrendingMovies = async () => {
     setIsLoadingMovies(true);
     setMoviesError(null);
