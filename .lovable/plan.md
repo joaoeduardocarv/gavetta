@@ -1,59 +1,105 @@
-## Objetivo
+# Tela de Troubleshooting de Cadastro
 
-Substituir o mockup ilustrativo da seção "Episódio por episódio. Temporada por temporada." (`src/pages/Welcome.tsx`, linha 311) por um **print real** capturado direto do app Gavetta, na tela `/trending` filtrada por **Séries**, no viewport mobile.
+Uma página interna `/admin/signup-debug` onde você digita um email e recebe um diagnóstico completo de por que o cadastro foi (ou seria) negado.
 
-## Pré-requisito (você)
+## Acesso
 
-Antes de eu rodar, me envie no chat:
-- **Email** e **senha** de uma conta de teste do Gavetta com acesso a `/trending`.
+Restrita ao seu handle `joaoeduardo` (founder). Outros usuários autenticados veem "Acesso negado". Não vamos criar tabela de roles agora — usamos verificação simples por handle no client + RPC.
 
-> Sugestão: se possível, use uma conta que tenha o filtro **Séries** com bons resultados em alta no dia (ex: Stranger Things, Last of Us, etc.) — isso melhora a apresentação na landing.
+## O que a tela mostra
 
-## Etapas que vou executar (após receber credenciais)
+Você digita um email (ex.: `filipe@sp.senai.br`) e clica "Diagnosticar". O sistema retorna um relatório com 5 seções:
 
-### 1. Capturar o screenshot real
-- Abrir o preview no viewport **390×844** (iPhone 13/14 — mesma proporção dos assets atuais `mockup-series.png` 390w e `mockup-series-360.png` 360w).
-- Navegar para `/auth`, fazer login com as credenciais de teste.
-- Navegar para `/trending`.
-- Clicar no filtro **Séries** (pill de filtro da página Trending).
-- Aguardar o carregamento dos cards (TMDB API).
-- Tirar screenshot da tela inteira via `browser--screenshot`.
+### 1. Status no banco (`auth.users`)
+- Existe? Sim/Não
+- Se sim: `created_at`, `email_confirmed_at` (confirmou?), `last_sign_in_at`, `id`
+- Tem profile correspondente em `public.profiles`? (detecta órfãos: usuário em auth sem profile = trigger falhou)
 
-### 2. Mostrar para você aprovar
-- Colocar o screenshot bruto em `/mnt/documents/trending-series-preview.png` e te apresentar como `<lov-artifact>` para você revisar **antes** de eu substituir o asset.
-- Se aprovar → próximo passo. Se não → recapturo com ajustes (filtro semanal/diário, scroll position, etc.).
+### 2. Validação de formato + domínio
+- Regex de email válido?
+- Domínio MX existe? (heurística — pular se complexo, só validar formato)
+- Está em alguma lista de bloqueio do Supabase Auth?
 
-### 3. Processar e gerar os 2 assets responsivos
-- Recortar/redimensionar para **390×844** (asset principal).
-- Gerar versão **360×800** (asset para telas menores, mantendo a mesma proporção e crop).
-- Otimizar PNG (qualidade visual preservada, peso reduzido).
-- Salvar em:
-  - `src/assets/landing-mockup-series.png` (substitui)
-  - `src/assets/landing-mockup-series-360.png` (substitui)
+### 3. Simulação do trigger `handle_new_user`
+- Pega o local-part do email, gera o handle que seria criado
+- Verifica se o handle resultante (após auto-suffix) seria válido
+- Reporta se cairia no limite de 50 tentativas
 
-### 4. Validar no Welcome
-- Não preciso editar `Welcome.tsx` — ele já importa esses paths e usa `srcSet`/`sizes` corretamente (verificado nas linhas 311-320).
-- Capturar o `/welcome` final pra confirmar que o novo print aparece bonito dentro do frame de celular (border arredondada `rounded-[2.5rem]`, `border-[10px]`).
+### 4. Rate limit & tentativas recentes
+- Conta quantas tentativas de signup com esse email apareceram nos `auth_logs` nas últimas 24h
+- Mostra os últimos 5 eventos (signup, recovery, otp) com timestamp e status code
+- Identifica padrões: 429 (rate limit), 422 (validação), 500 (erro de servidor/trigger)
 
-### 5. QA final
-- Conferir que a imagem não está cortada, esticada ou com texto ilegível dentro do frame mockup.
-- Verificar nos breakpoints: mobile (<640px usa o 360w) e desktop (usa o 390w).
+### 5. Suppressão / bounce
+- Se o sistema de emails Lovable estiver ativo, checa `suppressed_emails` (caso a tabela exista)
+- Caso contrário, indica "verificar manualmente no provedor"
 
-## O que NÃO vai mudar
+## Veredito final
 
-- Nenhuma alteração em `Welcome.tsx`, copy, layout ou outros assets.
-- Nenhuma mudança em `/trending` ou em qualquer página do app — só captura.
-- A conta de teste que você me passar **não será modificada** (só leitura/navegação).
+No topo, um banner colorido com o diagnóstico em uma frase:
+- ✅ "Email livre, cadastro deve funcionar"
+- ⚠️ "Email já cadastrado e confirmado — usuário deve fazer login"
+- ⚠️ "Email cadastrado mas não confirmado — reenvie email de verificação"
+- ❌ "Registro órfão: existe em auth.users sem profile (trigger falhou) — limpar"
+- ❌ "Rate limit atingido — aguardar X minutos"
+- ❌ "Última tentativa retornou erro 500 — provável falha de trigger, ver detalhes"
 
-## Riscos e mitigações
+Cada caso tem botão de ação correspondente (quando aplicável):
+- "Reenviar confirmação" (chama `supabase.auth.resend`)
+- "Limpar registro órfão" (RPC admin que deleta de auth.users via service role)
 
-| Risco | Mitigação |
-|---|---|
-| Conteúdo "em alta" muda com o tempo e o print fica datado | É inerente a qualquer print real; podemos reagendar uma nova captura quando quiser |
-| Login falhar (Google-only, 2FA, etc.) | Você me confirma que é login por **email/senha**; se for só Google, precisamos de outra estratégia |
-| Conteúdo sensível/pessoal da conta aparecer | Vou usar só `/trending` (lista pública de em alta) — não toco em perfil, drawers ou feed pessoal |
-| Print ficar visualmente ruim | Etapa 2 (sua aprovação) existe justamente pra isso |
+## Detalhes técnicos
 
-## Próximo passo
+### Nova edge function: `signup-debug`
+- Verify JWT (precisa estar logado)
+- Valida que o `handle` do chamador é `joaoeduardo` antes de qualquer query
+- Usa `SUPABASE_SERVICE_ROLE_KEY` para acessar `auth.users` e `auth_logs` (analytics_query)
+- Retorna JSON estruturado com as 5 seções acima
 
-Aprove o plano e cole as credenciais de teste no chat. Aí eu já capturo, te mostro o preview, e finalizo.
+```ts
+// Resposta esperada
+{
+  email: "filipe@sp.senai.br",
+  verdict: { level: "error", code: "trigger_failed", message: "..." },
+  authUser: { exists: true, id, createdAt, emailConfirmedAt, lastSignInAt } | null,
+  profile: { exists: false } | { exists: true, handle, username },
+  format: { valid: true, domain: "sp.senai.br" },
+  triggerSimulation: { suggestedHandle: "filipe", available: true },
+  recentLogs: [{ timestamp, action, status, errorMsg }],
+  suppression: { listed: false } | { listed: true, reason }
+}
+```
+
+### Nova edge function: `signup-cleanup-orphan`
+- Mesma proteção (founder only)
+- Deleta de `auth.users` via Admin API quando há registro órfão
+- Loga a ação
+
+### Nova página: `src/pages/AdminSignupDebug.tsx`
+- Rota `/admin/signup-debug` em `App.tsx` dentro de `<ProtectedRoute>`
+- Verifica handle do usuário logado; se ≠ `joaoeduardo`, mostra "Acesso negado" e botão voltar
+- Form com input de email + botão "Diagnosticar"
+- Renderiza o JSON de resposta em cards visuais (um por seção)
+- Banner de veredito no topo, com cor por severidade
+- Botões de ação contextuais (resend, cleanup)
+
+### Não vamos:
+- Criar tabela `user_roles` agora (overkill para 1 admin) — usar check por handle
+- Mexer em RLS de outras tabelas
+- Expor a página no menu — acesso por URL direta
+
+## Arquivos
+
+- `supabase/functions/signup-debug/index.ts` (novo)
+- `supabase/functions/signup-cleanup-orphan/index.ts` (novo)
+- `src/pages/AdminSignupDebug.tsx` (novo)
+- `src/App.tsx` (adicionar rota)
+
+## Fluxo de uso para o caso `filipe@sp.senai.br`
+
+1. Você acessa `/admin/signup-debug`
+2. Digita `filipe@sp.senai.br`
+3. Em ~1s recebe: "Email não existe em auth.users. Logs mostram 0 tentativas nas últimas 24h."
+4. Conclusão: o usuário nunca chegou a clicar "Cadastrar", ou o request travou no client antes de bater no Supabase. Você sabe onde investigar.
+
+Para casos diferentes (ex.: usuário diz que cadastrou mas não recebeu email), você verá `email_confirmed_at: null` e o botão "Reenviar confirmação".
