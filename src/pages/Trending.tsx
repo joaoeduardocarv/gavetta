@@ -4,11 +4,14 @@ import { BottomNav } from "@/components/BottomNav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Film, Tv, Newspaper, ExternalLink, Loader2, Star, Plus } from "lucide-react";
+import { Film, Tv, Newspaper, ExternalLink, Loader2, Star, Plus, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Content } from "@/lib/mockData";
 import { supabase } from "@/integrations/supabase/client";
-import { getTrendingMovies, getTrendingTV, getTMDBImageUrl, TMDBMovie, TMDBTVShow } from "@/lib/tmdb";
+import { getTrendingMovies, getTrendingTV, getTMDBImageUrl, getTVDetails, TMDBMovie, TMDBTVShow } from "@/lib/tmdb";
 import { useDrawers } from "@/contexts/DrawerContext";
 import { DrawerPickerPopover } from "@/components/DrawerPickerPopover";
 
@@ -120,6 +123,11 @@ export default function Trending() {
   const [moviesError, setMoviesError] = useState<string | null>(null);
   const [seriesError, setSeriesError] = useState<string | null>(null);
 
+  // Filtro "Em breve" para séries
+  const [onlyUpcoming, setOnlyUpcoming] = useState(false);
+  const [upcomingMap, setUpcomingMap] = useState<Record<number, { isUpcoming: boolean; nextDate: string | null }>>({});
+  const [isCheckingUpcoming, setIsCheckingUpcoming] = useState(false);
+
   const fetchTrendingMovies = async () => {
     setIsLoadingMovies(true);
     setMoviesError(null);
@@ -196,6 +204,54 @@ export default function Trending() {
     fetchTrendingSeries();
     fetchNews();
   }, []);
+
+  // Quando o filtro "Em breve" é ativado, busca detalhes das séries para detectar próxima temporada futura.
+  useEffect(() => {
+    if (!onlyUpcoming || trendingSeries.length === 0) return;
+    const missing = trendingSeries.filter((s) => upcomingMap[s.id] === undefined);
+    if (missing.length === 0) return;
+
+    let cancelled = false;
+    setIsCheckingUpcoming(true);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    Promise.all(
+      missing.map(async (s) => {
+        try {
+          const details = await getTVDetails(s.id);
+          const futureSeasons = details.seasons
+            .filter((sea) => sea.season_number > 0 && sea.air_date)
+            .filter((sea) => {
+              const d = new Date(sea.air_date + "T00:00:00");
+              return !isNaN(d.getTime()) && d.getTime() > today.getTime();
+            })
+            .sort((a, b) => a.air_date.localeCompare(b.air_date));
+          return {
+            id: s.id,
+            isUpcoming: futureSeasons.length > 0,
+            nextDate: futureSeasons[0]?.air_date ?? null,
+          };
+        } catch {
+          return { id: s.id, isUpcoming: false, nextDate: null };
+        }
+      })
+    ).then((results) => {
+      if (cancelled) return;
+      setUpcomingMap((prev) => {
+        const next = { ...prev };
+        results.forEach((r) => {
+          next[r.id] = { isUpcoming: r.isUpcoming, nextDate: r.nextDate };
+        });
+        return next;
+      });
+      setIsCheckingUpcoming(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [onlyUpcoming, trendingSeries, upcomingMap]);
 
   const formatDate = (dateString: string) => {
     try {
@@ -318,12 +374,23 @@ export default function Trending() {
           </TabsContent>
 
           <TabsContent value="series" className="space-y-4">
-            <div className="mb-4">
+            <div className="mb-4 space-y-3">
               <p className="text-sm text-muted-foreground">
                 Séries em alta hoje no TMDB
               </p>
+              <div className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-card">
+                <Label htmlFor="upcoming-filter" className="flex items-center gap-2 cursor-pointer text-sm">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  Apenas com temporada nova em breve
+                </Label>
+                <Switch
+                  id="upcoming-filter"
+                  checked={onlyUpcoming}
+                  onCheckedChange={setOnlyUpcoming}
+                />
+              </div>
             </div>
-            
+
             {isLoadingSeries ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -331,25 +398,64 @@ export default function Trending() {
             ) : seriesError ? (
               <div className="text-center py-8 text-muted-foreground">
                 <p>{seriesError}</p>
-                <button 
+                <button
                   onClick={fetchTrendingSeries}
                   className="mt-2 text-primary hover:underline"
                 >
                   Tentar novamente
                 </button>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {trendingSeries.map((series) => (
-                  <TrendingContentCard
-                    key={series.id}
-                    item={series}
-                    type="series"
-                    onClick={() => handleSeriesClick(series)}
-                  />
-                ))}
-              </div>
-            )}
+            ) : (() => {
+              const visibleSeries = onlyUpcoming
+                ? trendingSeries.filter((s) => upcomingMap[s.id]?.isUpcoming === true)
+                : trendingSeries;
+              const stillChecking = onlyUpcoming && trendingSeries.some((s) => upcomingMap[s.id] === undefined);
+
+              if (stillChecking && visibleSeries.length === 0) {
+                return (
+                  <div className="flex flex-col items-center justify-center py-12 gap-2">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <p className="text-sm text-muted-foreground">Verificando próximas temporadas...</p>
+                  </div>
+                );
+              }
+
+              if (visibleSeries.length === 0) {
+                return (
+                  <div className="text-center py-8 text-muted-foreground text-sm">
+                    Nenhuma série em alta tem temporada nova anunciada no momento.
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-3">
+                  {isCheckingUpcoming && onlyUpcoming && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      Atualizando lista...
+                    </p>
+                  )}
+                  {visibleSeries.map((series) => {
+                    const info = upcomingMap[series.id];
+                    return (
+                      <div key={series.id} className="relative">
+                        <TrendingContentCard
+                          item={series}
+                          type="series"
+                          onClick={() => handleSeriesClick(series)}
+                        />
+                        {onlyUpcoming && info?.isUpcoming && info.nextDate && (
+                          <Badge className="absolute top-2 right-2 bg-accent/90 text-accent-foreground border border-accent/30 text-[10px] gap-1">
+                            <Sparkles className="h-3 w-3" />
+                            {new Date(info.nextDate + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+                          </Badge>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </TabsContent>
 
           <TabsContent value="news" className="space-y-4">
