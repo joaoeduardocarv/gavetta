@@ -374,12 +374,23 @@ export default function Trending() {
           </TabsContent>
 
           <TabsContent value="series" className="space-y-4">
-            <div className="mb-4">
+            <div className="mb-4 space-y-3">
               <p className="text-sm text-muted-foreground">
                 Séries em alta hoje no TMDB
               </p>
+              <div className="flex items-center justify-between gap-3 p-3 rounded-lg border bg-card">
+                <Label htmlFor="upcoming-filter" className="flex items-center gap-2 cursor-pointer text-sm">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  Apenas com temporada nova em breve
+                </Label>
+                <Switch
+                  id="upcoming-filter"
+                  checked={onlyUpcoming}
+                  onCheckedChange={setOnlyUpcoming}
+                />
+              </div>
             </div>
-            
+
             {isLoadingSeries ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -387,25 +398,64 @@ export default function Trending() {
             ) : seriesError ? (
               <div className="text-center py-8 text-muted-foreground">
                 <p>{seriesError}</p>
-                <button 
+                <button
                   onClick={fetchTrendingSeries}
                   className="mt-2 text-primary hover:underline"
                 >
                   Tentar novamente
                 </button>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {trendingSeries.map((series) => (
-                  <TrendingContentCard
-                    key={series.id}
-                    item={series}
-                    type="series"
-                    onClick={() => handleSeriesClick(series)}
-                  />
-                ))}
-              </div>
-            )}
+            ) : (() => {
+              const visibleSeries = onlyUpcoming
+                ? trendingSeries.filter((s) => upcomingMap[s.id]?.isUpcoming === true)
+                : trendingSeries;
+              const stillChecking = onlyUpcoming && trendingSeries.some((s) => upcomingMap[s.id] === undefined);
+
+              if (stillChecking && visibleSeries.length === 0) {
+                return (
+                  <div className="flex flex-col items-center justify-center py-12 gap-2">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <p className="text-sm text-muted-foreground">Verificando próximas temporadas...</p>
+                  </div>
+                );
+              }
+
+              if (visibleSeries.length === 0) {
+                return (
+                  <div className="text-center py-8 text-muted-foreground text-sm">
+                    Nenhuma série em alta tem temporada nova anunciada no momento.
+                  </div>
+                );
+              }
+
+              return (
+                <div className="space-y-3">
+                  {isCheckingUpcoming && onlyUpcoming && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      Atualizando lista...
+                    </p>
+                  )}
+                  {visibleSeries.map((series) => {
+                    const info = upcomingMap[series.id];
+                    return (
+                      <div key={series.id} className="relative">
+                        <TrendingContentCard
+                          item={series}
+                          type="series"
+                          onClick={() => handleSeriesClick(series)}
+                        />
+                        {onlyUpcoming && info?.isUpcoming && info.nextDate && (
+                          <Badge className="absolute top-2 right-2 bg-accent/90 text-accent-foreground border border-accent/30 text-[10px] gap-1">
+                            <Sparkles className="h-3 w-3" />
+                            {new Date(info.nextDate + "T00:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+                          </Badge>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </TabsContent>
 
           <TabsContent value="news" className="space-y-4">
