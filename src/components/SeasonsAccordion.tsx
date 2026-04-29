@@ -215,6 +215,11 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
           const allWatched = epCount > 0 && watchedCount >= epCount;
           const year = season.air_date ? new Date(season.air_date).getFullYear() : null;
           const seasonRating = getEffectiveSeasonRating(season.season_number);
+          // "Em breve" se a data de estreia da temporada é futura, ou se episódios já carregados nenhum lançou.
+          const seasonAirInfo = formatEpisodeAirDate(season.air_date);
+          const isUpcomingSeason =
+            (seasonAirInfo?.isFuture ?? false) ||
+            (episodes != null && episodes.length > 0 && episodes.every((ep) => !hasAired(ep.air_date)));
 
           return (
             <AccordionItem key={season.id} value={`season-${season.season_number}`}>
@@ -228,7 +233,12 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
                           {year}
                         </Badge>
                       )}
-                      {allWatched && (
+                      {isUpcomingSeason && (
+                        <Badge className="gap-1 text-xs bg-accent/20 text-accent-foreground border border-accent/30">
+                          Em breve{seasonAirInfo ? ` · ${seasonAirInfo.label}` : ""}
+                        </Badge>
+                      )}
+                      {!isUpcomingSeason && allWatched && (
                         <Badge variant="secondary" className="gap-1 text-xs bg-primary/10 text-primary border-primary/20">
                           <Check className="h-3 w-3" />
                           Completo
