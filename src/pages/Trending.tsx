@@ -4,11 +4,14 @@ import { BottomNav } from "@/components/BottomNav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Film, Tv, Newspaper, ExternalLink, Loader2, Star, Plus } from "lucide-react";
+import { Film, Tv, Newspaper, ExternalLink, Loader2, Star, Plus, Sparkles } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { Content } from "@/lib/mockData";
 import { supabase } from "@/integrations/supabase/client";
-import { getTrendingMovies, getTrendingTV, getTMDBImageUrl, TMDBMovie, TMDBTVShow } from "@/lib/tmdb";
+import { getTrendingMovies, getTrendingTV, getTMDBImageUrl, getTVDetails, TMDBMovie, TMDBTVShow } from "@/lib/tmdb";
 import { useDrawers } from "@/contexts/DrawerContext";
 import { DrawerPickerPopover } from "@/components/DrawerPickerPopover";
 
