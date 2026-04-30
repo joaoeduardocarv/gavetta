@@ -65,13 +65,37 @@ serve(async (req) => {
       lang: language,
       country: country,
       max: max,
+      // Restrict matching to title + description so unrelated body mentions
+      // (e.g. a sports article that happens to namedrop "Netflix") don't slip in.
+      in: 'title,description',
+      // GNews supports comma-separated topic exclusions; avoids sports feeds entirely.
+      // Note: GNews ignores `topic` on /search, but `excludetopics` works on the search endpoint.
+      excludetopics: 'sports',
+      sortby: 'publishedAt',
     });
 
-    // Define search query based on action
+    // Define search query based on action.
+    // Strategy: require an industry-specific term AND exclude common sports/celebrity-gossip noise.
+    // GNews query syntax supports AND / OR / NOT and grouping with parentheses.
     let searchQuery = query;
     if (!query || action === 'movies') {
-      // Search for movie and series related news - focused on entertainment
-      searchQuery = 'Netflix OR "novo filme" OR "nova série" OR cinema OR streaming OR "Amazon Prime" OR "Disney+"';
+      const include = [
+        '"novo filme"', '"novo trailer"', '"trailer oficial"',
+        '"nova série"', '"nova temporada"', '"estreia"', '"estreias"',
+        'cinema', 'cinemas', 'bilheteria', 'Hollywood',
+        '"streaming"', 'Netflix', 'HBO', '"Max"', '"Disney+"', '"Amazon Prime"',
+        '"Apple TV"', 'Paramount', '"Prime Video"', 'Globoplay',
+        'Marvel', 'DC', 'Pixar', '"A24"',
+        '"diretor"', '"diretora"', '"roteirista"', '"elenco"',
+        'Oscar', '"Globo de Ouro"', 'Cannes',
+      ].join(' OR ');
+      // Exclude sports / fitness / unrelated topics that share vocabulary.
+      const exclude = [
+        'futebol', 'jogador', 'jogadora', 'campeonato', 'gol', 'gols',
+        'NBA', 'NFL', 'UFC', 'Fórmula 1', 'F1', 'corrida', 'esporte', 'esportes',
+        'Brasileirão', 'Libertadores', 'Champions', 'seleção',
+      ].map((w) => `NOT ${w}`).join(' ');
+      searchQuery = `(${include}) ${exclude}`;
     }
     params.append('q', searchQuery);
 
@@ -85,9 +109,9 @@ serve(async (req) => {
       const response = await fetch(`${GNEWS_BASE_URL}${endpoint}?${params.toString()}`, {
         signal: controller.signal,
       });
-      
+
       clearTimeout(timeoutId);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('GNews API error:', response.status, errorText);
@@ -97,8 +121,50 @@ serve(async (req) => {
       const data = await response.json();
       console.log(`Successfully fetched ${data.articles?.length || 0} news articles`);
 
+      // Post-filter: drop anything that still looks like sports/fitness/games.
+      // GNews queries are best-effort, so a client-side denylist on title+description
+      // catches the long tail (e.g. "F1", "Premier League", esports tournaments).
+      const SPORT_DENYLIST = [
+        /\bfutebol\b/i, /\bjogador(a)?\b/i, /\bgol(s)?\b/i, /\bcampeonato\b/i,
+        /\bbrasileir(ã|a)o\b/i, /\blibertadores\b/i, /\bchampions\s+league\b/i,
+        /\bcopa\s+(do|da)\b/i, /\bseleção\b/i, /\btécnico\b.*\b(time|clube)\b/i,
+        /\bnba\b/i, /\bnfl\b/i, /\bufc\b/i, /\bmma\b/i, /\bboxe\b/i,
+        /\bf[óo]rmula\s*1\b/i, /\bf1\b/i, /\bgp\s+(do|de|da)\b/i, /\bgrand\s*prix\b/i,
+        /\besport(e|es|iv[oa])\b/i, /\bvit[óo]ria\b.*\b(time|jogo)\b/i,
+        /\be[\-\s]?sports?\b/i, /\bvalorant\b/i, /\bcs\s*2\b/i, /\bleague\s+of\s+legends\b/i,
+        /\batleta\b/i, /\btreinador(a)?\b/i, /\bolimp[íi]ad/i,
+      ];
+      const isSportsy = (text: string) =>
+        SPORT_DENYLIST.some((re) => re.test(text));
+
+      // Whitelist: must mention at least one cinema/series/streaming signal.
+      // Prevents generic "estreia" articles (e.g. an album release) from passing.
+      const CINEMA_ALLOWLIST = [
+        /\bfilme(s)?\b/i, /\bs[ée]rie(s)?\b/i, /\btemporada\b/i, /\bepis[óo]dio(s)?\b/i,
+        /\bcinema(s)?\b/i, /\bbilheteria\b/i, /\btrailer\b/i, /\bestreia(s)?\b/i,
+        /\bnetflix\b/i, /\bhbo\b/i, /\bdisney\+?\b/i, /\bprime\s+video\b/i,
+        /\bamazon\s+prime\b/i, /\bapple\s+tv\b/i, /\bparamount\+?\b/i, /\bglobopla(y|i)\b/i,
+        /\bmax\b/i, /\bstreaming\b/i, /\bhollywood\b/i, /\bdiretor(a)?\b/i,
+        /\broteirista\b/i, /\belenco\b/i, /\boscar\b/i, /\bgolden\s+globe\b/i,
+        /\bglobo\s+de\s+ouro\b/i, /\bcannes\b/i, /\bmarvel\b/i, /\bdc\b/i, /\bpixar\b/i,
+        /\bdocument[áa]rio\b/i, /\bcurta[\-\s]?metragem\b/i, /\blongametragem\b/i,
+      ];
+      const looksLikeCinema = (text: string) =>
+        CINEMA_ALLOWLIST.some((re) => re.test(text));
+
+      const filteredArticles = (data.articles || []).filter((article: any) => {
+        const haystack = `${article.title ?? ''} ${article.description ?? ''}`;
+        if (isSportsy(haystack)) return false;
+        if (!looksLikeCinema(haystack)) return false;
+        return true;
+      });
+
+      console.log(
+        `Filtered ${data.articles?.length || 0} → ${filteredArticles.length} cinema-relevant articles`
+      );
+
       // Transform GNews response to match our expected format
-      const transformedNews = (data.articles || []).map((article: any, index: number) => ({
+      const transformedNews = filteredArticles.map((article: any, index: number) => ({
         id: `gnews-${index}-${Date.now()}`,
         title: article.title,
         description: article.description,
