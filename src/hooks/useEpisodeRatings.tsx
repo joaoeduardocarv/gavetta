@@ -133,20 +133,36 @@ export function useEpisodeRatings(tmdbTvId: number | null) {
           return;
         }
 
-        // Upsert via onConflict on the unique scope index.
-        const { error } = await supabase
+        // Manual upsert: the unique index uses COALESCE expressions on
+        // season_number / episode_number, so Postgres' ON CONFLICT (cols...)
+        // can't match it. We try UPDATE first, then INSERT if no row existed.
+        let updateQ = supabase
           .from("episode_ratings")
-          .upsert(
-            {
+          .update({ rating: value, updated_at: new Date().toISOString() })
+          .eq("user_id", user.id)
+          .eq("tmdb_tv_id", tmdbTvId)
+          .select("id");
+        updateQ = season == null
+          ? updateQ.is("season_number", null)
+          : updateQ.eq("season_number", season);
+        updateQ = episode == null
+          ? updateQ.is("episode_number", null)
+          : updateQ.eq("episode_number", episode);
+        const { data: updated, error: updErr } = await updateQ;
+        if (updErr) throw updErr;
+
+        if (!updated || updated.length === 0) {
+          const { error: insErr } = await supabase
+            .from("episode_ratings")
+            .insert({
               user_id: user.id,
               tmdb_tv_id: tmdbTvId,
               season_number: season,
               episode_number: episode,
               rating: value,
-            },
-            { onConflict: "user_id,tmdb_tv_id,season_number,episode_number" }
-          );
-        if (error) throw error;
+            });
+          if (insErr) throw insErr;
+        }
       } catch (err) {
         console.error("Error saving rating:", err);
         // Revert
