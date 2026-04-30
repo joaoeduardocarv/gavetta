@@ -86,7 +86,21 @@ export function RatingPicker({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground">{label}</p>
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-xs font-medium text-muted-foreground">{label}</p>
+            {value != null && (
+              <span
+                className={cn(
+                  "text-xs font-semibold tabular-nums",
+                  isAverage ? "text-muted-foreground italic" : "text-primary"
+                )}
+                title={isAverage ? "Média calculada" : "Nota salva no banco"}
+              >
+                {formattedValue}/10
+                {isAverage && <span className="ml-1 font-normal">(média)</span>}
+              </span>
+            )}
+          </div>
           <div className="flex gap-0.5" onMouseLeave={() => setHover(null)}>
             {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
               <button
