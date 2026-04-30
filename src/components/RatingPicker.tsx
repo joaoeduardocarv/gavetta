@@ -46,7 +46,9 @@ export function RatingPicker({
 
   const display = hover ?? value ?? 0;
 
-  const triggerLabel = value != null ? value.toFixed(value % 1 === 0 ? 0 : 1) : "—";
+  const formattedValue =
+    value != null ? value.toFixed(value % 1 === 0 ? 0 : 1) : null;
+  const triggerLabel = formattedValue != null ? `${formattedValue}/10` : "—";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
