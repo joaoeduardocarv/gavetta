@@ -133,11 +133,12 @@ describe("handle_new_user trigger — handle validation contract", () => {
   });
 
   describe("rejeita handles inválidos", () => {
+    // NOTA: handles com maiúsculas NÃO são rejeitados — a trigger faz
+    // LOWER(TRIM(...)) antes de validar, normalizando a entrada.
     it.each([
       ["ab", "muito curto"],
       ["", "vazio"],
       ["a".repeat(31), "muito longo"],
-      ["JoaoSilva", "tem maiúsculas"],
       ["joão", "tem acento"],
       ["joao silva", "tem espaço"],
       ["joao-silva", "tem hífen"],
