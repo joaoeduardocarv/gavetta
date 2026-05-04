@@ -276,6 +276,56 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ─── Casos negativos de handle (handle literal, sem suffix) ───
+    for (const tc of HANDLE_NEGATIVE_TESTS) {
+      const email = `tt-${runId}-h${results.length}${TEST_EMAIL_DOMAIN}`;
+      try {
+        const { data: created, error: createErr } =
+          await admin.auth.admin.createUser({
+            email,
+            password: "TestTrigger123!",
+            email_confirm: true,
+            user_metadata: {
+              username: tc.username,
+              handle: tc.handle,
+              avatar_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=test",
+            },
+          });
+
+        if (createErr || !created.user) {
+          results.push({
+            name: tc.name,
+            username: tc.username,
+            passed: true,
+            details: `Falhou como esperado: ${createErr?.message ?? "sem user"}`,
+          });
+        } else {
+          createdUserIds.push(created.user.id);
+          const { data: prof } = await admin
+            .from("profiles")
+            .select("handle, username")
+            .eq("id", created.user.id)
+            .maybeSingle();
+          results.push({
+            name: tc.name,
+            username: tc.username,
+            passed: false,
+            details: `Esperava falha (handle="${tc.handle}") mas trigger aceitou. Profile: ${JSON.stringify(prof)}`,
+            createdUserId: created.user.id,
+            profileHandle: prof?.handle ?? null,
+            profileUsername: prof?.username ?? null,
+          });
+        }
+      } catch (e) {
+        results.push({
+          name: tc.name,
+          username: tc.username,
+          passed: true,
+          details: `Falhou como esperado (exceção): ${(e as Error).message}`,
+        });
+      }
+    }
+
     // Cleanup — apaga todos os usuários criados
     let cleanupErrors = 0;
     for (const id of createdUserIds) {
