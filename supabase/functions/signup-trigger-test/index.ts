@@ -167,7 +167,14 @@ Deno.serve(async (req) => {
 
     for (const tc of TESTS) {
       const email = `tt-${runId}-${results.length}${TEST_EMAIL_DOMAIN}`;
-      const handle = tc.handle ? `${tc.handle}_${runId}`.slice(0, 30) : undefined;
+      // Para casos positivos, sufixamos o handle com runId para garantir
+      // unicidade. Para negativos, mantemos o handle literal — caso contrário
+      // o suffix poderia tornar o handle inválido em válido.
+      const handle = tc.handle
+        ? tc.shouldSucceed
+          ? `${tc.handle}_${runId}`.slice(0, 30)
+          : tc.handle
+        : undefined;
 
       try {
         const { data: created, error: createErr } =
