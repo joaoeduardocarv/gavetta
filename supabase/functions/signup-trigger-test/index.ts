@@ -92,34 +92,36 @@ const TESTS: TestCase[] = [
     handle: "nunez_t9",
     shouldSucceed: true,
   },
+  // Casos negativos: a Admin API mascara a exception da trigger como
+  // "Database error creating new user". Validamos só que a chamada
+  // falha + nenhum profile é criado.
   {
     name: "Username muito curto (1 char) deve falhar",
     username: "A",
-    handle: "fail_short_t10",
+    handle: "fshort",
     shouldSucceed: false,
-    expectedErrorContains: "2-50",
+    expectedErrorContains: "Database error",
   },
   {
     name: "Caractere proibido (@) deve falhar",
     username: "user@name",
-    handle: "fail_at_t11",
+    handle: "fat",
     shouldSucceed: false,
-    expectedErrorContains: "forbidden",
+    expectedErrorContains: "Database error",
   },
-  {
-    name: "Handle inválido (maiúscula) deve falhar",
-    username: "Valid Name",
-    handle: "InvalidUpper",
-    shouldSucceed: false,
-    expectedErrorContains: "lowercase",
-  },
-  {
-    name: "Handle muito curto deve falhar",
-    username: "Valid Name",
-    handle: "ab",
-    shouldSucceed: false,
-    expectedErrorContains: "3-30",
-  },
+];
+
+// Casos negativos para handle são testados com handle FIXO (sem suffix
+// runId, para preservar o formato inválido). Tratados em loop separado.
+const HANDLE_NEGATIVE_TESTS: Array<{
+  name: string;
+  username: string;
+  handle: string;
+}> = [
+  { name: "Handle inválido (maiúscula) deve falhar", username: "Valid Name", handle: "InvalidUpper" },
+  { name: "Handle muito curto deve falhar", username: "Valid Name", handle: "ab" },
+  { name: "Handle com hífen deve falhar", username: "Valid Name", handle: "joao-silva" },
+  { name: "Handle com acento deve falhar", username: "Valid Name", handle: "joão_t" },
 ];
 
 Deno.serve(async (req) => {
