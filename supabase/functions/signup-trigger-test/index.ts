@@ -118,7 +118,8 @@ const HANDLE_NEGATIVE_TESTS: Array<{
   username: string;
   handle: string;
 }> = [
-  { name: "Handle inválido (maiúscula) deve falhar", username: "Valid Name", handle: "InvalidUpper" },
+  // NOTA: handle com maiúsculas NÃO é caso negativo — a trigger faz
+  // LOWER(TRIM(...)) antes de validar, normalizando a entrada.
   { name: "Handle muito curto deve falhar", username: "Valid Name", handle: "ab" },
   { name: "Handle com hífen deve falhar", username: "Valid Name", handle: "joao-silva" },
   { name: "Handle com acento deve falhar", username: "Valid Name", handle: "joão_t" },
