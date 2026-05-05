@@ -1,4 +1,5 @@
-import { Archive, Clock, Play, Check, Plus } from "lucide-react";
+import { Clock, Play, Check, Plus } from "lucide-react";
+import { GavetaIcon } from "@/components/GavetaIcon";
 import {
   Popover,
   PopoverContent,
@@ -104,7 +105,7 @@ export function DrawerPickerPopover({ content, children }: DrawerPickerPopoverPr
                       isSelected && "bg-accent/20"
                     )}
                   >
-                    <Archive className="h-4 w-4 text-muted-foreground" />
+                    <GavetaIcon className="h-4 w-4" />
                     <span className="flex-1 text-left">{drawer.name}</span>
                     {isSelected && <Check className="h-4 w-4 text-accent" />}
                   </button>

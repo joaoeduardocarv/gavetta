@@ -1,4 +1,5 @@
-import { Archive, Star, Film, Tv, Check, Clock, Play, Bell } from "lucide-react";
+import { Star, Film, Tv, Check, Clock, Play, Bell } from "lucide-react";
+import { GavetaIcon } from "@/components/GavetaIcon";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { cn, formatRelativeDate } from "@/lib/utils";
@@ -127,11 +128,9 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
               className="p-1 -m-1 hover:bg-accent/10 rounded transition-colors"
               onClick={(e) => e.stopPropagation()}
             >
-              <Archive className={cn(
-                "h-4 w-4 flex-shrink-0",
-                isInAnyDrawer 
-                  ? "fill-accent text-accent" 
-                  : "text-muted-foreground/40"
+              <GavetaIcon className={cn(
+                "h-4 w-4 flex-shrink-0 transition-opacity",
+                isInAnyDrawer ? "opacity-100" : "opacity-40"
               )} />
             </button>
           </DrawerPickerPopover>
