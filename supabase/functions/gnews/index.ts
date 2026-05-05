@@ -75,27 +75,21 @@ serve(async (req) => {
     });
 
     // Define search query based on action.
-    // Strategy: require an industry-specific term AND exclude common sports/celebrity-gossip noise.
-    // GNews query syntax supports AND / OR / NOT and grouping with parentheses.
+    // GNews limits `q` to 200 characters, so keep includes/excludes compact.
     let searchQuery = query;
     if (!query || action === 'movies') {
       const include = [
-        '"novo filme"', '"novo trailer"', '"trailer oficial"',
-        '"nova série"', '"nova temporada"', '"estreia"', '"estreias"',
-        'cinema', 'cinemas', 'bilheteria', 'Hollywood',
-        '"streaming"', 'Netflix', 'HBO', '"Max"', '"Disney+"', '"Amazon Prime"',
-        '"Apple TV"', 'Paramount', '"Prime Video"', 'Globoplay',
-        'Marvel', 'DC', 'Pixar', '"A24"',
-        '"diretor"', '"diretora"', '"roteirista"', '"elenco"',
-        'Oscar', '"Globo de Ouro"', 'Cannes',
+        'filme', 'série', 'temporada', 'cinema', 'trailer', 'estreia',
+        'Netflix', 'HBO', 'Disney+', 'Globoplay', 'Marvel', 'Oscar',
       ].join(' OR ');
-      // Exclude sports / fitness / unrelated topics that share vocabulary.
-      const exclude = [
-        'futebol', 'jogador', 'jogadora', 'campeonato', 'gol', 'gols',
-        'NBA', 'NFL', 'UFC', 'Fórmula 1', 'F1', 'corrida', 'esporte', 'esportes',
-        'Brasileirão', 'Libertadores', 'Champions', 'seleção',
-      ].map((w) => `NOT ${w}`).join(' ');
+      const exclude = ['futebol', 'NBA', 'F1', 'esporte']
+        .map((w) => `NOT ${w}`)
+        .join(' ');
       searchQuery = `(${include}) ${exclude}`;
+    }
+    // Hard cap at 200 chars to satisfy GNews API limit
+    if (searchQuery.length > 200) {
+      searchQuery = searchQuery.slice(0, 200);
     }
     params.append('q', searchQuery);
 
