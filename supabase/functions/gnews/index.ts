@@ -79,12 +79,10 @@ serve(async (req) => {
     let searchQuery = query;
     if (!query || action === 'movies') {
       const include = [
-        'filme', 'série', 'temporada', 'episódio',
-        'cinema', 'trailer', 'estreia',
-        'Netflix', 'HBO', 'Disney+', 'Prime Video', 'Globoplay',
-        'Marvel', 'Pixar', 'Oscar', 'Cannes',
+        'filme', 'série', 'temporada', 'cinema', 'trailer', 'estreia',
+        'Netflix', 'HBO', 'Disney+', 'Globoplay', 'Marvel', 'Oscar',
       ].join(' OR ');
-      const exclude = ['futebol', 'NBA', 'NFL', 'F1', 'esporte']
+      const exclude = ['futebol', 'NBA', 'F1', 'esporte']
         .map((w) => `NOT ${w}`)
         .join(' ');
       searchQuery = `(${include}) ${exclude}`;
