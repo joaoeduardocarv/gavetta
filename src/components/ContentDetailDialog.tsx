@@ -9,7 +9,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Film, Tv, Calendar, Star, Share2, MessageCircle, Archive, Check, Play, Eye, CheckCircle, Loader2 } from "lucide-react";
+import { Film, Tv, Calendar, Star, Share2, MessageCircle, Check, Play, Eye, CheckCircle, Loader2 } from "lucide-react";
+import { GavetaIcon } from "@/components/GavetaIcon";
 import { useStoryShare } from "@/hooks/useStoryShare";
 import { RecommendDialog } from "./RecommendDialog";
 import { PersonDetailDialog } from "./PersonDetailDialog";
@@ -368,7 +369,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                   hasAnyDrawer && "bg-gradient-to-r from-primary to-primary/80"
                 )}
               >
-                <Archive className="h-4 w-4 flex-shrink-0" />
+                <GavetaIcon className="h-4 w-4 flex-shrink-0" />
                 <span className="truncate">{getButtonLabel()}</span>
               </Button>
             </DropdownMenuTrigger>

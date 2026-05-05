@@ -1,5 +1,6 @@
-import { Eye, CheckCircle, Play, Archive } from "lucide-react";
+import { Eye, CheckCircle, Play } from "lucide-react";
 import { useDrawers } from "@/contexts/DrawerContext";
+import { GavetaIcon } from "@/components/GavetaIcon";
 
 export function ProfileStats() {
   const { assignments, customDrawers, getDrawerContents } = useDrawers();
@@ -13,7 +14,7 @@ export function ProfileStats() {
     { label: "Quero Ver", value: toWatchCount, icon: Play, color: "text-blue-500" },
     { label: "Assistindo", value: watchingCount, icon: Eye, color: "text-yellow-500" },
     { label: "Assistidos", value: watchedCount, icon: CheckCircle, color: "text-green-500" },
-    { label: "Personalizadas", value: totalCustom, icon: Archive, color: "text-primary" },
+    { label: "Personalizadas", value: totalCustom, icon: GavetaIcon, color: "text-primary" },
   ];
 
   // Calculate average rating
