@@ -1,5 +1,6 @@
-import { List, Users, Search, TrendingUp, User } from "lucide-react";
+import { Users, Search, TrendingUp, User } from "lucide-react";
 import { NavLink } from "./NavLink";
+import { GavettasIcon } from "./icons/GavettasIcon";
 
 export function BottomNav() {
   return (
@@ -11,7 +12,7 @@ export function BottomNav() {
           className="flex flex-col items-center justify-center gap-0.5 px-2 py-2 rounded-lg text-muted-foreground transition-colors"
           activeClassName="text-primary"
         >
-          <List className="h-5 w-5" />
+          <GavettasIcon className="h-5 w-5" />
           <span className="text-[10px] font-medium">Gavettas</span>
         </NavLink>
 
