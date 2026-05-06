@@ -186,22 +186,22 @@ export default function Auth() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!selectedAvatar) {
-      toast({
-        variant: "destructive",
-        title: "Escolha um avatar",
-        description: "Selecione um avatar para continuar.",
-      });
-      return;
-    }
 
-    const validation = signupSchema.safeParse({ email, password, username, handle });
+    const validation = signupSchema.safeParse({ username, handle, email, password });
     if (!validation.success) {
       toast({
         variant: "destructive",
         title: "Erro de validação",
         description: validation.error.errors[0].message,
+      });
+      return;
+    }
+
+    if (!selectedAvatar) {
+      toast({
+        variant: "destructive",
+        title: "Escolha um avatar",
+        description: "Selecione um avatar para continuar.",
       });
       return;
     }
