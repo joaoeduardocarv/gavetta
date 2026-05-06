@@ -20,11 +20,30 @@ const loginSchema = z.object({
   password: z.string().min(6, { message: "Senha deve ter pelo menos 6 caracteres" }),
 });
 
+// Ordem dos campos = ordem visual do formulário (username → handle → email → password).
+// Isso garante que o primeiro erro mostrado no toast corresponda ao primeiro campo
+// visível com problema, evitando confusão do usuário.
 const signupSchema = z.object({
-  email: z.string().trim().email({ message: "Email inválido" }),
+  username: z
+    .string()
+    .trim()
+    .min(2, { message: "Nome deve ter pelo menos 2 caracteres" })
+    .max(50, { message: "Nome deve ter no máximo 50 caracteres" })
+    // Mesma regra da trigger handle_new_user (POSIX [:alpha:][:digit:] + _ - . ' espaço)
+    .regex(/^[\p{L}\p{N}_\-\. ']+$/u, {
+      message: "Nome só pode conter letras, números, espaços, _ - . e '",
+    }),
+  handle: z
+    .string()
+    .trim()
+    .min(3, { message: "@ deve ter pelo menos 3 caracteres" })
+    .max(30, { message: "@ deve ter no máximo 30 caracteres" })
+    .regex(/^[a-zA-Z0-9_]+$/, {
+      message: "@ só pode conter letras minúsculas, números e _",
+    })
+    .transform((v) => v.toLowerCase()),
+  email: z.string().trim().min(1, { message: "Informe seu email" }).email({ message: "Email inválido" }),
   password: z.string().min(6, { message: "Senha deve ter pelo menos 6 caracteres" }),
-  username: z.string().trim().min(2, { message: "Nome deve ter pelo menos 2 caracteres" }).max(50, { message: "Nome deve ter no máximo 50 caracteres" }),
-  handle: z.string().trim().min(3, { message: "@ deve ter pelo menos 3 caracteres" }).max(30, { message: "@ deve ter no máximo 30 caracteres" }).regex(/^[a-zA-Z0-9_]+$/, { message: "@ só pode conter letras, números e _" }).transform(v => v.toLowerCase()),
 });
 
 // Normaliza nome → handle base (remove acentos, espaços, símbolos)
