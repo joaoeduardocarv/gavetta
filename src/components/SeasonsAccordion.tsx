@@ -497,6 +497,36 @@ export function SeasonsAccordion({ tmdbTvId, seriesStatus, content, onProgressCh
           );
         })}
       </Accordion>
+
+      <AlertDialog open={showMoveToWatchedPrompt} onOpenChange={setShowMoveToWatchedPrompt}>
+        <AlertDialogContent className="z-[60]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Você assistiu tudo que está disponível!</AlertDialogTitle>
+            <AlertDialogDescription>
+              {isOngoingSeries
+                ? "Quer mover esta série direto para a gaveta Assistido?"
+                : "A série está finalizada. Quer mover para a gaveta Assistido?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {isOngoingSeries && (
+            <div className="flex items-start gap-2 rounded-md border border-accent/30 bg-accent/10 p-3 text-sm text-foreground">
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-accent" />
+              <p>
+                Atenção: a série ainda está em produção e novos episódios devem ser lançados.
+                Você poderá continuar marcando episódios futuros mesmo após mover.
+              </p>
+            </div>
+          )}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Agora não</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmMoveToWatched}>
+              Mover para Assistido
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
