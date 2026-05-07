@@ -49,7 +49,7 @@ function formatEpisodeAirDate(airDate: string | null | undefined): { label: stri
   return { label: formatted, isFuture };
 }
 
-export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordionProps) {
+export function SeasonsAccordion({ tmdbTvId, seriesStatus, content, onProgressChange }: SeasonsAccordionProps) {
   const [seasons, setSeasons] = useState<TMDBSeason[]>([]);
   const [totalEpisodes, setTotalEpisodes] = useState(0);
   const [isLoadingSeasons, setIsLoadingSeasons] = useState(true);
@@ -57,6 +57,16 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
   const [loadingSeason, setLoadingSeason] = useState<number | null>(null);
   /** Key "season:episode" of the rating picker that should be auto-opened (just-watched episode). */
   const [autoOpenRatingKey, setAutoOpenRatingKey] = useState<string | null>(null);
+  /** Whether the "move to Assistido" prompt is open. */
+  const [showMoveToWatchedPrompt, setShowMoveToWatchedPrompt] = useState(false);
+  /** Avoid re-prompting in the same view session. */
+  const promptShownRef = useRef(false);
+
+  const { setDefaultDrawer, getContentDrawers } = useDrawers();
+  const isAlreadyWatched = content
+    ? getContentDrawers(content.id).defaultDrawer === "watched"
+    : false;
+  const isOngoingSeries = !!seriesStatus && seriesStatus !== "Ended" && seriesStatus !== "Canceled";
 
   const {
     isWatched,
