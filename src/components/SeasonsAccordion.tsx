@@ -184,7 +184,7 @@ export function SeasonsAccordion({ tmdbTvId, seriesStatus, content, onProgressCh
   };
 
   /** After an episode is marked, check if user reached 100% of aired episodes and prompt to move. */
-  const maybePromptMoveToWatched = async () => {
+  const maybePromptMoveToWatched = async (justMarked?: { season: number; episode: number }) => {
     if (!content) return;
     if (isAlreadyWatched) return;
     if (promptShownRef.current) return;
@@ -197,9 +197,14 @@ export function SeasonsAccordion({ tmdbTvId, seriesStatus, content, onProgressCh
         const eps = loaded[s.season_number];
         if (!eps) continue;
         for (const ep of eps) {
-          if (hasAired(ep.air_date)) {
-            totalAired++;
-            if (isWatched(s.season_number, ep.episode_number)) airedWatched++;
+          if (!hasAired(ep.air_date)) continue;
+          totalAired++;
+          const isJustMarked =
+            justMarked &&
+            justMarked.season === s.season_number &&
+            justMarked.episode === ep.episode_number;
+          if (isJustMarked || isWatched(s.season_number, ep.episode_number)) {
+            airedWatched++;
           }
         }
       }
