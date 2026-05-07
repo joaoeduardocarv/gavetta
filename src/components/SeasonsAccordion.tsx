@@ -47,7 +47,8 @@ function formatEpisodeAirDate(airDate: string | null | undefined): { label: stri
   return { label: formatted, isFuture };
 }
 
-export function SeasonsAccordion({ tmdbTvId, seriesStatus, content, onProgressChange }: SeasonsAccordionProps) {
+export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: SeasonsAccordionProps) {
+  const [seriesStatus, setSeriesStatus] = useState<string | undefined>(undefined);
   const [seasons, setSeasons] = useState<TMDBSeason[]>([]);
   const [totalEpisodes, setTotalEpisodes] = useState(0);
   const [isLoadingSeasons, setIsLoadingSeasons] = useState(true);
