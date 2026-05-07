@@ -20,6 +20,8 @@ import { useWatchedEpisodes } from "@/hooks/useWatchedEpisodes";
 import { useEpisodeRatings } from "@/hooks/useEpisodeRatings";
 import { RatingPicker } from "@/components/RatingPicker";
 import { useDrawers } from "@/contexts/DrawerContext";
+import { useToast } from "@/hooks/use-toast";
+import { ToastAction } from "@/components/ui/toast";
 import type { Content } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 
