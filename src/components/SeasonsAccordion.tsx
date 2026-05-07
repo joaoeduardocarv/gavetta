@@ -64,6 +64,7 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
   const promptShownRef = useRef(false);
 
   const { setDefaultDrawer, getContentDrawers } = useDrawers();
+  const { toast } = useToast();
   const isAlreadyWatched = content
     ? getContentDrawers(content.id).defaultDrawer === "watched"
     : false;
