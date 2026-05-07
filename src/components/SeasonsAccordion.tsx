@@ -99,6 +99,7 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
         const list = filtered.length > 0 ? filtered : details.seasons;
         setSeasons(list);
         setTotalEpisodes(details.number_of_episodes ?? list.reduce((sum, s) => sum + (s.episode_count ?? 0), 0));
+        setSeriesStatus(details.status);
       })
       .catch((err) => console.error("Error loading TV details:", err))
       .finally(() => {
