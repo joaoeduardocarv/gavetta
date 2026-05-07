@@ -25,8 +25,6 @@ import { cn } from "@/lib/utils";
 
 interface SeasonsAccordionProps {
   tmdbTvId: number;
-  /** Series TMDB status (e.g. "Ended", "Returning Series"). Used to warn when offering to move to "Assistido". */
-  seriesStatus?: string;
   /** Series content (used to move into the "Assistido" drawer when prompted). */
   content?: Content;
   /** Called whenever total watched count changes; lets parent detect "all watched". */
