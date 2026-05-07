@@ -1,18 +1,32 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Check, CheckCheck } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Loader2, Check, CheckCheck, AlertTriangle } from "lucide-react";
 import { getTVDetails, getSeasonEpisodes, type TMDBEpisode, type TMDBSeason } from "@/lib/tmdb";
 import { useWatchedEpisodes } from "@/hooks/useWatchedEpisodes";
 import { useEpisodeRatings } from "@/hooks/useEpisodeRatings";
 import { RatingPicker } from "@/components/RatingPicker";
+import { useDrawers } from "@/contexts/DrawerContext";
+import type { Content } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 
 interface SeasonsAccordionProps {
   tmdbTvId: number;
+  /** Series content (used to move into the "Assistido" drawer when prompted). */
+  content?: Content;
   /** Called whenever total watched count changes; lets parent detect "all watched". */
   onProgressChange?: (info: { totalEpisodes: number; totalWatched: number }) => void;
 }
@@ -33,7 +47,8 @@ function formatEpisodeAirDate(airDate: string | null | undefined): { label: stri
   return { label: formatted, isFuture };
 }
 
-export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordionProps) {
+export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: SeasonsAccordionProps) {
+  const [seriesStatus, setSeriesStatus] = useState<string | undefined>(undefined);
   const [seasons, setSeasons] = useState<TMDBSeason[]>([]);
   const [totalEpisodes, setTotalEpisodes] = useState(0);
   const [isLoadingSeasons, setIsLoadingSeasons] = useState(true);
@@ -41,6 +56,16 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
   const [loadingSeason, setLoadingSeason] = useState<number | null>(null);
   /** Key "season:episode" of the rating picker that should be auto-opened (just-watched episode). */
   const [autoOpenRatingKey, setAutoOpenRatingKey] = useState<string | null>(null);
+  /** Whether the "move to Assistido" prompt is open. */
+  const [showMoveToWatchedPrompt, setShowMoveToWatchedPrompt] = useState(false);
+  /** Avoid re-prompting in the same view session. */
+  const promptShownRef = useRef(false);
+
+  const { setDefaultDrawer, getContentDrawers } = useDrawers();
+  const isAlreadyWatched = content
+    ? getContentDrawers(content.id).defaultDrawer === "watched"
+    : false;
+  const isOngoingSeries = !!seriesStatus && seriesStatus !== "Ended" && seriesStatus !== "Canceled";
 
   const {
     isWatched,
@@ -74,6 +99,7 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
         const list = filtered.length > 0 ? filtered : details.seasons;
         setSeasons(list);
         setTotalEpisodes(details.number_of_episodes ?? list.reduce((sum, s) => sum + (s.episode_count ?? 0), 0));
+        setSeriesStatus(details.status);
       })
       .catch((err) => console.error("Error loading TV details:", err))
       .finally(() => {
@@ -90,6 +116,14 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
       onProgressChange?.({ totalEpisodes, totalWatched });
     }
   }, [totalWatched, totalEpisodes, onProgressChange]);
+
+  // Trigger move-to-watched prompt after bulk actions update the watched count.
+  useEffect(() => {
+    if (totalWatched === 0) return;
+    if (!content || isAlreadyWatched || promptShownRef.current) return;
+    maybePromptMoveToWatched();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalWatched]);
 
   /** True if an episode has already aired (air date <= today) or has no date. */
   const hasAired = (airDate: string | null | undefined): boolean => {
@@ -134,6 +168,71 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
       if (airedNumbers.length > 0) {
         await markSeason(s.season_number, airedNumbers);
       }
+    }
+  };
+
+  /** Loads any season's episode list that is still missing and returns the merged map. */
+  const ensureAllSeasonsLoaded = async (): Promise<Record<number, TMDBEpisode[]>> => {
+    const missing = seasons.filter((s) => !episodesBySeason[s.season_number]);
+    if (missing.length === 0) return episodesBySeason;
+    const results = await Promise.all(
+      missing.map((s) =>
+        getSeasonEpisodes(tmdbTvId, s.season_number).then((eps) => ({
+          season: s.season_number,
+          eps,
+        }))
+      )
+    );
+    const merged = { ...episodesBySeason };
+    results.forEach(({ season, eps }) => {
+      merged[season] = eps;
+    });
+    setEpisodesBySeason(merged);
+    return merged;
+  };
+
+  /** After an episode is marked, check if user reached 100% of aired episodes and prompt to move. */
+  const maybePromptMoveToWatched = async (justMarked?: { season: number; episode: number }) => {
+    if (!content) return;
+    if (isAlreadyWatched) return;
+    if (promptShownRef.current) return;
+    if (totalEpisodes === 0) return;
+    try {
+      const loaded = await ensureAllSeasonsLoaded();
+      let totalAired = 0;
+      let airedWatched = 0;
+      for (const s of seasons) {
+        const eps = loaded[s.season_number];
+        if (!eps) continue;
+        for (const ep of eps) {
+          if (!hasAired(ep.air_date)) continue;
+          totalAired++;
+          const isJustMarked =
+            justMarked &&
+            justMarked.season === s.season_number &&
+            justMarked.episode === ep.episode_number;
+          if (isJustMarked || isWatched(s.season_number, ep.episode_number)) {
+            airedWatched++;
+          }
+        }
+      }
+      if (totalAired > 0 && airedWatched >= totalAired) {
+        promptShownRef.current = true;
+        setShowMoveToWatchedPrompt(true);
+      }
+    } catch (err) {
+      console.error("Error checking aired-episode totals:", err);
+    }
+  };
+
+  const handleConfirmMoveToWatched = async () => {
+    setShowMoveToWatchedPrompt(false);
+    if (!content) return;
+    try {
+      // Triggers the global rating dialog (mandatory 1-10 + optional comment).
+      await setDefaultDrawer(content, "watched");
+    } catch (err) {
+      console.error("Error moving content to 'Assistido':", err);
     }
   };
 
@@ -318,9 +417,12 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
                                 if (!aired) return;
                                 const wasWatched = watched;
                                 await toggleEpisode(season.season_number, ep.episode_number);
-                                // After marking as watched, auto-open the rating picker
                                 if (!wasWatched) {
                                   setAutoOpenRatingKey(`${season.season_number}:${ep.episode_number}`);
+                                  maybePromptMoveToWatched({
+                                    season: season.season_number,
+                                    episode: ep.episode_number,
+                                  });
                                 }
                               }}
                               className="mt-0.5"
@@ -395,6 +497,36 @@ export function SeasonsAccordion({ tmdbTvId, onProgressChange }: SeasonsAccordio
           );
         })}
       </Accordion>
+
+      <AlertDialog open={showMoveToWatchedPrompt} onOpenChange={setShowMoveToWatchedPrompt}>
+        <AlertDialogContent className="z-[60]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Você assistiu tudo que está disponível!</AlertDialogTitle>
+            <AlertDialogDescription>
+              {isOngoingSeries
+                ? "Quer mover esta série direto para a gaveta Assistido?"
+                : "A série está finalizada. Quer mover para a gaveta Assistido?"}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          {isOngoingSeries && (
+            <div className="flex items-start gap-2 rounded-md border border-accent/30 bg-accent/10 p-3 text-sm text-foreground">
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-accent" />
+              <p>
+                Atenção: a série ainda está em produção e novos episódios devem ser lançados.
+                Você poderá continuar marcando episódios futuros mesmo após mover.
+              </p>
+            </div>
+          )}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Agora não</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmMoveToWatched}>
+              Mover para Assistido
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
