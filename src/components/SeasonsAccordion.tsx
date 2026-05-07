@@ -163,6 +163,66 @@ export function SeasonsAccordion({ tmdbTvId, seriesStatus, content, onProgressCh
     }
   };
 
+  /** Loads any season's episode list that is still missing and returns the merged map. */
+  const ensureAllSeasonsLoaded = async (): Promise<Record<number, TMDBEpisode[]>> => {
+    const missing = seasons.filter((s) => !episodesBySeason[s.season_number]);
+    if (missing.length === 0) return episodesBySeason;
+    const results = await Promise.all(
+      missing.map((s) =>
+        getSeasonEpisodes(tmdbTvId, s.season_number).then((eps) => ({
+          season: s.season_number,
+          eps,
+        }))
+      )
+    );
+    const merged = { ...episodesBySeason };
+    results.forEach(({ season, eps }) => {
+      merged[season] = eps;
+    });
+    setEpisodesBySeason(merged);
+    return merged;
+  };
+
+  /** After an episode is marked, check if user reached 100% of aired episodes and prompt to move. */
+  const maybePromptMoveToWatched = async () => {
+    if (!content) return;
+    if (isAlreadyWatched) return;
+    if (promptShownRef.current) return;
+    if (totalEpisodes === 0) return;
+    try {
+      const loaded = await ensureAllSeasonsLoaded();
+      let totalAired = 0;
+      let airedWatched = 0;
+      for (const s of seasons) {
+        const eps = loaded[s.season_number];
+        if (!eps) continue;
+        for (const ep of eps) {
+          if (hasAired(ep.air_date)) {
+            totalAired++;
+            if (isWatched(s.season_number, ep.episode_number)) airedWatched++;
+          }
+        }
+      }
+      if (totalAired > 0 && airedWatched >= totalAired) {
+        promptShownRef.current = true;
+        setShowMoveToWatchedPrompt(true);
+      }
+    } catch (err) {
+      console.error("Error checking aired-episode totals:", err);
+    }
+  };
+
+  const handleConfirmMoveToWatched = async () => {
+    setShowMoveToWatchedPrompt(false);
+    if (!content) return;
+    try {
+      // Triggers the global rating dialog (mandatory 1-10 + optional comment).
+      await setDefaultDrawer(content, "watched");
+    } catch (err) {
+      console.error("Error moving content to 'Assistido':", err);
+    }
+  };
+
   const handleAccordionChange = async (value: string) => {
     if (!value) return;
     const seasonNumber = Number(value.replace("season-", ""));
