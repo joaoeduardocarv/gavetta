@@ -228,9 +228,32 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
   const handleConfirmMoveToWatched = async () => {
     setShowMoveToWatchedPrompt(false);
     if (!content) return;
+    const previousDrawer = getContentDrawers(content.id).defaultDrawer;
     try {
       // Triggers the global rating dialog (mandatory 1-10 + optional comment).
       await setDefaultDrawer(content, "watched");
+      // Confirm the move actually went through (user may have cancelled the rating dialog).
+      const nowWatched = getContentDrawers(content.id).defaultDrawer === "watched";
+      if (!nowWatched) return;
+      toast({
+        title: "Movido para Assistido",
+        description: `${content.title} foi movido para a gaveta Assistido.`,
+        action: (
+          <ToastAction
+            altText="Desfazer"
+            onClick={async () => {
+              try {
+                await setDefaultDrawer(content, previousDrawer);
+                promptShownRef.current = false;
+              } catch (err) {
+                console.error("Error undoing move:", err);
+              }
+            }}
+          >
+            Desfazer
+          </ToastAction>
+        ),
+      });
     } catch (err) {
       console.error("Error moving content to 'Assistido':", err);
     }
