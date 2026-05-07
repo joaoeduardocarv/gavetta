@@ -1,18 +1,34 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Check, CheckCheck } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Loader2, Check, CheckCheck, AlertTriangle } from "lucide-react";
 import { getTVDetails, getSeasonEpisodes, type TMDBEpisode, type TMDBSeason } from "@/lib/tmdb";
 import { useWatchedEpisodes } from "@/hooks/useWatchedEpisodes";
 import { useEpisodeRatings } from "@/hooks/useEpisodeRatings";
 import { RatingPicker } from "@/components/RatingPicker";
+import { useDrawers } from "@/contexts/DrawerContext";
+import type { Content } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 
 interface SeasonsAccordionProps {
   tmdbTvId: number;
+  /** Series TMDB status (e.g. "Ended", "Returning Series"). Used to warn when offering to move to "Assistido". */
+  seriesStatus?: string;
+  /** Series content (used to move into the "Assistido" drawer when prompted). */
+  content?: Content;
   /** Called whenever total watched count changes; lets parent detect "all watched". */
   onProgressChange?: (info: { totalEpisodes: number; totalWatched: number }) => void;
 }
