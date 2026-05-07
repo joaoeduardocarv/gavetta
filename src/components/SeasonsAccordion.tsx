@@ -409,9 +409,12 @@ export function SeasonsAccordion({ tmdbTvId, seriesStatus, content, onProgressCh
                                 if (!aired) return;
                                 const wasWatched = watched;
                                 await toggleEpisode(season.season_number, ep.episode_number);
-                                // After marking as watched, auto-open the rating picker
                                 if (!wasWatched) {
                                   setAutoOpenRatingKey(`${season.season_number}:${ep.episode_number}`);
+                                  maybePromptMoveToWatched({
+                                    season: season.season_number,
+                                    episode: ep.episode_number,
+                                  });
                                 }
                               }}
                               className="mt-0.5"
