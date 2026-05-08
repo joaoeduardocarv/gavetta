@@ -164,6 +164,8 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
         await markSeason(s.season_number, airedNumbers);
       }
     }
+
+    maybePromptMoveToWatched();
   };
 
   /** Loads any season's episode list that is still missing and returns the merged map. */
