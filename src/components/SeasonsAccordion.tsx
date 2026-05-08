@@ -120,7 +120,6 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
     }
   }, [totalWatched, totalEpisodes, onProgressChange]);
 
-  // Notify parent when progress changes
   const hasAired = (airDate: string | null | undefined): boolean => {
     if (!airDate) return false; // unknown date → treat as not yet aired (safer)
     const ep = new Date(airDate + "T00:00:00");
