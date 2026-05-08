@@ -120,15 +120,6 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
     }
   }, [totalWatched, totalEpisodes, onProgressChange]);
 
-  // Trigger move-to-watched prompt after bulk actions update the watched count.
-  useEffect(() => {
-    if (totalWatched === 0) return;
-    if (!content || isAlreadyWatched || promptShownRef.current) return;
-    maybePromptMoveToWatched();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [totalWatched]);
-
-  /** True if an episode has already aired (air date <= today) or has no date. */
   const hasAired = (airDate: string | null | undefined): boolean => {
     if (!airDate) return false; // unknown date → treat as not yet aired (safer)
     const ep = new Date(airDate + "T00:00:00");
@@ -172,6 +163,8 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
         await markSeason(s.season_number, airedNumbers);
       }
     }
+
+    maybePromptMoveToWatched();
   };
 
   /** Loads any season's episode list that is still missing and returns the merged map. */
