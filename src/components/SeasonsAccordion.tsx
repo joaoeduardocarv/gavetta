@@ -430,7 +430,9 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
                       {episodes.map((ep) => {
                         const aired = hasAired(ep.air_date);
                         // Never treat unreleased episodes as watched, even if stored.
-                        const watched = aired && isWatched(season.season_number, ep.episode_number);
+                        // Strict boolean coercion guarantees a brand-new episode that
+                        // isn't in the watched_episodes table can never render as checked.
+                        const watched = Boolean(aired && isWatched(season.season_number, ep.episode_number) === true);
                         const airInfo = formatEpisodeAirDate(ep.air_date);
                         const epRating = getEffectiveEpisodeRating(season.season_number, ep.episode_number);
                         const epStored = getStoredEpisodeRating(season.season_number, ep.episode_number);
@@ -495,16 +497,20 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
                               {(() => {
                                 const epKey = `${season.season_number}:${ep.episode_number}`;
                                 const isAutoOpen = autoOpenRatingKey === epKey;
+                                // For unwatched episodes, never surface an inherited
+                                // season-average rating — show an empty picker so the
+                                // user doesn't think the episode is already "marked".
+                                const showInherited = watched || epStored != null;
+                                const displayValue = showInherited ? epRating.value : null;
+                                const displayIsAverage = showInherited ? epRating.isAverage : false;
                                 return (
                                   <RatingPicker
-                                    value={epRating.value}
-                                    isAverage={epRating.isAverage}
-                                    disabled={!watched && epStored == null && epRating.value == null}
+                                    value={displayValue}
+                                    isAverage={displayIsAverage}
+                                    disabled={!watched && epStored == null}
                                     label={
                                       watched
                                         ? `Sua nota para o episódio ${ep.episode_number}`
-                                        : epRating.value != null
-                                        ? `Média herdada: ${epRating.value}`
                                         : "Marque como assistido para avaliar"
                                     }
                                     open={isAutoOpen ? true : undefined}
