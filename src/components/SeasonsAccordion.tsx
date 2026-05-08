@@ -287,6 +287,20 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
 
   return (
     <div className="space-y-3">
+      {/* Persistent warning when series is in "Assistido" but still ongoing */}
+      {isAlreadyWatched && isOngoingSeries && (
+        <div
+          role="status"
+          className="flex items-start gap-2 rounded-md border border-accent/30 bg-accent/10 p-3 text-sm text-foreground"
+        >
+          <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0 text-accent" />
+          <p>
+            Esta série está marcada como <strong>Assistida</strong>, mas ainda está em produção.
+            Novos episódios podem ser lançados e aparecer aqui no futuro.
+          </p>
+        </div>
+      )}
+
       {/* Overall progress + series-level rating */}
       <div className="space-y-1.5">
         <div className="flex items-center justify-between text-sm gap-2">
