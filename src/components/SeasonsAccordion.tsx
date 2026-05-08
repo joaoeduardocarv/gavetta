@@ -430,7 +430,9 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
                       {episodes.map((ep) => {
                         const aired = hasAired(ep.air_date);
                         // Never treat unreleased episodes as watched, even if stored.
-                        const watched = aired && isWatched(season.season_number, ep.episode_number);
+                        // Strict boolean coercion guarantees a brand-new episode that
+                        // isn't in the watched_episodes table can never render as checked.
+                        const watched = Boolean(aired && isWatched(season.season_number, ep.episode_number) === true);
                         const airInfo = formatEpisodeAirDate(ep.air_date);
                         const epRating = getEffectiveEpisodeRating(season.season_number, ep.episode_number);
                         const epStored = getStoredEpisodeRating(season.season_number, ep.episode_number);
