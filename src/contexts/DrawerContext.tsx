@@ -216,6 +216,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
           cast: credits.cast.slice(0, 10).map(c => c.name),
           availableOn: extractStreamingNames(providers),
           watchProviderLogos: extractStreamingLogos(providers),
+          watchProvidersLink: providers?.link || undefined,
           isInTheaters: details.isInTheaters,
         };
       } else {
@@ -233,6 +234,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
           cast: credits.cast.slice(0, 10).map(c => c.name),
           availableOn: extractStreamingNames(providers),
           watchProviderLogos: extractStreamingLogos(providers),
+          watchProvidersLink: providers?.link || undefined,
         };
       }
     } catch (error) {

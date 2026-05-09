@@ -175,17 +175,40 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
 
         {/* Plataformas de streaming com logos */}
         {hasLogos ? (
-          <div className="flex items-center gap-1 mt-1.5">
-            {providerLogos.map((provider, i) => (
-              <img
-                key={i}
-                src={getTMDBImageUrl((provider as any).logoPath || (provider as any).logo_path, 'w200')}
-                alt={String((provider as any).name || (provider as any).provider_name || 'Streaming')}
-                title={String((provider as any).name || (provider as any).provider_name || 'Streaming')}
-                className="h-5 w-5 rounded-sm object-cover flex-shrink-0"
-                loading="lazy"
-              />
-            ))}
+          <div className="flex items-center gap-1.5 mt-1.5">
+            {providerLogos.map((provider, i) => {
+              const offers = ((provider as any).offerTypes ?? []) as string[];
+              const hasFlat = offers.includes('flatrate') || offers.includes('free') || offers.includes('ads');
+              const isPaidOnly = offers.length > 0 && !hasFlat;
+              const name = String((provider as any).name || (provider as any).provider_name || 'Streaming');
+              const titleSuffix = isPaidOnly
+                ? ' · Aluguel/Compra'
+                : offers.includes('flatrate')
+                  ? ' · Incluso na assinatura'
+                  : '';
+              return (
+                <span key={i} className="relative flex-shrink-0">
+                  <img
+                    src={getTMDBImageUrl((provider as any).logoPath || (provider as any).logo_path, 'w200')}
+                    alt={name}
+                    title={`${name}${titleSuffix}`}
+                    className={cn(
+                      "h-5 w-5 rounded-sm object-cover",
+                      isPaidOnly && "opacity-80"
+                    )}
+                    loading="lazy"
+                  />
+                  {isPaidOnly && (
+                    <span
+                      className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-accent text-accent-foreground text-[8px] font-bold leading-3 text-center ring-1 ring-background"
+                      aria-label="Apenas aluguel ou compra"
+                    >
+                      $
+                    </span>
+                  )}
+                </span>
+              );
+            })}
             {extraCount > 0 && (
               <span className="text-[10px] text-muted-foreground ml-0.5">+{extraCount}</span>
             )}

@@ -160,6 +160,7 @@ async function enrichContentData(content: Content, productionId: string, product
         cast: credits.cast?.slice(0, 10).map(c => c.name) || content.cast,
         availableOn: extractStreamingNames(providers),
         watchProviderLogos: extractStreamingLogos(providers),
+        watchProvidersLink: providers?.link || undefined,
         isInTheaters: details.isInTheaters,
       };
     } else {
@@ -176,6 +177,7 @@ async function enrichContentData(content: Content, productionId: string, product
         cast: credits.cast?.slice(0, 10).map(c => c.name) || content.cast,
         availableOn: extractStreamingNames(providers),
         watchProviderLogos: extractStreamingLogos(providers),
+        watchProvidersLink: providers?.link || undefined,
       };
     }
   } catch (err) {

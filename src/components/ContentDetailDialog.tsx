@@ -564,10 +564,10 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                 </div>
               )}
 
-              {(content.isInTheaters || (content.availableOn && content.availableOn.length > 0)) && (
+              {(content.isInTheaters || (content.watchProviderLogos && content.watchProviderLogos.length > 0) || (content.availableOn && content.availableOn.length > 0)) && (
                 <div>
-                  <Label className="text-sm font-semibold">Disponível em</Label>
-                  <div className="flex flex-wrap gap-2 mt-1">
+                  <Label className="text-sm font-semibold">Onde assistir</Label>
+                  <div className="mt-2 space-y-2">
                     {content.isInTheaters && (
                       <Badge
                         variant="default"
@@ -576,11 +576,99 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                         🎬 Em cartaz nos cinemas
                       </Badge>
                     )}
-                    {content.availableOn?.map((platform) => (
-                      <Badge key={platform} variant="outline">
-                        {platform}
-                      </Badge>
-                    ))}
+                    {(() => {
+                      const logos = content.watchProviderLogos ?? [];
+                      if (logos.length === 0) {
+                        return (
+                          <div className="flex flex-wrap gap-2">
+                            {content.availableOn?.map((platform) => (
+                              <Badge key={platform} variant="outline">{platform}</Badge>
+                            ))}
+                          </div>
+                        );
+                      }
+
+                      type Offer = 'flatrate' | 'rent' | 'buy' | 'free' | 'ads';
+                      const sectionDefs: { key: Offer; label: string }[] = [
+                        { key: 'flatrate', label: 'Incluso na assinatura' },
+                        { key: 'free', label: 'Grátis' },
+                        { key: 'ads', label: 'Grátis com anúncios' },
+                        { key: 'rent', label: 'Alugar' },
+                        { key: 'buy', label: 'Comprar' },
+                      ];
+
+                      const grouped = sectionDefs
+                        .map(({ key, label }) => ({
+                          key,
+                          label,
+                          items: logos.filter((l) => (l.offerTypes ?? []).includes(key)),
+                        }))
+                        .filter((g) => g.items.length > 0);
+
+                      // Fallback: nenhum offerType conhecido, mostra como antes
+                      if (grouped.length === 0) {
+                        return (
+                          <div className="flex flex-wrap gap-2">
+                            {logos.map((l) => (
+                              <div key={l.name} className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-border bg-card">
+                                <img
+                                  src={getTMDBImageUrl(l.logoPath, 'w200')}
+                                  alt={l.name}
+                                  className="h-5 w-5 rounded-sm object-cover"
+                                  loading="lazy"
+                                />
+                                <span className="text-xs text-foreground">{l.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        );
+                      }
+
+                      const link = content.watchProvidersLink;
+
+                      return (
+                        <div className="space-y-2.5">
+                          {grouped.map(({ key, label, items }) => (
+                            <div key={key}>
+                              <p className="text-xs font-medium text-muted-foreground mb-1">{label}</p>
+                              <div className="flex flex-wrap gap-2">
+                                {items.map((l) => (
+                                  <div
+                                    key={l.name}
+                                    className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-border bg-card"
+                                    title={`${l.name} · ${label}`}
+                                  >
+                                    <img
+                                      src={getTMDBImageUrl(l.logoPath, 'w200')}
+                                      alt={l.name}
+                                      className="h-5 w-5 rounded-sm object-cover"
+                                      loading="lazy"
+                                    />
+                                    <span className="text-xs text-foreground">{l.name}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                          <p className="text-[11px] text-muted-foreground pt-1">
+                            Disponibilidade no Brasil via JustWatch.
+                            {link && (
+                              <>
+                                {' '}
+                                <a
+                                  href={link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="underline hover:text-foreground"
+                                >
+                                  Ver preços e detalhes
+                                </a>
+                              </>
+                            )}
+                          </p>
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               )}
