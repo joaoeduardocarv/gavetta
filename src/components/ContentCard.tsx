@@ -8,7 +8,7 @@ import { DrawerPickerPopover } from "./DrawerPickerPopover";
 import { useDrawers } from "@/contexts/DrawerContext";
 import { getTMDBImageUrl } from "@/lib/tmdb";
 import { useContentNotifications } from "@/hooks/useContentNotifications";
-import { useWatchedEpisodeCount } from "@/hooks/useWatchedEpisodes";
+import { useSeriesEpisodeProgress } from "@/hooks/useWatchedEpisodes";
 import { extractTmdbInfoFromId } from "@/lib/contentNormalizer";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "./ui/tooltip";
 
@@ -56,7 +56,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
   const isSeries = content.type === 'series' || content.type === 'tv';
   const parsedTmdb = isSeries ? extractTmdbInfoFromId(content.id) : null;
   const tmdbTvId = parsedTmdb?.mediaType === 'tv' ? parsedTmdb.tmdbId : null;
-  const watchedEpCount = useWatchedEpisodeCount(tmdbTvId);
+  const { watched: watchedEpCount, total: totalEpCount } = useSeriesEpisodeProgress(tmdbTvId);
 
   const posterSrc =
     typeof content.posterUrl === "string"
@@ -152,7 +152,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
           {isSeries && watchedEpCount > 0 && (
             <Badge variant="outline" className="gap-1 text-xs border-primary/30 text-primary">
               <Check className="h-3 w-3" />
-              {watchedEpCount} ep{watchedEpCount > 1 ? 's' : ''}
+              {watchedEpCount}{totalEpCount > 0 ? `/${totalEpCount}` : ''} eps
             </Badge>
           )}
         </div>

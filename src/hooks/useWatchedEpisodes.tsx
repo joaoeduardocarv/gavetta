@@ -264,3 +264,34 @@ export function useWatchedEpisodeCount(tmdbTvId: number | null) {
 
   return count;
 }
+
+/**
+ * Returns watched count and total episode count for a series (TMDB id).
+ * Total is fetched from TMDB (cached) lazily.
+ */
+export function useSeriesEpisodeProgress(tmdbTvId: number | null) {
+  const watched = useWatchedEpisodeCount(tmdbTvId);
+  const [total, setTotal] = useState<number>(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (tmdbTvId == null) {
+      setTotal(0);
+      return;
+    }
+    import("@/lib/tmdb").then(({ getTVDetails }) => {
+      getTVDetails(tmdbTvId)
+        .then((d) => {
+          if (!cancelled) setTotal(d?.number_of_episodes ?? 0);
+        })
+        .catch(() => {
+          if (!cancelled) setTotal(0);
+        });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [tmdbTvId]);
+
+  return { watched, total };
+}
