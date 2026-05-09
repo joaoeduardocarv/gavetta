@@ -56,7 +56,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
   const isSeries = content.type === 'series' || content.type === 'tv';
   const parsedTmdb = isSeries ? extractTmdbInfoFromId(content.id) : null;
   const tmdbTvId = parsedTmdb?.mediaType === 'tv' ? parsedTmdb.tmdbId : null;
-  const watchedEpCount = useWatchedEpisodeCount(tmdbTvId);
+  const { watched: watchedEpCount, total: totalEpCount } = useSeriesEpisodeProgress(tmdbTvId);
 
   const posterSrc =
     typeof content.posterUrl === "string"
