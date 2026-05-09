@@ -340,18 +340,23 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
           const isLoadingEps = loadingSeason === season.season_number;
           // Use only aired episodes for accurate counts when episode list is loaded.
           const airedEpisodes = episodes?.filter((ep) => hasAired(ep.air_date));
-          const epCount = airedEpisodes ? airedEpisodes.length : season.episode_count ?? 0;
+          const airedCount = airedEpisodes ? airedEpisodes.length : season.episode_count ?? 0;
+          const totalEpCount = season.episode_count ?? airedCount;
           const watchedCount = airedEpisodes
             ? airedEpisodes.filter((ep) => isWatched(season.season_number, ep.episode_number)).length
             : watchedCountForSeason(season.season_number);
-          const allWatched = epCount > 0 && watchedCount >= epCount;
+          const allAiredWatched = airedCount > 0 && watchedCount >= airedCount;
+          const allWatched = allAiredWatched && airedCount >= totalEpCount;
           const year = season.air_date ? new Date(season.air_date).getFullYear() : null;
           const seasonRating = getEffectiveSeasonRating(season.season_number);
           // "Em breve" se a data de estreia da temporada é futura, ou se episódios já carregados nenhum lançou.
           const seasonAirInfo = formatEpisodeAirDate(season.air_date);
           const isUpcomingSeason =
             (seasonAirInfo?.isFuture ?? false) ||
-            (episodes != null && episodes.length > 0 && episodes.every((ep) => !hasAired(ep.air_date)));
+            (episodes != null && episodes.length > 0 && episodes.every((ep) => !hasAired(ep.air_date))) ||
+            (airedCount === 0 && totalEpCount > 0);
+          // "Em andamento": ainda há episódios não lançados nesta temporada
+          const isOngoingSeason = !isUpcomingSeason && totalEpCount > airedCount;
 
           return (
             <AccordionItem key={season.id} value={`season-${season.season_number}`}>
@@ -370,7 +375,12 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
                           Em breve{seasonAirInfo ? ` · ${seasonAirInfo.label}` : ""}
                         </Badge>
                       )}
-                      {!isUpcomingSeason && allWatched && (
+                      {isOngoingSeason && (
+                        <Badge variant="secondary" className="gap-1 text-xs bg-accent/15 text-accent border-accent/30">
+                          Em andamento
+                        </Badge>
+                      )}
+                      {!isUpcomingSeason && !isOngoingSeason && allWatched && (
                         <Badge variant="secondary" className="gap-1 text-xs bg-primary/10 text-primary border-primary/20">
                           <Check className="h-3 w-3" />
                           Completo
@@ -378,7 +388,7 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {watchedCount} / {epCount} episódios
+                      {watchedCount} / {totalEpCount} episódios
                     </p>
                   </div>
                   {/* Season rating chip — stops trigger toggle on click */}
