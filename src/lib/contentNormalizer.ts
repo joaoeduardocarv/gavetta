@@ -64,7 +64,7 @@ const toProviderLogos = (
       return { name, logoPath, offerTypes: toOfferTypes(item.offerTypes) };
     })
     .filter(
-      (item): item is { name: string; logoPath: string; offerTypes?: OfferType[] } =>
+      (item): item is { name: string; logoPath: string; offerTypes: OfferType[] | undefined } =>
         item !== null,
     );
 };
