@@ -90,10 +90,15 @@ export interface TMDBWatchProvider {
   display_priority: number;
 }
 
+export type TMDBOfferType = 'flatrate' | 'rent' | 'buy' | 'free' | 'ads';
+
 export interface TMDBWatchProvidersResult {
+  link?: string;
   flatrate?: TMDBWatchProvider[];
   rent?: TMDBWatchProvider[];
   buy?: TMDBWatchProvider[];
+  free?: TMDBWatchProvider[];
+  ads?: TMDBWatchProvider[];
 }
 
 export interface TMDBPerson {
