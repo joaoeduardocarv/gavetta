@@ -38,9 +38,20 @@ const toStringArray = (value: unknown): string[] => {
     .filter((item): item is string => Boolean(item && item.trim()));
 };
 
+type OfferType = 'flatrate' | 'rent' | 'buy' | 'free' | 'ads';
+const VALID_OFFER_TYPES: OfferType[] = ['flatrate', 'rent', 'buy', 'free', 'ads'];
+
+const toOfferTypes = (value: unknown): OfferType[] | undefined => {
+  if (!Array.isArray(value)) return undefined;
+  const out = value
+    .map((v) => toStringValue(v))
+    .filter((v): v is OfferType => !!v && (VALID_OFFER_TYPES as string[]).includes(v));
+  return out.length > 0 ? out : undefined;
+};
+
 const toProviderLogos = (
   value: unknown,
-): { name: string; logoPath: string }[] => {
+): { name: string; logoPath: string; offerTypes?: OfferType[] }[] => {
   if (!Array.isArray(value)) return [];
 
   return value
@@ -50,9 +61,12 @@ const toProviderLogos = (
       const logoPath =
         toStringValue(item.logoPath) || toStringValue(item.logo_path);
       if (!name || !logoPath) return null;
-      return { name, logoPath };
+      return { name, logoPath, offerTypes: toOfferTypes(item.offerTypes) };
     })
-    .filter((item): item is { name: string; logoPath: string } => item !== null);
+    .filter(
+      (item): item is { name: string; logoPath: string; offerTypes?: OfferType[] } =>
+        item !== null,
+    );
 };
 
 const normalizeImageUrl = (value: unknown): string | undefined => {
