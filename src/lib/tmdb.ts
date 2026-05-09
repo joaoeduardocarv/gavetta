@@ -296,28 +296,42 @@ export function extractStreamingNames(providers: TMDBWatchProvidersResult | null
   return Array.from(names);
 }
 
-// Extrai logos únicos dos provedores de streaming
-export function extractStreamingLogos(providers: TMDBWatchProvidersResult | null): { name: string; logoPath: string }[] {
+// Extrai logos únicos dos provedores de streaming, com tipos de oferta agregados
+export function extractStreamingLogos(
+  providers: TMDBWatchProvidersResult | null
+): { name: string; logoPath: string; offerTypes: TMDBOfferType[] }[] {
   if (!providers) return [];
-  
-  const seen = new Set<number>();
-  const logos: { name: string; logoPath: string }[] = [];
-  
-  const addProviders = (list?: TMDBWatchProvider[]) => {
+
+  const byId = new Map<number, { name: string; logoPath: string; offerTypes: Set<TMDBOfferType> }>();
+
+  const addProviders = (list: TMDBWatchProvider[] | undefined, type: TMDBOfferType) => {
     list?.forEach(p => {
-      if (!seen.has(p.provider_id)) {
-        seen.add(p.provider_id);
-        logos.push({ name: p.provider_name, logoPath: p.logo_path });
+      let entry = byId.get(p.provider_id);
+      if (!entry) {
+        entry = { name: p.provider_name, logoPath: p.logo_path, offerTypes: new Set() };
+        byId.set(p.provider_id, entry);
       }
+      entry.offerTypes.add(type);
     });
   };
-  
-  // Prioriza flatrate (assinatura)
-  addProviders(providers.flatrate);
-  addProviders(providers.rent);
-  addProviders(providers.buy);
-  
-  return logos;
+
+  // Ordem de prioridade: flatrate primeiro
+  addProviders(providers.flatrate, 'flatrate');
+  addProviders(providers.free, 'free');
+  addProviders(providers.ads, 'ads');
+  addProviders(providers.rent, 'rent');
+  addProviders(providers.buy, 'buy');
+
+  return Array.from(byId.values()).map(e => ({
+    name: e.name,
+    logoPath: e.logoPath,
+    offerTypes: Array.from(e.offerTypes),
+  }));
+}
+
+// Extrai o link público (JustWatch) para a página BR de assistir
+export function extractWatchProvidersLink(providers: TMDBWatchProvidersResult | null): string | undefined {
+  return providers?.link || undefined;
 }
 
 // =============== ACTION 9 — DETALHES DE PESSOA ===============
