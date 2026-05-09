@@ -1,33 +1,64 @@
-# Popup ao marcar o último episódio disponível
 
-## Objetivo
-Quando o usuário marca como assistido o **último episódio já lançado** de uma série dentro do `SeasonsAccordion`, abrir um diálogo de confirmação ("Sim/Não") perguntando se quer **mover o card direto para a gaveta "Assistido"**. Se a série ainda não terminou (status TMDB diferente de `Ended`/`Canceled`), exibir um aviso claro de que ainda há temporadas/episódios por vir.
+## Sobre os preços
 
-## Comportamento
+**Preço por título não é possível** com nossa stack atual. A TMDB expõe os watch providers do JustWatch separados por categoria (`flatrate`, `rent`, `buy`, `free`, `ads`), mas **não retorna valores monetários**. Para preços precisaríamos da API direta do JustWatch (paga, com contrato comercial) ou scraping (frágil e contra os termos).
 
-1. Após cada `toggleEpisode` que marca (não desmarca) um episódio, comparar `totalWatched + 1` com o número total de **episódios já lançados** (aired) da série inteira.
-2. Se atingiu 100% dos lançados E a série ainda não está na gaveta `watched`, abrir um `AlertDialog`.
-3. O diálogo mostra:
-   - Título: "Você assistiu tudo que está disponível!"
-   - Se `status === 'Ended'` ou `'Canceled'`: subtítulo "A série está finalizada. Mover para Assistido?"
-   - Caso contrário (`Returning Series`, `In Production`, etc.): subtítulo + **aviso destacado** "Atenção: a série ainda está em produção e novos episódios devem ser lançados. Você poderá continuar marcando episódios futuros mesmo após mover."
-   - Botões: "Agora não" (cancelar) e "Mover para Assistido" (confirmar).
-4. Confirmar → chama o fluxo existente que move o conteúdo para a gaveta `watched` (mesma rota usada pelo `DrawerPickerPopover`/`ContentDetailDialog`, que dispara o `GlobalRatingDialog` para pedir nota 1-10 obrigatória, mantendo a regra atual de avaliação obrigatória).
-5. Disparado **uma única vez por sessão de visualização** (state local) para não reaparecer caso o usuário desmarque/remarque.
+O que conseguimos fazer hoje, e que cobre 95% da intenção: **mostrar com clareza em qual modalidade o título está disponível em cada streaming no Brasil** (Incluso, Aluguel, Compra, Grátis com anúncios).
 
-## Arquivos afetados
+## O que muda
 
-- `src/components/SeasonsAccordion.tsx`
-  - Aceitar nova prop opcional `seriesStatus?: string` e `contentId?: string` (ou já consumir do contexto).
-  - Detectar transição "último ep aired marcado" no `onCheckedChange` do checkbox e no botão "Marcar episódios já lançados".
-  - Renderizar `AlertDialog` com a lógica de aviso.
-  - Chamar a função do `DrawerContext` que move para `watched` (reutilizar `setContentDrawer('watched', ...)` que já existe e dispara o rating obrigatório).
-- `src/components/ContentDetailDialog.tsx`
-  - Passar `seriesStatus` (de `TMDBTVDetails.status`) e `content` para o `SeasonsAccordion`.
+Hoje juntamos `flatrate + rent + buy` numa lista única de logos, então um filme que está só para alugar na Prime aparece igualzinho a um que está incluso na assinatura. A proposta é separar e rotular.
 
-## Detalhes técnicos
+### 1. Backend (edge function `tmdb`)
 
-- "Último episódio disponível" = `airedEpisodesCount` somado em todas as temporadas (excluindo season 0). Calculado a partir de `episodesBySeason` já carregado; se nem todos os seasons foram abertos, carregar sob demanda apenas no momento da checagem (`Promise.all(getSeasonEpisodes)` para os faltantes), igual ao `handleMarkAllAired`.
-- Status "em andamento" = qualquer valor diferente de `Ended` e `Canceled` (TMDB usa também `Returning Series`, `In Production`, `Pilot`, `Planned`).
-- Verificação de "já está em watched" usa `useDrawers().getContentDrawers(contentId).defaultDrawer === 'watched'`.
-- Sem mudanças no banco; só UX no cliente.
+`getMovieWatchProviders` / `getTVWatchProviders` já retornam o objeto `BR` cru com `flatrate/rent/buy/free/ads` — não precisa mudar a função, só consumir esses campos no front (já vêm).
+
+### 2. Camada de dados (`src/lib/tmdb.ts`)
+
+Estender `extractStreamingLogos` para devolver também o tipo da oferta:
+
+```ts
+type OfferType = 'flatrate' | 'rent' | 'buy' | 'free' | 'ads';
+{ name, logoPath, offerTypes: OfferType[] } // um provider pode ter mais de uma
+```
+
+E manter `extractStreamingNames` retrocompatível.
+
+### 3. UI
+
+**ContentCard (lista compacta)**
+- Manter os logos como hoje
+- Adicionar um anel/badge sutil no canto da logo:
+  - Sem decoração = Incluso na assinatura (flatrate)
+  - Ícone `$` pequeno no canto = só Aluguel/Compra
+- Tooltip ao tocar/hover: "Prime Video · Aluguel/Compra"
+
+**ContentDetailDialog (tela de detalhes)**
+- Substituir a lista única "Disponível em" por seções rotuladas:
+  - **Incluso na assinatura** — logos flatrate
+  - **Alugar** — logos rent
+  - **Comprar** — logos buy
+  - **Grátis com anúncios** — logos ads/free (se houver)
+- Cada logo continua clicável (abre o link do JustWatch quando disponível, ou só visual)
+- Nota pequena no rodapé: "Disponibilidade fornecida por JustWatch · Brasil"
+
+### 4. Filtros existentes (Trending, Search, etc.)
+
+Se já existe filtro por streaming, adicionar um sub-filtro opcional "Apenas incluso na assinatura" para o usuário não ser enganado por um título que aparece como "Netflix" mas é só aluguel.
+
+## Sobre o preço — alternativas se for crítico
+
+1. **Aceitar sem preço** (recomendado): rotular a modalidade resolve a confusão principal sem custo nem fragilidade.
+2. **Link direto pro JustWatch**: clicar na logo abre o JustWatch BR daquele título, onde o usuário vê o preço atualizado. Baixo esforço, resolve sem manter dados.
+3. **Scraping do JustWatch**: não recomendado — viola ToS, quebra fácil, exige manutenção.
+4. **API JustWatch oficial**: paga, requer contrato. Fora de escopo para o momento.
+
+A opção **2 (link pro JustWatch)** combina muito bem com a separação por modalidade e é praticamente "preço com 1 clique".
+
+## Resumo do entregável proposto
+
+- Separar `flatrate`/`rent`/`buy`/`ads` em vez de misturar
+- Rotular nos detalhes ("Incluso", "Alugar", "Comprar")
+- Indicador visual no card quando não estiver incluso em nenhuma assinatura
+- Logos clicáveis → JustWatch BR (preço sempre atualizado pela fonte)
+- Sem preço dentro do app
