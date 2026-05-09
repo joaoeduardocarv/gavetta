@@ -152,7 +152,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
           {isSeries && watchedEpCount > 0 && (
             <Badge variant="outline" className="gap-1 text-xs border-primary/30 text-primary">
               <Check className="h-3 w-3" />
-              {watchedEpCount} ep{watchedEpCount > 1 ? 's' : ''}
+              {watchedEpCount}{totalEpCount > 0 ? `/${totalEpCount}` : ''} eps
             </Badge>
           )}
         </div>
