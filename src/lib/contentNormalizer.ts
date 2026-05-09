@@ -213,6 +213,8 @@ export function normalizeStoredContent(
       watchProviderLogos.length > 0
         ? watchProviderLogos
         : extractStreamingLogos(watchProviders),
+    watchProvidersLink:
+      toStringValue(data.watchProvidersLink) || watchProviders?.link || undefined,
     rating: ratingValue,
     status,
     isInTheaters: typeof data.isInTheaters === "boolean" ? data.isInTheaters : undefined,
