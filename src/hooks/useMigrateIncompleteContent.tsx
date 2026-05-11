@@ -55,7 +55,11 @@ export function useMigrateIncompleteContent() {
             ? true
             : logos.some(l => Array.isArray(l.offerTypes) && (l.offerTypes as unknown[]).length > 0);
 
-          return !hasGenres || !hasDirector || !hasAvailableOn || !hasOfferTypes || missingLogos;
+          // Filme sem o flag isInTheaters definido (precisa enriquecer p/ saber se está em cartaz)
+          const isMovie = assignment.production_type === 'movie' || data.type === 'movie';
+          const missingTheaters = isMovie && typeof data.isInTheaters !== 'boolean';
+
+          return !hasGenres || !hasDirector || !hasAvailableOn || !hasOfferTypes || missingLogos || missingTheaters;
         });
 
         if (needsEnrichment.length === 0) {
