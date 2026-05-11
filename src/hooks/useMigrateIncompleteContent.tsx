@@ -40,17 +40,22 @@ export function useMigrateIncompleteContent() {
         // Filter assignments that need enrichment
         const needsEnrichment = assignments.filter(assignment => {
           const data = assignment.production_data as Record<string, unknown>;
+          const availableOnArr = Array.isArray(data.availableOn) ? (data.availableOn as unknown[]) : [];
+          const logos = Array.isArray(data.watchProviderLogos) ? (data.watchProviderLogos as Array<Record<string, unknown>>) : [];
+
           const hasGenres = Array.isArray(data.genres) && data.genres.length > 0;
           const hasDirector = !!data.director;
           const hasAvailableOn = Array.isArray(data.availableOn);
 
-          // Also re-enrich if watchProviderLogos exist but lack offerTypes (old format)
-          const logos = Array.isArray(data.watchProviderLogos) ? (data.watchProviderLogos as Array<Record<string, unknown>>) : [];
+          // Logos faltando quando availableOn já tem dados (formato legado)
+          const missingLogos = availableOnArr.length > 0 && logos.length === 0;
+
+          // Logos no formato antigo (sem offerTypes)
           const hasOfferTypes = logos.length === 0
             ? true
             : logos.some(l => Array.isArray(l.offerTypes) && (l.offerTypes as unknown[]).length > 0);
 
-          return !hasGenres || !hasDirector || !hasAvailableOn || !hasOfferTypes;
+          return !hasGenres || !hasDirector || !hasAvailableOn || !hasOfferTypes || missingLogos;
         });
 
         if (needsEnrichment.length === 0) {
