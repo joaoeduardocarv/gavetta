@@ -43,8 +43,14 @@ export function useMigrateIncompleteContent() {
           const hasGenres = Array.isArray(data.genres) && data.genres.length > 0;
           const hasDirector = !!data.director;
           const hasAvailableOn = Array.isArray(data.availableOn);
-          
-          return !hasGenres || !hasDirector || !hasAvailableOn;
+
+          // Also re-enrich if watchProviderLogos exist but lack offerTypes (old format)
+          const logos = Array.isArray(data.watchProviderLogos) ? (data.watchProviderLogos as Array<Record<string, unknown>>) : [];
+          const hasOfferTypes = logos.length === 0
+            ? true
+            : logos.some(l => Array.isArray(l.offerTypes) && (l.offerTypes as unknown[]).length > 0);
+
+          return !hasGenres || !hasDirector || !hasAvailableOn || !hasOfferTypes;
         });
 
         if (needsEnrichment.length === 0) {
