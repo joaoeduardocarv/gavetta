@@ -1,64 +1,36 @@
+## Problema
 
-## Sobre os preços
+Itens antigos (como "Ex Machina") foram salvos com `availableOn` em texto mas sem `watchProviderLogos`. A migração atual em `useMigrateIncompleteContent.tsx` não detecta esse caso, então o card cai no fallback de texto e nunca recebe os logos.
 
-**Preço por título não é possível** com nossa stack atual. A TMDB expõe os watch providers do JustWatch separados por categoria (`flatrate`, `rent`, `buy`, `free`, `ads`), mas **não retorna valores monetários**. Para preços precisaríamos da API direta do JustWatch (paga, com contrato comercial) ou scraping (frágil e contra os termos).
+## Correção
 
-O que conseguimos fazer hoje, e que cobre 95% da intenção: **mostrar com clareza em qual modalidade o título está disponível em cada streaming no Brasil** (Incluso, Aluguel, Compra, Grátis com anúncios).
-
-## O que muda
-
-Hoje juntamos `flatrate + rent + buy` numa lista única de logos, então um filme que está só para alugar na Prime aparece igualzinho a um que está incluso na assinatura. A proposta é separar e rotular.
-
-### 1. Backend (edge function `tmdb`)
-
-`getMovieWatchProviders` / `getTVWatchProviders` já retornam o objeto `BR` cru com `flatrate/rent/buy/free/ads` — não precisa mudar a função, só consumir esses campos no front (já vêm).
-
-### 2. Camada de dados (`src/lib/tmdb.ts`)
-
-Estender `extractStreamingLogos` para devolver também o tipo da oferta:
+Em `src/hooks/useMigrateIncompleteContent.tsx`, ajustar a lógica de `needsEnrichment` (linhas 41-54) adicionando uma condição `missingLogos`:
 
 ```ts
-type OfferType = 'flatrate' | 'rent' | 'buy' | 'free' | 'ads';
-{ name, logoPath, offerTypes: OfferType[] } // um provider pode ter mais de uma
+const availableOnArr = Array.isArray(data.availableOn) ? data.availableOn : [];
+const logos = Array.isArray(data.watchProviderLogos)
+  ? (data.watchProviderLogos as Array<Record<string, unknown>>)
+  : [];
+
+const hasGenres = Array.isArray(data.genres) && data.genres.length > 0;
+const hasDirector = !!data.director;
+const hasAvailableOn = Array.isArray(data.availableOn);
+
+// Logos faltando quando availableOn já tem dados (formato legado)
+const missingLogos = availableOnArr.length > 0 && logos.length === 0;
+
+// Logos no formato antigo (sem offerTypes)
+const hasOfferTypes = logos.length === 0
+  ? true
+  : logos.some(l => Array.isArray(l.offerTypes) && (l.offerTypes as unknown[]).length > 0);
+
+return !hasGenres || !hasDirector || !hasAvailableOn || !hasOfferTypes || missingLogos;
 ```
 
-E manter `extractStreamingNames` retrocompatível.
+## Resultado
 
-### 3. UI
+No próximo carregamento da home/gavetas, o hook detecta os itens legados, busca os providers no TMDB e popula `watchProviderLogos` (com `offerTypes`) e `watchProvidersLink`. O `ContentCard` passa a renderizar a logo do Prime Video — com badge `$` se for só aluguel/compra.
 
-**ContentCard (lista compacta)**
-- Manter os logos como hoje
-- Adicionar um anel/badge sutil no canto da logo:
-  - Sem decoração = Incluso na assinatura (flatrate)
-  - Ícone `$` pequeno no canto = só Aluguel/Compra
-- Tooltip ao tocar/hover: "Prime Video · Aluguel/Compra"
+## Arquivo alterado
 
-**ContentDetailDialog (tela de detalhes)**
-- Substituir a lista única "Disponível em" por seções rotuladas:
-  - **Incluso na assinatura** — logos flatrate
-  - **Alugar** — logos rent
-  - **Comprar** — logos buy
-  - **Grátis com anúncios** — logos ads/free (se houver)
-- Cada logo continua clicável (abre o link do JustWatch quando disponível, ou só visual)
-- Nota pequena no rodapé: "Disponibilidade fornecida por JustWatch · Brasil"
-
-### 4. Filtros existentes (Trending, Search, etc.)
-
-Se já existe filtro por streaming, adicionar um sub-filtro opcional "Apenas incluso na assinatura" para o usuário não ser enganado por um título que aparece como "Netflix" mas é só aluguel.
-
-## Sobre o preço — alternativas se for crítico
-
-1. **Aceitar sem preço** (recomendado): rotular a modalidade resolve a confusão principal sem custo nem fragilidade.
-2. **Link direto pro JustWatch**: clicar na logo abre o JustWatch BR daquele título, onde o usuário vê o preço atualizado. Baixo esforço, resolve sem manter dados.
-3. **Scraping do JustWatch**: não recomendado — viola ToS, quebra fácil, exige manutenção.
-4. **API JustWatch oficial**: paga, requer contrato. Fora de escopo para o momento.
-
-A opção **2 (link pro JustWatch)** combina muito bem com a separação por modalidade e é praticamente "preço com 1 clique".
-
-## Resumo do entregável proposto
-
-- Separar `flatrate`/`rent`/`buy`/`ads` em vez de misturar
-- Rotular nos detalhes ("Incluso", "Alugar", "Comprar")
-- Indicador visual no card quando não estiver incluso em nenhuma assinatura
-- Logos clicáveis → JustWatch BR (preço sempre atualizado pela fonte)
-- Sem preço dentro do app
+- `src/hooks/useMigrateIncompleteContent.tsx`
