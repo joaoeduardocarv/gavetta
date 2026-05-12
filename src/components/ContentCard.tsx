@@ -140,21 +140,6 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
           <Badge variant="secondary" className="text-xs">
             {typeLabels[content.type] || 'Filme'}
           </Badge>
-          {content.isInTheaters && (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge variant="outline" className="gap-1 text-xs border-accent/40 text-accent">
-                    <Clapperboard className="h-3 w-3" />
-                    Nos cinemas
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs">
-                  <p>Em exibição nos cinemas</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          )}
           {StatusIcon && (
             <StatusIcon className={cn("h-3.5 w-3.5", content.status && statusColors[content.status])} />
           )}
