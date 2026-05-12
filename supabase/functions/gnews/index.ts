@@ -144,19 +144,55 @@ serve(async (req) => {
         SPORT_DENYLIST.some((re) => re.test(text));
 
       // Whitelist: must mention at least one cinema/series/streaming signal.
-      // Prevents generic "estreia" articles (e.g. an album release) from passing.
-      const CINEMA_ALLOWLIST = [
-        /\bfilme(s)?\b/i, /\bs[ée]rie(s)?\b/i, /\btemporada\b/i, /\bepis[óo]dio(s)?\b/i,
-        /\bcinema(s)?\b/i, /\bbilheteria\b/i, /\btrailer\b/i, /\bestreia(s)?\b/i,
-        /\bnetflix\b/i, /\bhbo\b/i, /\bdisney\+?\b/i, /\bprime\s+video\b/i,
-        /\bamazon\s+prime\b/i, /\bapple\s+tv\b/i, /\bparamount\+?\b/i, /\bglobopla(y|i)\b/i,
-        /\bmax\b/i, /\bstreaming\b/i, /\bhollywood\b/i, /\bdiretor(a)?\b/i,
-        /\broteirista\b/i, /\belenco\b/i, /\boscar\b/i, /\bgolden\s+globe\b/i,
-        /\bglobo\s+de\s+ouro\b/i, /\bcannes\b/i, /\bmarvel\b/i, /\bdc\b/i, /\bpixar\b/i,
-        /\bdocument[áa]rio\b/i, /\bcurta[\-\s]?metragem\b/i, /\blongametragem\b/i,
+      // Allowlist: STRONG signals (any one is enough) vs WEAK signals (need 2+).
+      // This avoids false positives like "trailer do novo álbum", "Max anuncia plano",
+      // "DC anuncia gabinete", "Marvel" como sobrenome, etc.
+      const STRONG_CINEMA_SIGNALS = [
+        // Formats / production
+        /\bfilme(s)?\b/i, /\bs[ée]rie(s)?\s+(de\s+tv|original|nova|brasileira|americana)?/i,
+        /\btemporada\s+\d/i, /\bnova\s+temporada\b/i, /\bepis[óo]dio(s)?\b/i,
+        /\bcinema(s)?\b/i, /\bbilheteria\b/i, /\blongametragem\b/i,
+        /\bcurta[\-\s]?metragem\b/i, /\bdocument[áa]rio\b/i, /\banima(ção|ções)\b/i,
+        // Streaming services as full names
+        /\bnetflix\b/i, /\bdisney\s*\+/i, /\bdisney\s+plus\b/i,
+        /\bprime\s+video\b/i, /\bamazon\s+prime\s+video\b/i, /\bapple\s+tv\s*\+?/i,
+        /\bparamount\s*\+/i, /\bparamount\s+plus\b/i, /\bglobopla(y|i)\b/i,
+        /\bhbo\s+max\b/i, /\bhbo\b/i, /\bmax\s+(stream|libera|anuncia|estreia)/i,
+        // Industry / awards / festivals
+        /\bhollywood\b/i, /\boscar\b/i, /\bgolden\s+globe\b/i, /\bglobo\s+de\s+ouro\b/i,
+        /\bcannes\b/i, /\bberlim\s+festival\b/i, /\bfestival\s+de\s+(cinema|cannes|veneza|berlim|sundance)\b/i,
+        /\bemm[yi]\b/i, /\bbafta\b/i, /\bsag\s+awards\b/i,
+        // Roles
+        /\bdiretor(a)?\s+(de\s+cinema|de\s+arte|do\s+filme|da\s+s[ée]rie)/i,
+        /\broteirista\b/i, /\belenco\s+(do|da|de)\b/i, /\bator\s+principal\b/i,
+        /\batriz\s+principal\b/i, /\bprotagoniza(r|do|da|m)\b/i,
+        // Studios / franchises (unambiguous)
+        /\bmarvel\s+studios\b/i, /\bmcu\b/i, /\bdc\s+(studios|comics|universe|films)\b/i,
+        /\bpixar\b/i, /\ba24\b/i, /\bwarner\s+bros/i, /\buniversal\s+pictures\b/i,
+        /\bsony\s+pictures\b/i, /\b20th\s+century\b/i, /\blucasfilm\b/i,
+        // Spinoff / sequel language
+        /\bspin[\-\s]?off\b/i, /\bcontinua[çc][ãa]o\b/i, /\bsequ[êe]ncia\b.*\bfilme\b/i,
+        /\bremake\b/i, /\breboot\b/i, /\bprequel\b/i,
       ];
-      const looksLikeCinema = (text: string) =>
-        CINEMA_ALLOWLIST.some((re) => re.test(text));
+
+      // Weak signals — count only when paired with another weak signal,
+      // since each one alone matches too many off-topic articles.
+      const WEAK_CINEMA_SIGNALS = [
+        /\bestreia(s|r|ram)?\b/i, /\btrailer\b/i, /\btemporada\b/i,
+        /\bdiretor(a)?\b/i, /\belenco\b/i, /\bator(es)?\b/i, /\batriz(es)?\b/i,
+        /\bstreaming\b/i, /\bplataforma\b/i, /\blan[çc]amento\b/i,
+        /\bcatálogo\b/i, /\bassinatura\b/i, /\bdublag(em|ens)\b/i,
+        /\blegendado\b/i, /\bprodu[çc][ãa]o\b/i, /\bcr[íi]tica(s)?\b/i,
+      ];
+
+      const looksLikeCinema = (text: string) => {
+        if (STRONG_CINEMA_SIGNALS.some((re) => re.test(text))) return true;
+        const weakHits = WEAK_CINEMA_SIGNALS.reduce(
+          (n, re) => n + (re.test(text) ? 1 : 0),
+          0,
+        );
+        return weakHits >= 2;
+      };
 
       const filteredArticles = (data.articles || []).filter((article: any) => {
         const haystack = `${article.title ?? ''} ${article.description ?? ''}`;
