@@ -78,12 +78,14 @@ serve(async (req) => {
     // GNews limits `q` to 200 characters, so keep includes/excludes compact.
     let searchQuery = query;
     if (!query || action === 'movies') {
+      // GNews query syntax requires uppercase operators and quoted phrases
+      // when they contain reserved characters (e.g. "Disney+", "Prime Video").
       const include = [
         'filme', 'série', 'temporada', 'cinema', 'trailer', 'estreia',
-        'Netflix', 'HBO', 'Disney+', 'Globoplay', 'Marvel', 'Oscar',
+        'Netflix', 'HBO', '"Disney+"', 'Globoplay', 'Marvel', 'Oscar',
       ].join(' OR ');
       const exclude = ['futebol', 'NBA', 'F1', 'esporte']
-        .map((w) => `NOT ${w}`)
+        .map((w) => `AND NOT ${w}`)
         .join(' ');
       searchQuery = `(${include}) ${exclude}`;
     }
