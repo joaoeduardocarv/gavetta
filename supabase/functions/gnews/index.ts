@@ -84,9 +84,12 @@ serve(async (req) => {
         'filme', 'série', 'temporada', 'cinema', 'trailer', 'estreia',
         'Netflix', 'HBO', '"Disney+"', 'Globoplay', 'Marvel', 'Oscar',
       ].join(' OR ');
-      const exclude = ['futebol', 'NBA', 'F1', 'esporte']
-        .map((w) => `AND NOT ${w}`)
-        .join(' ');
+      const exclude = [
+        'futebol', 'NBA', 'F1', 'esporte', 'esportes', 'jogador', 'time',
+        'economia', 'mercado', 'bolsa', 'dólar', 'inflação', 'PIB', 'juros',
+        'vírus', 'covid', 'gripe', 'saúde', 'doença', 'surto', 'epidemia',
+        'política', 'eleição', 'governo', 'guerra',
+      ].map((w) => `AND NOT ${w}`).join(' ');
       searchQuery = `(${include}) ${exclude}`;
     }
     // Hard cap at 200 chars to satisfy GNews API limit
