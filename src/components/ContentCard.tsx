@@ -174,51 +174,72 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
         </p>
 
         {/* Plataformas de streaming com logos */}
-        {hasLogos ? (
+        {(hasLogos || content.isInTheaters || (content.availableOn && content.availableOn.length > 0)) && (
           <div className="flex items-center gap-1.5 mt-1.5">
-            {providerLogos.map((provider, i) => {
-              const offers = ((provider as any).offerTypes ?? []) as string[];
-              const hasFlat = offers.includes('flatrate') || offers.includes('free') || offers.includes('ads');
-              const isPaidOnly = offers.length > 0 && !hasFlat;
-              const name = String((provider as any).name || (provider as any).provider_name || 'Streaming');
-              const titleSuffix = isPaidOnly
-                ? ' · Aluguel/Compra'
-                : offers.includes('flatrate')
-                  ? ' · Incluso na assinatura'
-                  : '';
-              return (
-                <span key={i} className="relative flex-shrink-0">
-                  <img
-                    src={getTMDBImageUrl((provider as any).logoPath || (provider as any).logo_path, 'w200')}
-                    alt={name}
-                    title={`${name}${titleSuffix}`}
-                    className={cn(
-                      "h-5 w-5 rounded-sm object-cover",
-                      isPaidOnly && "opacity-80"
-                    )}
-                    loading="lazy"
-                  />
-                  {isPaidOnly && (
+            {content.isInTheaters && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
                     <span
-                      className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-accent text-accent-foreground text-[8px] font-bold leading-3 text-center ring-1 ring-background"
-                      aria-label="Apenas aluguel ou compra"
+                      className="flex h-5 w-5 items-center justify-center rounded-sm bg-accent/15 text-accent flex-shrink-0"
+                      aria-label="Nos cinemas"
                     >
-                      $
+                      <Clapperboard className="h-3 w-3" />
                     </span>
-                  )}
-                </span>
-              );
-            })}
-            {extraCount > 0 && (
-              <span className="text-[10px] text-muted-foreground ml-0.5">+{extraCount}</span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    <p>Em exibição nos cinemas</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             )}
+            {hasLogos ? (
+              <>
+                {providerLogos.map((provider, i) => {
+                  const offers = ((provider as any).offerTypes ?? []) as string[];
+                  const hasFlat = offers.includes('flatrate') || offers.includes('free') || offers.includes('ads');
+                  const isPaidOnly = offers.length > 0 && !hasFlat;
+                  const name = String((provider as any).name || (provider as any).provider_name || 'Streaming');
+                  const titleSuffix = isPaidOnly
+                    ? ' · Aluguel/Compra'
+                    : offers.includes('flatrate')
+                      ? ' · Incluso na assinatura'
+                      : '';
+                  return (
+                    <span key={i} className="relative flex-shrink-0">
+                      <img
+                        src={getTMDBImageUrl((provider as any).logoPath || (provider as any).logo_path, 'w200')}
+                        alt={name}
+                        title={`${name}${titleSuffix}`}
+                        className={cn(
+                          "h-5 w-5 rounded-sm object-cover",
+                          isPaidOnly && "opacity-80"
+                        )}
+                        loading="lazy"
+                      />
+                      {isPaidOnly && (
+                        <span
+                          className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-accent text-accent-foreground text-[8px] font-bold leading-3 text-center ring-1 ring-background"
+                          aria-label="Apenas aluguel ou compra"
+                        >
+                          $
+                        </span>
+                      )}
+                    </span>
+                  );
+                })}
+                {extraCount > 0 && (
+                  <span className="text-[10px] text-muted-foreground ml-0.5">+{extraCount}</span>
+                )}
+              </>
+            ) : content.availableOn && content.availableOn.length > 0 ? (
+              <span className="text-xs text-muted-foreground line-clamp-1">
+                {content.availableOn.slice(0, 3).join(" • ")}
+                {content.availableOn.length > 3 && ` +${content.availableOn.length - 3}`}
+              </span>
+            ) : null}
           </div>
-        ) : content.availableOn && content.availableOn.length > 0 ? (
-          <p className="text-xs text-muted-foreground mt-1.5 line-clamp-1">
-            {content.availableOn.slice(0, 3).join(" • ")}
-            {content.availableOn.length > 3 && ` +${content.availableOn.length - 3}`}
-          </p>
-        ) : null}
+        )}
       </div>
     </div>
   );
