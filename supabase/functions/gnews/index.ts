@@ -78,18 +78,14 @@ serve(async (req) => {
     // GNews limits `q` to 200 characters, so keep includes/excludes compact.
     let searchQuery = query;
     if (!query || action === 'movies') {
-      // GNews query syntax requires uppercase operators and quoted phrases
-      // when they contain reserved characters (e.g. "Disney+", "Prime Video").
+      // Keep API query short (200-char limit). Heavy filtering happens client-side
+      // via SPORT_DENYLIST + CINEMA_ALLOWLIST below.
       const include = [
         'filme', 'série', 'temporada', 'cinema', 'trailer', 'estreia',
         'Netflix', 'HBO', '"Disney+"', 'Globoplay', 'Marvel', 'Oscar',
       ].join(' OR ');
-      const exclude = ['futebol', 'NBA', 'F1', 'esporte']
-        .map((w) => `AND NOT ${w}`)
-        .join(' ');
-      searchQuery = `(${include}) ${exclude}`;
+      searchQuery = `(${include}) AND NOT futebol AND NOT esporte AND NOT economia`;
     }
-    // Hard cap at 200 chars to satisfy GNews API limit
     if (searchQuery.length > 200) {
       searchQuery = searchQuery.slice(0, 200);
     }
@@ -117,10 +113,9 @@ serve(async (req) => {
       const data = await response.json();
       console.log(`Successfully fetched ${data.articles?.length || 0} news articles`);
 
-      // Post-filter: drop anything that still looks like sports/fitness/games.
-      // GNews queries are best-effort, so a client-side denylist on title+description
-      // catches the long tail (e.g. "F1", "Premier League", esports tournaments).
+      // Post-filter: drop sports, economy, health, politics, and other off-topic news.
       const SPORT_DENYLIST = [
+        // Sports
         /\bfutebol\b/i, /\bjogador(a)?\b/i, /\bgol(s)?\b/i, /\bcampeonato\b/i,
         /\bbrasileir(ã|a)o\b/i, /\blibertadores\b/i, /\bchampions\s+league\b/i,
         /\bcopa\s+(do|da)\b/i, /\bseleção\b/i, /\btécnico\b.*\b(time|clube)\b/i,
@@ -129,6 +124,21 @@ serve(async (req) => {
         /\besport(e|es|iv[oa])\b/i, /\bvit[óo]ria\b.*\b(time|jogo)\b/i,
         /\be[\-\s]?sports?\b/i, /\bvalorant\b/i, /\bcs\s*2\b/i, /\bleague\s+of\s+legends\b/i,
         /\batleta\b/i, /\btreinador(a)?\b/i, /\bolimp[íi]ad/i,
+        // Economy / finance
+        /\beconomia\b/i, /\beconômic[oa]\b/i, /\bmercado\s+financeiro\b/i,
+        /\bbolsa\s+de\s+valores\b/i, /\bibovespa\b/i, /\bd[óo]lar\b/i, /\beuro\b/i,
+        /\binfla[çc][ãa]o\b/i, /\bpib\b/i, /\bjuros\b/i, /\bselic\b/i,
+        /\bfundo\s+(imobili|de)\b/i, /\bcripto(moeda)?s?\b/i, /\bbitcoin\b/i,
+        /\bcâmbio\b/i, /\bbanco\s+central\b/i, /\bdesemprego\b/i,
+        // Health / virus / disease
+        /\bv[íi]rus\b/i, /\bcovid(\-?19)?\b/i, /\bgripe\b/i, /\bdengue\b/i,
+        /\bsa[úu]de\b/i, /\bdoen[çc]a\b/i, /\bsurto\b/i, /\bepidemia\b/i,
+        /\bpandemia\b/i, /\bvacina(s|ção)?\b/i, /\bhospital\b/i,
+        // Politics / war / crime
+        /\bpol[íi]tica\b/i, /\beleiç[ãa]o\b/i, /\bgoverno\b/i, /\bpresidente\b/i,
+        /\bcongresso\b/i, /\bsenad(o|or)\b/i, /\bdeputad[oa]\b/i,
+        /\bguerra\b/i, /\bm[íi]ssil\b/i, /\bex[ée]rcito\b/i,
+        /\bhomic[íi]dio\b/i, /\bassassinato\b/i, /\bpris[ãa]o\b/i,
       ];
       const isSportsy = (text: string) =>
         SPORT_DENYLIST.some((re) => re.test(text));
