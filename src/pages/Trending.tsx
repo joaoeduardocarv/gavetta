@@ -84,6 +84,7 @@ function TrendingContentCard({
           <div onClick={(e) => e.stopPropagation()}>
             <DrawerPickerPopover content={content}>
               <button 
+                aria-label={`Adicionar ${title} a uma gavetta`}
                 className={cn(
                   "p-2 rounded-full transition-colors",
                   isInDrawer 
