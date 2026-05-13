@@ -269,9 +269,9 @@ export default function MyDrawers() {
       
       <main className="container mx-auto px-4 py-6 max-w-lg">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="font-heading text-3xl font-bold text-foreground">
+          <h1 className="font-heading text-3xl font-bold text-foreground">
             Minhas Gavettas
-          </h2>
+          </h1>
           <Button size="sm" variant="outline" onClick={() => setIsCreateDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Nova
