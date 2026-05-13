@@ -150,8 +150,30 @@ export default function PublicProfile() {
   const medalColors = ["text-accent", "text-muted-foreground", "text-orange-600"];
   const medalLabels = ["🥇", "🥈", "🥉"];
 
+  const profileUrl = `https://gavetta.com.br/u/${profile.username}`;
+  const profileJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ProfilePage",
+    mainEntity: {
+      "@type": "Person",
+      name: profile.username,
+      identifier: profile.username,
+      url: profileUrl,
+    },
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>{`@${profile.username} · Gavetta`}</title>
+        <meta name="description" content={`Perfil público de @${profile.username} no Gavetta — filmes e séries assistidos, em alta e por assistir.`} />
+        <link rel="canonical" href={profileUrl} />
+        <meta property="og:type" content="profile" />
+        <meta property="og:title" content={`@${profile.username} no Gavetta`} />
+        <meta property="og:description" content={`Veja as gavettas de filmes e séries de @${profile.username}.`} />
+        <meta property="og:url" content={profileUrl} />
+        <script type="application/ld+json">{JSON.stringify(profileJsonLd)}</script>
+      </Helmet>
       {/* Top bar with logo */}
       <div className="flex items-center justify-center py-4 border-b border-border/50">
         <img src={gavetaLogo} alt="Gavetta" className="h-7 dark:brightness-0 dark:invert" />
