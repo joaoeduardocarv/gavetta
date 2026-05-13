@@ -1,0 +1,17 @@
+# Gavetta
+
+> App brasileiro mobile-first para organizar filmes e séries: gavetas (Para Assistir, Assistindo, Assistidos), avaliação por episódio, gavetas compartilhadas com amigos e descoberta do que está em alta.
+
+Gavetta foi feito no Brasil para cinéfilos brasileiros. Diferente do Letterboxd, acompanha séries episódio por episódio, com herança automática de notas. Integra dados do TMDB e mostra disponibilidade em streamings.
+
+## Pages
+
+- [Boas-vindas](/welcome): Landing com features, FAQ e CTAs de cadastro.
+- [Entrar / Cadastrar](/auth): Login e signup por email ou Google.
+- [Buscar](/search): Pesquise filmes, séries e artistas; filtre por gênero.
+- [Em Alta](/trending): Trending de filmes, séries e notícias do cinema.
+- [Ajuda no cadastro](/signup-help): Diagnóstico de problemas no signup.
+
+## Optional
+
+- [Perfis públicos](/u/usuario): Perfil compartilhável com top 3, watchlist e estatísticas.
