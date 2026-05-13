@@ -319,9 +319,9 @@ export default function Trending() {
       <Header />
       
       <main className="container mx-auto px-4 py-6 max-w-lg">
-        <h2 className="font-heading text-3xl font-bold text-foreground mb-6">
+        <h1 className="font-heading text-3xl font-bold text-foreground mb-6">
           Em Alta
-        </h2>
+        </h1>
 
         <Tabs defaultValue="movies" className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-6">
