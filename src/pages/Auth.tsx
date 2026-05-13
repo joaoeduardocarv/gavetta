@@ -399,6 +399,12 @@ export default function Auth() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-start md:justify-center p-4 py-8 overflow-y-auto">
+      <Helmet>
+        <title>Entrar ou Cadastrar · Gavetta</title>
+        <meta name="description" content="Acesse o Gavetta para organizar seus filmes e séries. Login com email ou Google." />
+        <link rel="canonical" href="https://gavetta.com.br/auth" />
+      </Helmet>
+      <h1 className="sr-only">Entrar ou criar conta no Gavetta</h1>
       <div className="w-full max-w-md space-y-6">
         <div className="flex flex-col items-center gap-2">
           <img src={gavetaLogo} alt="Gavetta" className="h-12 w-auto" />
