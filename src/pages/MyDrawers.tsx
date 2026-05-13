@@ -352,6 +352,7 @@ export default function MyDrawers() {
                         variant="ghost"
                         className="h-10 w-10 shrink-0"
                         title="Gerenciar membros"
+                        aria-label={`Gerenciar membros da gaveta ${drawer.name}`}
                         onClick={() => {
                           setManageMembersDrawerId(drawer.id);
                           setManageMembersDrawerName(drawer.name);
@@ -364,6 +365,7 @@ export default function MyDrawers() {
                         variant="ghost"
                         className="h-10 w-10 shrink-0"
                         title="Compartilhar"
+                        aria-label={`Compartilhar gaveta ${drawer.name}`}
                         onClick={() => {
                           setShareDrawerId(drawer.id);
                           setShareDrawerName(drawer.name);
