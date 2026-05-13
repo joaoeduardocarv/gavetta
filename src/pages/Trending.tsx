@@ -317,6 +317,14 @@ export default function Trending() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      <Helmet>
+        <title>Em Alta · Filmes, séries e notícias · Gavetta</title>
+        <meta name="description" content="O que está bombando no Brasil: filmes e séries em alta no dia e na semana, mais notícias do mundo do cinema." />
+        <link rel="canonical" href="https://gavetta.com.br/trending" />
+        <meta property="og:title" content="Em Alta · Gavetta" />
+        <meta property="og:description" content="Filmes, séries e notícias em alta no Brasil." />
+        <meta property="og:url" content="https://gavetta.com.br/trending" />
+      </Helmet>
       <Header />
       
       <main className="container mx-auto px-4 py-6 max-w-lg">
