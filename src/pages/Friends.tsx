@@ -34,6 +34,15 @@ export default function Friends() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      <Helmet>
+        <title>Meus Amigos · Gavetta</title>
+        <meta name="description" content="Conecte-se com amigos cinéfilos, veja o que estão assistindo e troque indicações de filmes e séries." />
+        <link rel="canonical" href="https://gavetta.com.br/friends" />
+        <meta property="og:title" content="Meus Amigos · Gavetta" />
+        <meta property="og:description" content="Sua tribo cinéfila no Gavetta." />
+        <meta property="og:url" content="https://gavetta.com.br/friends" />
+        <meta name="robots" content="noindex" />
+      </Helmet>
       <Header />
       
       <main className="container mx-auto px-4 py-6 max-w-lg">
