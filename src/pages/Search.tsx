@@ -428,6 +428,7 @@ export default function Search() {
             <button
               onClick={clearPersonSelection}
               className="p-2 rounded-full hover:bg-accent/10 transition-colors"
+              aria-label="Limpar seleção de pessoa"
             >
               <X className="h-4 w-4 text-muted-foreground" />
             </button>
