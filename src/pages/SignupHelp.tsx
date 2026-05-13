@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect } from "react";
+import { Helmet } from "react-helmet-async";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
@@ -297,6 +298,12 @@ export default function SignupHelp() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Helmet>
+        <title>Ajuda no cadastro · Gavetta</title>
+        <meta name="description" content="Diagnóstico de cadastro no Gavetta: descubra qual campo precisa ser corrigido antes de tentar novamente." />
+        <link rel="canonical" href="https://gavetta.com.br/signup-help" />
+      </Helmet>
+      <h1 className="sr-only">Ajuda no cadastro</h1>
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-3">
           <div className="flex items-center justify-between">

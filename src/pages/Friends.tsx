@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Helmet } from "react-helmet-async";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { Input } from "@/components/ui/input";
@@ -33,13 +34,22 @@ export default function Friends() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      <Helmet>
+        <title>Meus Amigos · Gavetta</title>
+        <meta name="description" content="Conecte-se com amigos cinéfilos, veja o que estão assistindo e troque indicações de filmes e séries." />
+        <link rel="canonical" href="https://gavetta.com.br/friends" />
+        <meta property="og:title" content="Meus Amigos · Gavetta" />
+        <meta property="og:description" content="Sua tribo cinéfila no Gavetta." />
+        <meta property="og:url" content="https://gavetta.com.br/friends" />
+        <meta name="robots" content="noindex" />
+      </Helmet>
       <Header />
       
       <main className="container mx-auto px-4 py-6 max-w-lg">
         <div className="mb-6">
-          <h2 className="font-heading text-3xl font-bold text-foreground mb-1">
+          <h1 className="font-heading text-3xl font-bold text-foreground mb-1">
             Meus Amigos
-          </h2>
+          </h1>
           <p className="text-sm text-muted-foreground">
             Conecte-se e descubra novas indicações
           </p>
@@ -195,6 +205,7 @@ function FriendCard({
         onClick={onRemove}
         disabled={isRemoving}
         title="Remover amigo"
+        aria-label={`Remover ${friend.username || "amigo"} da lista`}
       >
         {isRemoving ? (
           <Loader2 className="h-4 w-4 animate-spin" />

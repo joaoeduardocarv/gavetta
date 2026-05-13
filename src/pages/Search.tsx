@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { Helmet } from "react-helmet-async";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { Input } from "@/components/ui/input";
@@ -365,12 +366,20 @@ export default function Search() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      <Helmet>
+        <title>Buscar filmes, séries e atores · Gavetta</title>
+        <meta name="description" content="Encontre filmes, séries e artistas. Filtre por gênero e descubra o que está disponível em cada streaming." />
+        <link rel="canonical" href="https://gavetta.com.br/search" />
+        <meta property="og:title" content="Buscar · Gavetta" />
+        <meta property="og:description" content="Filmes, séries e artistas em um só lugar." />
+        <meta property="og:url" content="https://gavetta.com.br/search" />
+      </Helmet>
       <Header />
       
       <main className="container mx-auto px-4 py-6 max-w-lg">
-        <h2 className="font-heading text-3xl font-bold text-foreground mb-6">
+        <h1 className="font-heading text-3xl font-bold text-foreground mb-6">
           Buscar
-        </h2>
+        </h1>
 
         {/* Campo de Busca */}
         <div className="relative mb-6">
@@ -428,6 +437,7 @@ export default function Search() {
             <button
               onClick={clearPersonSelection}
               className="p-2 rounded-full hover:bg-accent/10 transition-colors"
+              aria-label="Limpar seleção de pessoa"
             >
               <X className="h-4 w-4 text-muted-foreground" />
             </button>

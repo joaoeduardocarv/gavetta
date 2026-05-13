@@ -127,6 +127,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
             <button 
               className="p-1 -m-1 hover:bg-accent/10 rounded transition-colors"
               onClick={(e) => e.stopPropagation()}
+              aria-label={isInAnyDrawer ? `${safeTitle} está em uma gavetta — alterar` : `Adicionar ${safeTitle} a uma gavetta`}
             >
               <GavetaIcon className={cn(
                 "h-4 w-4 flex-shrink-0 transition-opacity",

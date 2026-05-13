@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
@@ -265,13 +266,22 @@ export default function MyDrawers() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      <Helmet>
+        <title>Minhas Gavettas · Gavetta</title>
+        <meta name="description" content="Suas gavetas de filmes e séries: Para Assistir, Assistindo e Assistidos, mais gavetas personalizadas e compartilhadas." />
+        <link rel="canonical" href="https://gavetta.com.br/my-drawers" />
+        <meta property="og:title" content="Minhas Gavettas · Gavetta" />
+        <meta property="og:description" content="Organize seus filmes e séries em gavetas." />
+        <meta property="og:url" content="https://gavetta.com.br/my-drawers" />
+        <meta name="robots" content="noindex" />
+      </Helmet>
       <Header />
       
       <main className="container mx-auto px-4 py-6 max-w-lg">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="font-heading text-3xl font-bold text-foreground">
+          <h1 className="font-heading text-3xl font-bold text-foreground">
             Minhas Gavettas
-          </h2>
+          </h1>
           <Button size="sm" variant="outline" onClick={() => setIsCreateDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             Nova
@@ -352,6 +362,7 @@ export default function MyDrawers() {
                         variant="ghost"
                         className="h-10 w-10 shrink-0"
                         title="Gerenciar membros"
+                        aria-label={`Gerenciar membros da gaveta ${drawer.name}`}
                         onClick={() => {
                           setManageMembersDrawerId(drawer.id);
                           setManageMembersDrawerName(drawer.name);
@@ -364,6 +375,7 @@ export default function MyDrawers() {
                         variant="ghost"
                         className="h-10 w-10 shrink-0"
                         title="Compartilhar"
+                        aria-label={`Compartilhar gaveta ${drawer.name}`}
                         onClick={() => {
                           setShareDrawerId(drawer.id);
                           setShareDrawerName(drawer.name);
