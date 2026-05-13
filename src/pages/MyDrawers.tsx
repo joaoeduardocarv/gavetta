@@ -266,6 +266,15 @@ export default function MyDrawers() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      <Helmet>
+        <title>Minhas Gavettas · Gavetta</title>
+        <meta name="description" content="Suas gavetas de filmes e séries: Para Assistir, Assistindo e Assistidos, mais gavetas personalizadas e compartilhadas." />
+        <link rel="canonical" href="https://gavetta.com.br/my-drawers" />
+        <meta property="og:title" content="Minhas Gavettas · Gavetta" />
+        <meta property="og:description" content="Organize seus filmes e séries em gavetas." />
+        <meta property="og:url" content="https://gavetta.com.br/my-drawers" />
+        <meta name="robots" content="noindex" />
+      </Helmet>
       <Header />
       
       <main className="container mx-auto px-4 py-6 max-w-lg">
