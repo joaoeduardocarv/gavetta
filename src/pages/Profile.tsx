@@ -82,6 +82,12 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
+      <Helmet>
+        <title>Meu Perfil · Gavetta</title>
+        <meta name="description" content="Suas estatísticas, avatar e configurações do Gavetta." />
+        <link rel="canonical" href="https://gavetta.com.br/profile" />
+        <meta name="robots" content="noindex" />
+      </Helmet>
       <Header />
       
       <main className="container mx-auto px-4 py-6 max-w-lg">
