@@ -195,6 +195,7 @@ function FriendCard({
         onClick={onRemove}
         disabled={isRemoving}
         title="Remover amigo"
+        aria-label={`Remover ${friend.username || "amigo"} da lista`}
       >
         {isRemoving ? (
           <Loader2 className="h-4 w-4 animate-spin" />
