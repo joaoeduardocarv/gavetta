@@ -37,9 +37,9 @@ export default function Friends() {
       
       <main className="container mx-auto px-4 py-6 max-w-lg">
         <div className="mb-6">
-          <h2 className="font-heading text-3xl font-bold text-foreground mb-1">
+          <h1 className="font-heading text-3xl font-bold text-foreground mb-1">
             Meus Amigos
-          </h2>
+          </h1>
           <p className="text-sm text-muted-foreground">
             Conecte-se e descubra novas indicações
           </p>
