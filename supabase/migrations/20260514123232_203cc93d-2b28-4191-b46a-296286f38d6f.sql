@@ -1,0 +1,2 @@
+DELETE FROM public.profiles WHERE id IN (SELECT id FROM auth.users WHERE email LIKE '%@gavetta-qa-%.invalid' OR email LIKE '%@gavetta-trigger-test.invalid' OR email LIKE '%@gavetta-load-test.invalid');
+DELETE FROM auth.users WHERE email LIKE '%@gavetta-qa-%.invalid' OR email LIKE '%@gavetta-trigger-test.invalid' OR email LIKE '%@gavetta-load-test.invalid';
