@@ -102,46 +102,9 @@ export function NotificationsPopover() {
     }
   };
 
-  const handleContentClick = async (notification: Notification) => {
-    if (!notification.related_content_id) return;
-    markAsRead.mutate(notification.id);
-
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data: assignment } = await supabase
-      .from("user_drawer_assignments")
-      .select("production_id, production_type, production_data")
-      .eq("user_id", user.id)
-      .eq("production_id", notification.related_content_id)
-      .limit(1)
-      .maybeSingle();
-
-    if (assignment) {
-      const content = normalizeStoredContent(assignment.production_data, {
-        productionId: assignment.production_id,
-        productionType: assignment.production_type,
-      });
-      setSelectedContent(content);
-      setPopoverOpen(false);
-      setContentDialogOpen(true);
-    }
-  };
-
-  const CONTENT_TYPES: Notification["type"][] = [
-    "new_episodes",
-    "new_season",
-    "upcoming_content",
-    "streaming_change",
-  ];
-
   const handleNotificationClick = (notification: Notification) => {
     if (notification.type === "recommendation") {
       handleRecommendationClick(notification);
-      return;
-    }
-    if (CONTENT_TYPES.includes(notification.type)) {
-      handleContentClick(notification);
       return;
     }
     if (!notification.is_read) {
