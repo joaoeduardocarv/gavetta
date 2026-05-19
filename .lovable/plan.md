@@ -1,36 +1,40 @@
-## Problema
+## Diagnóstico
 
-Itens antigos (como "Ex Machina") foram salvos com `availableOn` em texto mas sem `watchProviderLogos`. A migração atual em `useMigrateIncompleteContent.tsx` não detecta esse caso, então o card cai no fallback de texto e nunca recebe os logos.
+A parte visual **já está pronta**: o mini-card já mostra os ícones de aluguel/compra com badge `$` no canto, e o detalhe já agrupa por "Incluso na assinatura / Alugar / Comprar / Grátis". O que falta é a **notificação automática** quando um filme das suas gavetas "Quero ver" ou "Vendo" chega ao VOD (aluguel/compra) pela primeira vez.
 
-## Correção
+Hoje já existe a notificação `streaming_change` (para assinatura), mas ela compara só `flatrate` — ignora `rent` e `buy`.
 
-Em `src/hooks/useMigrateIncompleteContent.tsx`, ajustar a lógica de `needsEnrichment` (linhas 41-54) adicionando uma condição `missingLogos`:
+A migration que adiciona a coluna `vod_arrival` em `notification_preferences` (default `true`) já foi aplicada.
 
-```ts
-const availableOnArr = Array.isArray(data.availableOn) ? data.availableOn : [];
-const logos = Array.isArray(data.watchProviderLogos)
-  ? (data.watchProviderLogos as Array<Record<string, unknown>>)
-  : [];
+## Mudanças
 
-const hasGenres = Array.isArray(data.genres) && data.genres.length > 0;
-const hasDirector = !!data.director;
-const hasAvailableOn = Array.isArray(data.availableOn);
+### 1. Edge function `check-content-updates`
+- Adicionar helper `vodProvidersAppeared(oldProviders, newProviders)` que compara `rent ∪ buy` antigos vs novos e retorna `true` apenas quando passou de **zero para um ou mais provedores**.
+- Aplicar somente quando `production_type === 'movie'` (filme).
+- Disparar notificação tipo `vod_arrival` com título `💵 {título} já pode ser alugado` e mensagem listando os provedores que apareceram.
+- Respeitar `userWants(userId, 'vod_arrival')` na nova chave `vod_arrival` do mapa de preferências.
+- Reaproveita o dedup de 24h já existente.
 
-// Logos faltando quando availableOn já tem dados (formato legado)
-const missingLogos = availableOnArr.length > 0 && logos.length === 0;
+### 2. Front-end — UI da notificação
+- `src/hooks/useNotifications.tsx`: adicionar `"vod_arrival"` na união de tipos.
+- `src/hooks/useContentNotifications.tsx`: incluir `"vod_arrival"` em `CONTENT_NOTIFICATION_TYPES` para que o sino pisque no mini-card também por VOD.
+- `src/components/NotificationsPopover.tsx`: adicionar case `vod_arrival` em `getNotificationIcon` usando `DollarSign` em tom accent.
 
-// Logos no formato antigo (sem offerTypes)
-const hasOfferTypes = logos.length === 0
-  ? true
-  : logos.some(l => Array.isArray(l.offerTypes) && (l.offerTypes as unknown[]).length > 0);
+### 3. Preferências de notificação
+- `src/components/NotificationSettingsDialog.tsx`:
+  - Adicionar `vod_arrival: boolean` no tipo `Preferences` e no `defaultPrefs`.
+  - Incluir no `select` da query e no `upsert`.
+  - Novo item de toggle com ícone `DollarSign`, label **"Disponível para alugar"** e descrição **"Quando um filme das suas gavetas chega para aluguel ou compra digital"**.
 
-return !hasGenres || !hasDirector || !hasAvailableOn || !hasOfferTypes || missingLogos;
-```
+## Comportamento final
 
-## Resultado
+- Funciona apenas para **filmes** em `want_to_watch` ou `watching` (já é o filtro padrão da função).
+- Notifica **apenas a estreia em VOD** (primeira vez que aparece em `rent` ou `buy`). Se já havia VOD e só mudou o provedor, não notifica — evita ruído.
+- Quem desligar o toggle nas preferências para de receber.
+- Roda no mesmo cron diário (`check-content-updates`) que já existe.
 
-No próximo carregamento da home/gavetas, o hook detecta os itens legados, busca os providers no TMDB e popula `watchProviderLogos` (com `offerTypes`) e `watchProvidersLink`. O `ContentCard` passa a renderizar a logo do Prime Video — com badge `$` se for só aluguel/compra.
+## Fora de escopo
 
-## Arquivo alterado
-
-- `src/hooks/useMigrateIncompleteContent.tsx`
+- Notificação de saída do VOD.
+- Notificação de mudança de preço.
+- Aplicar a séries (raro elas terem janela de VOD relevante).

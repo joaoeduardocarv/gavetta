@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bell, Check, UserPlus, ThumbsUp, Film, Trash2, Users, CheckCircle, X, Tv, Calendar, RefreshCw } from "lucide-react";
+import { Bell, Check, UserPlus, ThumbsUp, Film, Trash2, Users, CheckCircle, X, Tv, Calendar, RefreshCw, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -34,6 +34,8 @@ const getNotificationIcon = (type: Notification["type"]) => {
       return <Tv className="h-4 w-4 text-emerald-400" />;
     case "upcoming_content":
       return <Calendar className="h-4 w-4 text-orange-500" />;
+    case "vod_arrival":
+      return <DollarSign className="h-4 w-4 text-accent" />;
     default:
       return <Bell className="h-4 w-4 text-muted-foreground" />;
   }

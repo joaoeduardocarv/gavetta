@@ -7,6 +7,7 @@ const CONTENT_NOTIFICATION_TYPES = [
   "new_season",
   "upcoming_content",
   "streaming_change",
+  "vod_arrival",
 ];
 
 export interface ContentNotificationInfo {
