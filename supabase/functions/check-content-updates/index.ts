@@ -44,6 +44,14 @@ function getProviderNames(providers: WatchProviders | null): string[] {
   return [...names].sort();
 }
 
+function getVodProviderNames(providers: WatchProviders | null): string[] {
+  if (!providers) return [];
+  const names = new Set<string>();
+  for (const entry of providers.rent || []) names.add(entry.provider_name);
+  for (const entry of providers.buy || []) names.add(entry.provider_name);
+  return [...names].sort();
+}
+
 function providersDiffer(oldProviders: WatchProviders | null, newProviders: WatchProviders | null): { added: string[]; removed: string[] } {
   const oldNames = getProviderNames(oldProviders);
   const newNames = getProviderNames(newProviders);
@@ -112,7 +120,7 @@ serve(async (req) => {
 
     const { data: prefsData } = await supabase
       .from('notification_preferences')
-      .select('user_id, streaming_changes, new_seasons, new_episodes, upcoming_content')
+      .select('user_id, streaming_changes, new_seasons, new_episodes, upcoming_content, vod_arrival')
       .in('user_id', [...allUserIds]);
 
     const userPrefs = new Map<string, Record<string, boolean>>();
@@ -129,6 +137,7 @@ serve(async (req) => {
         new_season: 'new_seasons',
         new_episodes: 'new_episodes',
         upcoming_content: 'upcoming_content',
+        vod_arrival: 'vod_arrival',
       };
       const col = map[type];
       return col ? (p[col] !== false) : true;
@@ -172,6 +181,25 @@ serve(async (req) => {
                   message: message.trim(),
                   related_content_id: prod.productionId,
                 });
+              }
+            }
+
+            // 1b. VOD arrival (movies only) — first time the film shows up for rent/buy in BR
+            if (mediaType === 'movie') {
+              const oldVod = getVodProviderNames(oldProviders);
+              const newVod = getVodProviderNames(newProviders);
+              if (oldVod.length === 0 && newVod.length > 0) {
+                const message = `Já pode ser alugado/comprado em: ${newVod.join(', ')}.`;
+                for (const userId of prod.userIds) {
+                  if (!userWants(userId, 'vod_arrival')) continue;
+                  notifications.push({
+                    user_id: userId,
+                    type: 'vod_arrival',
+                    title: `💵 ${title} chegou no aluguel`,
+                    message,
+                    related_content_id: prod.productionId,
+                  });
+                }
               }
             }
 
