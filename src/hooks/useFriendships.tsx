@@ -179,6 +179,7 @@ export function useFriendships() {
     onSuccess: () => {
       toast({ title: "Pedido enviado!", description: "Aguardando aceitação." });
       queryClient.invalidateQueries({ queryKey: ["friends"] });
+      queryClient.invalidateQueries({ queryKey: ["sent-requests"] });
     },
     onError: (error: any) => {
       if (error.code === "23505") {
