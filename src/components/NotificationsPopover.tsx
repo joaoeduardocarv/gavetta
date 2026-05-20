@@ -34,7 +34,9 @@ const getNotificationIcon = (type: Notification["type"]) => {
       return <Tv className="h-4 w-4 text-emerald-400" />;
     case "upcoming_content":
       return <Calendar className="h-4 w-4 text-orange-500" />;
-    case "vod_arrival":
+    case "rental_arrival":
+      return <DollarSign className="h-4 w-4 text-accent" />;
+    case "purchase_arrival":
       return <DollarSign className="h-4 w-4 text-accent" />;
     default:
       return <Bell className="h-4 w-4 text-muted-foreground" />;
