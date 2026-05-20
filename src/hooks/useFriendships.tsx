@@ -272,14 +272,36 @@ export function useFriendships() {
     },
   });
 
+  // Cancel a sent friend request
+  const cancelSentRequest = useMutation({
+    mutationFn: async (friendshipId: string) => {
+      const { error } = await supabase
+        .from("friendships")
+        .delete()
+        .eq("id", friendshipId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Pedido cancelado" });
+      queryClient.invalidateQueries({ queryKey: ["sent-requests"] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    },
+  });
+
   return {
     friends,
     friendsLoading,
     pendingRequests,
     pendingLoading,
+    sentRequests,
+    sentLoading,
     sendRequest,
     acceptRequest,
     rejectRequest,
     removeFriend,
+    cancelSentRequest,
   };
 }
