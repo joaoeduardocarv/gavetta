@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Tv, RefreshCw, Calendar, Film, DollarSign } from "lucide-react";
+import { Tv, RefreshCw, Calendar, Film, DollarSign, ShoppingBag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -17,7 +17,8 @@ interface Preferences {
   new_seasons: boolean;
   new_episodes: boolean;
   upcoming_content: boolean;
-  vod_arrival: boolean;
+  rental_arrival: boolean;
+  purchase_arrival: boolean;
 }
 
 const defaultPrefs: Preferences = {
@@ -25,7 +26,8 @@ const defaultPrefs: Preferences = {
   new_seasons: true,
   new_episodes: true,
   upcoming_content: true,
-  vod_arrival: true,
+  rental_arrival: true,
+  purchase_arrival: true,
 };
 
 export function NotificationSettingsDialog({ open, onOpenChange }: NotificationSettingsDialogProps) {
@@ -41,7 +43,7 @@ export function NotificationSettingsDialog({ open, onOpenChange }: NotificationS
     (async () => {
       const { data, error } = await supabase
         .from("notification_preferences")
-        .select("streaming_changes, new_seasons, new_episodes, upcoming_content, vod_arrival")
+        .select("streaming_changes, new_seasons, new_episodes, upcoming_content, rental_arrival, purchase_arrival")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -96,10 +98,16 @@ export function NotificationSettingsDialog({ open, onOpenChange }: NotificationS
       description: "Episódios que serão lançados nos próximos 7 dias",
     },
     {
-      key: "vod_arrival" as const,
+      key: "rental_arrival" as const,
       icon: DollarSign,
       label: "Disponível para alugar",
-      description: "Quando um filme das suas gavetas chega para aluguel ou compra digital",
+      description: "Quando um filme das suas gavetas chega para aluguel digital",
+    },
+    {
+      key: "purchase_arrival" as const,
+      icon: ShoppingBag,
+      label: "Disponível para comprar",
+      description: "Quando um filme das suas gavetas chega para compra digital",
     },
   ];
 
