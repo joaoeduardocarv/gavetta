@@ -44,10 +44,16 @@ function getProviderNames(providers: WatchProviders | null): string[] {
   return [...names].sort();
 }
 
-function getVodProviderNames(providers: WatchProviders | null): string[] {
+function getRentProviderNames(providers: WatchProviders | null): string[] {
   if (!providers) return [];
   const names = new Set<string>();
   for (const entry of providers.rent || []) names.add(entry.provider_name);
+  return [...names].sort();
+}
+
+function getBuyProviderNames(providers: WatchProviders | null): string[] {
+  if (!providers) return [];
+  const names = new Set<string>();
   for (const entry of providers.buy || []) names.add(entry.provider_name);
   return [...names].sort();
 }
@@ -120,7 +126,7 @@ serve(async (req) => {
 
     const { data: prefsData } = await supabase
       .from('notification_preferences')
-      .select('user_id, streaming_changes, new_seasons, new_episodes, upcoming_content, vod_arrival')
+      .select('user_id, streaming_changes, new_seasons, new_episodes, upcoming_content, rental_arrival, purchase_arrival')
       .in('user_id', [...allUserIds]);
 
     const userPrefs = new Map<string, Record<string, boolean>>();
@@ -137,7 +143,8 @@ serve(async (req) => {
         new_season: 'new_seasons',
         new_episodes: 'new_episodes',
         upcoming_content: 'upcoming_content',
-        vod_arrival: 'vod_arrival',
+        rental_arrival: 'rental_arrival',
+        purchase_arrival: 'purchase_arrival',
       };
       const col = map[type];
       return col ? (p[col] !== false) : true;
@@ -184,18 +191,35 @@ serve(async (req) => {
               }
             }
 
-            // 1b. VOD arrival (movies only) — first time the film shows up for rent/buy in BR
+            // 1b. Rental arrival (movies only) — first time the film shows up for rent in BR
             if (mediaType === 'movie') {
-              const oldVod = getVodProviderNames(oldProviders);
-              const newVod = getVodProviderNames(newProviders);
-              if (oldVod.length === 0 && newVod.length > 0) {
-                const message = `Já pode ser alugado/comprado em: ${newVod.join(', ')}.`;
+              const oldRent = getRentProviderNames(oldProviders);
+              const newRent = getRentProviderNames(newProviders);
+              if (oldRent.length === 0 && newRent.length > 0) {
+                const message = `Já pode ser alugado em: ${newRent.join(', ')}.`;
                 for (const userId of prod.userIds) {
-                  if (!userWants(userId, 'vod_arrival')) continue;
+                  if (!userWants(userId, 'rental_arrival')) continue;
                   notifications.push({
                     user_id: userId,
-                    type: 'vod_arrival',
+                    type: 'rental_arrival',
                     title: `💵 ${title} chegou no aluguel`,
+                    message,
+                    related_content_id: prod.productionId,
+                  });
+                }
+              }
+
+              // 1c. Purchase arrival (movies only) — first time the film shows up for buy in BR
+              const oldBuy = getBuyProviderNames(oldProviders);
+              const newBuy = getBuyProviderNames(newProviders);
+              if (oldBuy.length === 0 && newBuy.length > 0) {
+                const message = `Já pode ser comprado em: ${newBuy.join(', ')}.`;
+                for (const userId of prod.userIds) {
+                  if (!userWants(userId, 'purchase_arrival')) continue;
+                  notifications.push({
+                    user_id: userId,
+                    type: 'purchase_arrival',
+                    title: `🛒 ${title} chegou para compra`,
                     message,
                     related_content_id: prod.productionId,
                   });
