@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, UserPlus, Users, Loader2, UserX, Activity, Gift } from "lucide-react";
+import { Search, UserPlus, Users, Loader2, UserX, Activity, Gift, Clock, X } from "lucide-react";
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { Content } from "@/lib/mockData";
 import { useFriendships, FriendProfile } from "@/hooks/useFriendships";
@@ -21,7 +21,7 @@ export default function Friends() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const { friends, friendsLoading, removeFriend } = useFriendships();
+  const { friends, friendsLoading, removeFriend, sentRequests, cancelSentRequest } = useFriendships();
 
   const handleContentChange = (newContent: Content) => {
     setSelectedContent(newContent);
