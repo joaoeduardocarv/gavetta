@@ -126,7 +126,7 @@ serve(async (req) => {
 
     const { data: prefsData } = await supabase
       .from('notification_preferences')
-      .select('user_id, streaming_changes, new_seasons, new_episodes, upcoming_content, vod_arrival')
+      .select('user_id, streaming_changes, new_seasons, new_episodes, upcoming_content, rental_arrival, purchase_arrival')
       .in('user_id', [...allUserIds]);
 
     const userPrefs = new Map<string, Record<string, boolean>>();
@@ -143,7 +143,8 @@ serve(async (req) => {
         new_season: 'new_seasons',
         new_episodes: 'new_episodes',
         upcoming_content: 'upcoming_content',
-        vod_arrival: 'vod_arrival',
+        rental_arrival: 'rental_arrival',
+        purchase_arrival: 'purchase_arrival',
       };
       const col = map[type];
       return col ? (p[col] !== false) : true;
