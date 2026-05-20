@@ -80,33 +80,36 @@ export type Database = {
           id: string
           new_episodes: boolean
           new_seasons: boolean
+          purchase_arrival: boolean
+          rental_arrival: boolean
           streaming_changes: boolean
           upcoming_content: boolean
           updated_at: string
           user_id: string
-          vod_arrival: boolean
         }
         Insert: {
           created_at?: string
           id?: string
           new_episodes?: boolean
           new_seasons?: boolean
+          purchase_arrival?: boolean
+          rental_arrival?: boolean
           streaming_changes?: boolean
           upcoming_content?: boolean
           updated_at?: string
           user_id: string
-          vod_arrival?: boolean
         }
         Update: {
           created_at?: string
           id?: string
           new_episodes?: boolean
           new_seasons?: boolean
+          purchase_arrival?: boolean
+          rental_arrival?: boolean
           streaming_changes?: boolean
           upcoming_content?: boolean
           updated_at?: string
           user_id?: string
-          vod_arrival?: boolean
         }
         Relationships: []
       }
