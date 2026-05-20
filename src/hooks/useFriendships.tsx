@@ -107,6 +107,44 @@ export function useFriendships() {
     enabled: !!user?.id,
   });
 
+  // Fetch pending requests SENT by current user (waiting for response)
+  const { data: sentRequests = [], isLoading: sentLoading } = useQuery({
+    queryKey: ["sent-requests", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+
+      const { data: friendships, error } = await supabase
+        .from("friendships")
+        .select("*")
+        .eq("requester_id", user.id)
+        .eq("status", "pending");
+
+      if (error) throw error;
+
+      const addresseeIds = friendships.map((f) => f.addressee_id);
+      if (addresseeIds.length === 0) return [];
+
+      const { data: profiles, error: profilesError } = await supabase
+        .from("profiles")
+        .select("*")
+        .in("id", addresseeIds);
+
+      if (profilesError) throw profilesError;
+
+      return friendships.map((f) => {
+        const profile = profiles.find((p) => p.id === f.addressee_id);
+        return {
+          id: f.addressee_id,
+          username: profile?.username,
+          avatar_url: profile?.avatar_url,
+          friendship_id: f.id,
+          is_requester: true,
+        } as FriendProfile;
+      });
+    },
+    enabled: !!user?.id,
+  });
+
   // Send friend request
   const sendRequest = useMutation({
     mutationFn: async (addresseeId: string) => {
@@ -141,6 +179,7 @@ export function useFriendships() {
     onSuccess: () => {
       toast({ title: "Pedido enviado!", description: "Aguardando aceitação." });
       queryClient.invalidateQueries({ queryKey: ["friends"] });
+      queryClient.invalidateQueries({ queryKey: ["sent-requests"] });
     },
     onError: (error: any) => {
       if (error.code === "23505") {
@@ -233,14 +272,36 @@ export function useFriendships() {
     },
   });
 
+  // Cancel a sent friend request
+  const cancelSentRequest = useMutation({
+    mutationFn: async (friendshipId: string) => {
+      const { error } = await supabase
+        .from("friendships")
+        .delete()
+        .eq("id", friendshipId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast({ title: "Pedido cancelado" });
+      queryClient.invalidateQueries({ queryKey: ["sent-requests"] });
+    },
+    onError: (error: any) => {
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
+    },
+  });
+
   return {
     friends,
     friendsLoading,
     pendingRequests,
     pendingLoading,
+    sentRequests,
+    sentLoading,
     sendRequest,
     acceptRequest,
     rejectRequest,
     removeFriend,
+    cancelSentRequest,
   };
 }
