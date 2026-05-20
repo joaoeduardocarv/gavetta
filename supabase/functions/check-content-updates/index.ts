@@ -44,10 +44,16 @@ function getProviderNames(providers: WatchProviders | null): string[] {
   return [...names].sort();
 }
 
-function getVodProviderNames(providers: WatchProviders | null): string[] {
+function getRentProviderNames(providers: WatchProviders | null): string[] {
   if (!providers) return [];
   const names = new Set<string>();
   for (const entry of providers.rent || []) names.add(entry.provider_name);
+  return [...names].sort();
+}
+
+function getBuyProviderNames(providers: WatchProviders | null): string[] {
+  if (!providers) return [];
+  const names = new Set<string>();
   for (const entry of providers.buy || []) names.add(entry.provider_name);
   return [...names].sort();
 }
