@@ -75,17 +75,40 @@ function setCache(key: string, data: unknown): void {
 
 // =============== TMDB FETCH ===============
 
-async function fetchTMDB(endpoint: string): Promise<Response> {
-  const response = await fetch(`${TMDB_BASE_URL}${endpoint}`, {
-    method: "GET",
-    headers: TMDB_HEADERS
-  });
-  
-  if (!response.ok) {
-    throw new Error(`TMDB API error: ${response.status}`);
+async function fetchTMDB(endpoint: string, retries = 2): Promise<Response> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(`${TMDB_BASE_URL}${endpoint}`, {
+        method: "GET",
+        headers: TMDB_HEADERS,
+      });
+
+      if (!response.ok) {
+        throw new Error(`TMDB API error: ${response.status}`);
+      }
+
+      // Read body as text first so we can detect empty responses without
+      // throwing the cryptic "unexpected end of file" from response.json().
+      const text = await response.text();
+      if (!text || text.trim().length === 0) {
+        throw new Error("TMDB API returned empty body");
+      }
+
+      // Re-wrap into a Response so callers can keep using .json()
+      return new Response(text, {
+        status: response.status,
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (err) {
+      lastError = err;
+      if (attempt < retries) {
+        await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
+        continue;
+      }
+    }
   }
-  
-  return response;
+  throw lastError instanceof Error ? lastError : new Error("TMDB fetch failed");
 }
 
 serve(async (req) => {
