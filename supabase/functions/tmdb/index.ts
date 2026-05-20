@@ -75,37 +75,63 @@ function setCache(key: string, data: unknown): void {
 
 // =============== TMDB FETCH ===============
 
-async function fetchTMDB(endpoint: string, retries = 2): Promise<Response> {
+async function fetchTMDB(endpoint: string, retries = 3): Promise<Response> {
   let lastError: unknown;
   for (let attempt = 0; attempt <= retries; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
     try {
       const response = await fetch(`${TMDB_BASE_URL}${endpoint}`, {
         method: "GET",
         headers: TMDB_HEADERS,
+        signal: controller.signal,
       });
 
       if (!response.ok) {
+        // Consume body to avoid leaks before retrying
+        try { await response.text(); } catch { /* ignore */ }
         throw new Error(`TMDB API error: ${response.status}`);
       }
 
-      // Read body as text first so we can detect empty responses without
-      // throwing the cryptic "unexpected end of file" from response.json().
-      const text = await response.text();
+      // Read body as text first so we can detect empty/truncated responses
+      // and avoid the cryptic "unexpected end of file" from response.json().
+      let text: string;
+      try {
+        text = await response.text();
+      } catch (readErr) {
+        throw new Error(
+          `TMDB body read failed: ${readErr instanceof Error ? readErr.message : String(readErr)}`,
+        );
+      }
+
       if (!text || text.trim().length === 0) {
         throw new Error("TMDB API returned empty body");
       }
 
-      // Re-wrap into a Response so callers can keep using .json()
+      // Validate JSON before returning so the caller's .json() never sees garbage
+      try {
+        JSON.parse(text);
+      } catch {
+        throw new Error("TMDB API returned invalid JSON");
+      }
+
       return new Response(text, {
         status: response.status,
         headers: { "Content-Type": "application/json" },
       });
     } catch (err) {
       lastError = err;
+      console.warn(
+        `fetchTMDB attempt ${attempt + 1}/${retries + 1} failed for ${endpoint}: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      );
       if (attempt < retries) {
-        await new Promise((r) => setTimeout(r, 300 * (attempt + 1)));
+        await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
         continue;
       }
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
   throw lastError instanceof Error ? lastError : new Error("TMDB fetch failed");
