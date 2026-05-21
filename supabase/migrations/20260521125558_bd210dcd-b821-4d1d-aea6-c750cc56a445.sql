@@ -1,0 +1,1 @@
+DELETE FROM public.watched_episodes WHERE user_id='35c7e3d3-fe00-4e29-84f9-8243ac507c67' AND tmdb_tv_id=76479 AND season_number=5 AND episode_number=8;
