@@ -359,9 +359,10 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
           size="sm"
           variant="default"
           className="w-full gap-2"
-          onClick={handleMarkAllAired}
+          onClick={prepareMarkAllAired}
+          disabled={isPreparingMarkAll}
         >
-          <CheckCheck className="h-4 w-4" />
+          {isPreparingMarkAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCheck className="h-4 w-4" />}
           Marcar episódios já lançados como assistidos
         </Button>
       )}
