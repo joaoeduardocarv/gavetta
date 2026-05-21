@@ -609,6 +609,25 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={showMarkAllConfirm} onOpenChange={setShowMarkAllConfirm}>
+        <AlertDialogContent className="z-[60]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Marcar todos os episódios lançados?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {markAllPreview
+                ? `Isso vai marcar ${markAllPreview.totalEps} episódio${markAllPreview.totalEps > 1 ? "s" : ""} já lançado${markAllPreview.totalEps > 1 ? "s" : ""} em ${markAllPreview.seasonCount} temporada${markAllPreview.seasonCount > 1 ? "s" : ""} como assistido. Você pode desmarcar individualmente depois.`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleMarkAllAired}>
+              Marcar todos
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
