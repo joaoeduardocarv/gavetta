@@ -133,12 +133,13 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
     return ep.getTime() <= today.getTime();
   };
 
-  const handleMarkAllAired = async () => {
-    // Ensure every season's episodes are loaded so we can filter by air date
-    const missing = seasons.filter((s) => !episodesBySeason[s.season_number]);
-    let loaded = episodesBySeason;
-    if (missing.length > 0) {
-      try {
+  /** Step 1: count aired-but-unwatched episodes across all seasons and open the confirmation dialog. */
+  const prepareMarkAllAired = async () => {
+    setIsPreparingMarkAll(true);
+    try {
+      const missing = seasons.filter((s) => !episodesBySeason[s.season_number]);
+      let loaded = episodesBySeason;
+      if (missing.length > 0) {
         const results = await Promise.all(
           missing.map((s) =>
             getSeasonEpisodes(tmdbTvId, s.season_number).then((eps) => ({
@@ -152,15 +153,42 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
           loaded[season] = eps;
         });
         setEpisodesBySeason(loaded);
-      } catch (err) {
-        console.error("Error loading episodes for mark-all:", err);
+      }
+
+      let totalEps = 0;
+      let seasonCount = 0;
+      for (const s of seasons) {
+        const eps = loaded[s.season_number];
+        if (!eps) continue;
+        const airedUnwatched = eps.filter(
+          (ep) => hasAired(ep.air_date) && !isWatched(s.season_number, ep.episode_number)
+        );
+        if (airedUnwatched.length > 0) {
+          totalEps += airedUnwatched.length;
+          seasonCount++;
+        }
+      }
+
+      if (totalEps === 0) {
+        toast({ title: "Nada para marcar", description: "Todos os episódios já lançados já estão marcados." });
         return;
       }
-    }
 
-    // Build list of aired episodes per season and mark each
+      setMarkAllPreview({ totalEps, seasonCount });
+      setShowMarkAllConfirm(true);
+    } catch (err) {
+      console.error("Error preparing mark-all:", err);
+    } finally {
+      setIsPreparingMarkAll(false);
+    }
+  };
+
+  /** Step 2: actually mark every aired episode across all seasons. Called after user confirms. */
+  const handleMarkAllAired = async () => {
+    setShowMarkAllConfirm(false);
+    // Episodes are already loaded by prepareMarkAllAired
     for (const s of seasons) {
-      const eps = loaded[s.season_number];
+      const eps = episodesBySeason[s.season_number];
       if (!eps) continue;
       const airedNumbers = eps.filter((ep) => hasAired(ep.air_date)).map((ep) => ep.episode_number);
       if (airedNumbers.length > 0) {
