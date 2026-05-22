@@ -349,6 +349,7 @@ export type Database = {
         Args: { _email?: string; _handle?: string; _username?: string }
         Returns: Json
       }
+      get_email_by_handle: { Args: { _handle: string }; Returns: string }
       is_profile_visible_to_viewer: {
         Args: { _profile_id: string }
         Returns: boolean
