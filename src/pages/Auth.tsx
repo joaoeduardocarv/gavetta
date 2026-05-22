@@ -17,7 +17,16 @@ import { allAvatars } from "@/components/AvatarPickerDialog";
 import { cn } from "@/lib/utils";
 
 const loginSchema = z.object({
-  email: z.string().trim().email({ message: "Email inválido" }),
+  identifier: z
+    .string()
+    .trim()
+    .min(1, { message: "Informe seu email ou @" })
+    .refine(
+      (v) =>
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ||
+        /^@?[a-zA-Z0-9_]{3,30}$/.test(v),
+      { message: "Informe um email válido ou um @ (ex.: @maria_silva)" }
+    ),
   password: z.string().min(6, { message: "Senha deve ter pelo menos 6 caracteres" }),
 });
 
