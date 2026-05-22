@@ -459,13 +459,17 @@ export default function Auth() {
                 
                 <form onSubmit={handleLogin} className="space-y-4 mt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="login-email">Email</Label>
+                    <Label htmlFor="login-email">Email ou @</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="login-email"
-                        type="email"
-                        placeholder="seu@email.com"
+                        type="text"
+                        inputMode="email"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        placeholder="seu@email.com ou @seu_usuario"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="pl-10"
