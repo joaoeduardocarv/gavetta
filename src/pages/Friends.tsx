@@ -23,6 +23,19 @@ export default function Friends() {
   const [searchQuery, setSearchQuery] = useState("");
   const { friends, friendsLoading, removeFriend, sentRequests, cancelSentRequest } = useFriendships();
 
+  // Pré-aquece o cache do navegador com os avatares dos amigos assim que
+  // a lista é resolvida, para que apareçam instantâneos nos cards.
+  useEffect(() => {
+    friends.forEach((f) => {
+      const src = resolveAvatarSrc(f.avatar_url);
+      if (src) {
+        const img = new Image();
+        img.decoding = "async";
+        img.src = src;
+      }
+    });
+  }, [friends]);
+
   const handleContentChange = (newContent: Content) => {
     setSelectedContent(newContent);
     setIsDialogOpen(true);
