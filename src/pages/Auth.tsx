@@ -158,8 +158,9 @@ export default function Auth() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const validation = loginSchema.safeParse({ email, password });
+
+    const identifier = email.trim();
+    const validation = loginSchema.safeParse({ identifier, password });
     if (!validation.success) {
       toast({
         variant: "destructive",
@@ -170,12 +171,34 @@ export default function Auth() {
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    // Resolve handle → email se o usuário digitou um @ em vez de email
+    let loginEmail = identifier;
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
+    if (!isEmail) {
+      const rawHandle = identifier.startsWith("@") ? identifier.slice(1) : identifier;
+      const { data: resolvedEmail, error: rpcError } = await supabase.rpc(
+        "get_email_by_handle" as any,
+        { _handle: rawHandle }
+      );
+      if (rpcError || !resolvedEmail) {
+        setLoading(false);
+        toast({
+          variant: "destructive",
+          title: "Erro ao entrar",
+          description: "Não encontramos uma conta com esse @. Verifique e tente novamente.",
+        });
+        return;
+      }
+      loginEmail = resolvedEmail as string;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
     setLoading(false);
 
     if (error) {
       if (error.message === "Email not confirmed") {
-        setConfirmationEmail(email);
+        setConfirmationEmail(loginEmail);
         setShowConfirmation(true);
         toast({
           variant: "destructive",
@@ -186,8 +209,8 @@ export default function Auth() {
         toast({
           variant: "destructive",
           title: "Erro ao entrar",
-          description: error.message === "Invalid login credentials" 
-            ? "Email ou senha incorretos. Verifique e tente novamente." 
+          description: error.message === "Invalid login credentials"
+            ? "Email/@ ou senha incorretos. Verifique e tente novamente."
             : error.message,
         });
       }
