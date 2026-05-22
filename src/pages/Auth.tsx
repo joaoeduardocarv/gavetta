@@ -17,7 +17,16 @@ import { allAvatars } from "@/components/AvatarPickerDialog";
 import { cn } from "@/lib/utils";
 
 const loginSchema = z.object({
-  email: z.string().trim().email({ message: "Email inválido" }),
+  identifier: z
+    .string()
+    .trim()
+    .min(1, { message: "Informe seu email ou @" })
+    .refine(
+      (v) =>
+        /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v) ||
+        /^@?[a-zA-Z0-9_]{3,30}$/.test(v),
+      { message: "Informe um email válido ou um @ (ex.: @maria_silva)" }
+    ),
   password: z.string().min(6, { message: "Senha deve ter pelo menos 6 caracteres" }),
 });
 
@@ -149,8 +158,9 @@ export default function Auth() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const validation = loginSchema.safeParse({ email, password });
+
+    const identifier = email.trim();
+    const validation = loginSchema.safeParse({ identifier, password });
     if (!validation.success) {
       toast({
         variant: "destructive",
@@ -161,12 +171,34 @@ export default function Auth() {
     }
 
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    // Resolve handle → email se o usuário digitou um @ em vez de email
+    let loginEmail = identifier;
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
+    if (!isEmail) {
+      const rawHandle = identifier.startsWith("@") ? identifier.slice(1) : identifier;
+      const { data: resolvedEmail, error: rpcError } = await supabase.rpc(
+        "get_email_by_handle" as any,
+        { _handle: rawHandle }
+      );
+      if (rpcError || !resolvedEmail) {
+        setLoading(false);
+        toast({
+          variant: "destructive",
+          title: "Erro ao entrar",
+          description: "Não encontramos uma conta com esse @. Verifique e tente novamente.",
+        });
+        return;
+      }
+      loginEmail = resolvedEmail as string;
+    }
+
+    const { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
     setLoading(false);
 
     if (error) {
       if (error.message === "Email not confirmed") {
-        setConfirmationEmail(email);
+        setConfirmationEmail(loginEmail);
         setShowConfirmation(true);
         toast({
           variant: "destructive",
@@ -177,8 +209,8 @@ export default function Auth() {
         toast({
           variant: "destructive",
           title: "Erro ao entrar",
-          description: error.message === "Invalid login credentials" 
-            ? "Email ou senha incorretos. Verifique e tente novamente." 
+          description: error.message === "Invalid login credentials"
+            ? "Email/@ ou senha incorretos. Verifique e tente novamente."
             : error.message,
         });
       }
@@ -427,13 +459,17 @@ export default function Auth() {
                 
                 <form onSubmit={handleLogin} className="space-y-4 mt-4">
                   <div className="space-y-2">
-                    <Label htmlFor="login-email">Email</Label>
+                    <Label htmlFor="login-email">Email ou @</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="login-email"
-                        type="email"
-                        placeholder="seu@email.com"
+                        type="text"
+                        inputMode="email"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        placeholder="seu@email.com ou @seu_usuario"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         className="pl-10"
