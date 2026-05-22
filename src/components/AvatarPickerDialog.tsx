@@ -187,7 +187,7 @@ export function AvatarPickerDialog({
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(filePath, blob, { upsert: true, contentType: "image/jpeg" });
+        .upload(filePath, blob, { upsert: true, contentType: "image/jpeg", cacheControl: "31536000" });
 
       if (uploadError) throw uploadError;
 
