@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
@@ -22,6 +22,19 @@ export default function Friends() {
   const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const { friends, friendsLoading, removeFriend, sentRequests, cancelSentRequest } = useFriendships();
+
+  // Pré-aquece o cache do navegador com os avatares dos amigos assim que
+  // a lista é resolvida, para que apareçam instantâneos nos cards.
+  useEffect(() => {
+    friends.forEach((f) => {
+      const src = resolveAvatarSrc(f.avatar_url);
+      if (src) {
+        const img = new Image();
+        img.decoding = "async";
+        img.src = src;
+      }
+    });
+  }, [friends]);
 
   const handleContentChange = (newContent: Content) => {
     setSelectedContent(newContent);
