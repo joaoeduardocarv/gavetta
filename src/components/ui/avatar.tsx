@@ -19,7 +19,15 @@ const AvatarImage = React.forwardRef<
   React.ElementRef<typeof AvatarPrimitive.Image>,
   React.ComponentPropsWithoutRef<typeof AvatarPrimitive.Image>
 >(({ className, ...props }, ref) => (
-  <AvatarPrimitive.Image ref={ref} className={cn("aspect-square h-full w-full", className)} {...props} />
+  <AvatarPrimitive.Image
+    ref={ref}
+    loading="eager"
+    decoding="async"
+    // @ts-expect-error fetchpriority is a valid <img> attribute not yet in React types
+    fetchpriority="high"
+    className={cn("aspect-square h-full w-full", className)}
+    {...props}
+  />
 ));
 AvatarImage.displayName = AvatarPrimitive.Image.displayName;
 
