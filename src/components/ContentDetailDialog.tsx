@@ -752,10 +752,10 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
             <Separator />
 
             {/* Ações */}
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button 
                 variant="outline" 
-                className="flex-1 gap-2"
+                className="flex-1 min-w-[140px] gap-2"
                 onClick={() => setIsRecommendDialogOpen(true)}
               >
                 <MessageCircle className="h-4 w-4" />
@@ -763,7 +763,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
               </Button>
               <Button 
                 variant="outline" 
-                className="flex-1 gap-2"
+                className="flex-1 min-w-[140px] gap-2"
                 onClick={() => shareToStory({
                   title: content.title,
                   posterUrl: content.posterUrl,
@@ -779,9 +779,39 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                 ) : (
                   <Share2 className="h-4 w-4" />
                 )}
-                Compartilhar
+                Compartilhar story
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 min-w-[140px] gap-2"
+                onClick={async () => {
+                  const parsed = extractTmdbInfoFromId(content.id);
+                  if (!parsed) {
+                    toast({ title: "Não foi possível gerar o link", variant: "destructive" });
+                    return;
+                  }
+                  const url = `${window.location.origin}/share/${parsed.mediaType}/${parsed.tmdbId}`;
+                  try {
+                    if (navigator.share) {
+                      await navigator.share({ title: String(content.title), url });
+                    } else {
+                      await navigator.clipboard.writeText(url);
+                      toast({ title: "Link copiado!", description: "Qualquer pessoa pode ver este card." });
+                    }
+                  } catch (err) {
+                    // user cancelled share — fall back to clipboard
+                    try {
+                      await navigator.clipboard.writeText(url);
+                      toast({ title: "Link copiado!" });
+                    } catch {}
+                  }
+                }}
+              >
+                <Link2 className="h-4 w-4" />
+                Copiar link público
               </Button>
             </div>
+
           </div>
         {/* Dialog de Indicação */}
         <RecommendDialog
