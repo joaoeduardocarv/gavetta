@@ -193,17 +193,13 @@ serve(async (req) => {
       console.log(`TMDB: Public request for action: ${action}`);
     }
 
-
-
-    const url = new URL(req.url);
-    const action = url.searchParams.get('action');
-    
     if (!action) {
       return new Response(
         JSON.stringify({ error: 'Action is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
     
     // Gerar chave de cache
     const cacheKey = getCacheKey(action, url.searchParams);
