@@ -144,45 +144,62 @@ serve(async (req) => {
   }
 
   try {
-    // Validate authentication
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader?.startsWith('Bearer ')) {
-      console.log('TMDB: Missing or invalid authorization header');
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized - Missing authorization' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: claimsData, error: authError } = await supabaseClient.auth.getClaims(token);
-    
-    if (authError || !claimsData?.claims) {
-      console.log('TMDB: Invalid or expired token', authError?.message);
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized - Invalid or expired token' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const userId = claimsData.claims.sub;
-    console.log(`TMDB: Authenticated request from user: ${userId}`);
-
     const url = new URL(req.url);
     const action = url.searchParams.get('action');
-    
+
+    // Public read-only actions can be called without an authenticated user
+    // (used by /share/:type/:tmdbId public pages).
+    const PUBLIC_ACTIONS = new Set([
+      'getMovieDetails',
+      'getTVDetails',
+      'getMovieCredits',
+      'getTVCredits',
+      'getMovieWatchProviders',
+      'getTVWatchProviders',
+      'getSeasonEpisodes',
+    ]);
+
+    const authHeader = req.headers.get('Authorization');
+    const isPublicAction = action ? PUBLIC_ACTIONS.has(action) : false;
+
+    if (!isPublicAction) {
+      if (!authHeader?.startsWith('Bearer ')) {
+        console.log('TMDB: Missing or invalid authorization header');
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized - Missing authorization' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        { global: { headers: { Authorization: authHeader } } }
+      );
+
+      const token = authHeader.replace('Bearer ', '');
+      const { data: claimsData, error: authError } = await supabaseClient.auth.getClaims(token);
+
+      if (authError || !claimsData?.claims) {
+        console.log('TMDB: Invalid or expired token', authError?.message);
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized - Invalid or expired token' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      console.log(`TMDB: Authenticated request from user: ${claimsData.claims.sub}`);
+    } else {
+      console.log(`TMDB: Public request for action: ${action}`);
+    }
+
     if (!action) {
       return new Response(
         JSON.stringify({ error: 'Action is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
     
     // Gerar chave de cache
     const cacheKey = getCacheKey(action, url.searchParams);
