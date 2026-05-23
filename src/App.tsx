@@ -20,6 +20,7 @@ import NotFound from "./pages/NotFound";
 import PublicProfile from "./pages/PublicProfile";
 import Welcome from "./pages/Welcome";
 import AdminSignupDebug from "./pages/AdminSignupDebug";
+import SharePage from "./pages/SharePage";
 
 const queryClient = new QueryClient();
 
