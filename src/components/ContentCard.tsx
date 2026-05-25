@@ -11,6 +11,7 @@ import { useContentNotifications } from "@/hooks/useContentNotifications";
 import { useSeriesEpisodeProgress } from "@/hooks/useWatchedEpisodes";
 import { extractTmdbInfoFromId } from "@/lib/contentNormalizer";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "./ui/tooltip";
+import { useTitleLanguage } from "@/hooks/useTitleLanguage";
 
 interface ContentCardProps {
   content: Content;
@@ -47,6 +48,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
   const StatusIcon = content.status ? statusIcons[content.status] : null;
   const { getContentDrawers } = useDrawers();
   const { getContentNotification } = useContentNotifications();
+  const { resolveTitle } = useTitleLanguage();
 
   const { defaultDrawer, customDrawers } = getContentDrawers(content.id);
   const isInAnyDrawer = defaultDrawer !== null || customDrawers.length > 0;
@@ -65,10 +67,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
         : getTMDBImageUrl(content.posterUrl)
       : undefined;
 
-  const safeTitle =
-    typeof content.title === "string"
-      ? content.title
-      : String(content.title ?? "Sem título");
+  const safeTitle = resolveTitle(content);
 
   const safeGenres = (Array.isArray(content.genres) ? content.genres : [])
     .map((genre) => {
