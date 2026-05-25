@@ -48,7 +48,8 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
   const StatusIcon = content.status ? statusIcons[content.status] : null;
   const { getContentDrawers } = useDrawers();
   const { getContentNotification } = useContentNotifications();
-  const { resolveTitle } = useTitleLanguage();
+  const { lang: titleLang, toggle: toggleTitleLang, resolveTitle } = useTitleLanguage();
+  const canToggleTitle = hasAlternateTitle(content);
 
   const { defaultDrawer, customDrawers } = getContentDrawers(content.id);
   const isInAnyDrawer = defaultDrawer !== null || customDrawers.length > 0;
