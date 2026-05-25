@@ -27,7 +27,7 @@ import { Calendar, Film, Star, Tv } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { SignupPromptOverlay } from "@/components/SignupPromptOverlay";
-import { useTitleLanguage, hasAlternateTitle } from "@/hooks/useTitleLanguage";
+
 
 type ShareType = "movie" | "tv";
 
