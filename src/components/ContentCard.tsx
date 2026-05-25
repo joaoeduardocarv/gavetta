@@ -11,7 +11,7 @@ import { useContentNotifications } from "@/hooks/useContentNotifications";
 import { useSeriesEpisodeProgress } from "@/hooks/useWatchedEpisodes";
 import { extractTmdbInfoFromId } from "@/lib/contentNormalizer";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "./ui/tooltip";
-import { useTitleLanguage } from "@/hooks/useTitleLanguage";
+import { useTitleLanguage, hasAlternateTitle } from "@/hooks/useTitleLanguage";
 
 interface ContentCardProps {
   content: Content;
