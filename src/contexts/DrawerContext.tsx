@@ -190,7 +190,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
 
   // Helper function to enrich content with full TMDB data
   const enrichContent = async (content: Content): Promise<Content> => {
-    const needsEnrichment = !content.genres?.length || !content.director || !content.availableOn?.length;
+    const needsEnrichment = !content.genres?.length || !content.director || !content.availableOn?.length || !content.originalTitle;
     if (!needsEnrichment) return content;
 
     const parsedId = extractTmdbInfoFromId(content.id);
@@ -211,6 +211,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
         return {
           ...content,
           id: `movie-${numericId}`,
+          originalTitle: (details as unknown as { original_title?: string }).original_title || content.originalTitle,
           genres: details.genres.map(g => g.name),
           director: director?.name || content.director,
           cast: credits.cast.slice(0, 10).map(c => c.name),
@@ -229,6 +230,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
         return {
           ...content,
           id: `tv-${numericId}`,
+          originalTitle: (details as unknown as { original_name?: string }).original_name || content.originalTitle,
           genres: details.genres.map(g => g.name),
           director: details.created_by?.[0]?.name || content.director,
           cast: credits.cast.slice(0, 10).map(c => c.name),

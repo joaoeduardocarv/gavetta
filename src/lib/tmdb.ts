@@ -3,6 +3,7 @@
 export interface TMDBMovie {
   id: number;
   title: string;
+  original_title?: string;
   overview: string;
   poster_path: string | null;
   backdrop_path: string | null;
@@ -27,6 +28,7 @@ export interface TMDBMovieDetails extends TMDBMovie {
 export interface TMDBTVShow {
   id: number;
   name: string;
+  original_name?: string;
   overview: string;
   poster_path: string | null;
   backdrop_path: string | null;
@@ -114,7 +116,9 @@ export interface TMDBPerson {
 export interface TMDBPersonCredit {
   id: number;
   title?: string;
+  original_title?: string;
   name?: string;
+  original_name?: string;
   poster_path: string | null;
   backdrop_path?: string | null;
   overview?: string;

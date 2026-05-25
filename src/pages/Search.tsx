@@ -50,6 +50,7 @@ function tmdbMovieToContent(movie: TMDBMovie): Content & { popularity: number } 
   return {
     id: `movie-${movie.id}`,
     title: movie.title,
+    originalTitle: movie.original_title,
     type: 'movie',
     posterUrl: getTMDBImageUrl(movie.poster_path),
     backdropUrl: movie.backdrop_path ? getTMDBImageUrl(movie.backdrop_path, 'original') : undefined,
@@ -67,6 +68,7 @@ function tmdbTVToContent(tvShow: TMDBTVShow): Content & { popularity: number } {
   return {
     id: `tv-${tvShow.id}`,
     title: tvShow.name,
+    originalTitle: tvShow.original_name,
     type: 'series',
     posterUrl: getTMDBImageUrl(tvShow.poster_path),
     backdropUrl: tvShow.backdrop_path ? getTMDBImageUrl(tvShow.backdrop_path, 'original') : undefined,
@@ -84,6 +86,7 @@ function personCreditToContent(credit: TMDBPersonCredit): Content & { popularity
   return {
     id: `${credit.media_type === 'movie' ? 'movie' : 'tv'}-${credit.id}`,
     title: credit.title || credit.name || '',
+    originalTitle: credit.original_title || credit.original_name,
     type: credit.media_type === 'movie' ? 'movie' : 'series',
     posterUrl: getTMDBImageUrl(credit.poster_path),
     backdropUrl: credit.backdrop_path ? getTMDBImageUrl(credit.backdrop_path, 'original') : undefined,
