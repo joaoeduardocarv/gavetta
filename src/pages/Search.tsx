@@ -86,6 +86,7 @@ function personCreditToContent(credit: TMDBPersonCredit): Content & { popularity
   return {
     id: `${credit.media_type === 'movie' ? 'movie' : 'tv'}-${credit.id}`,
     title: credit.title || credit.name || '',
+    originalTitle: credit.original_title || credit.original_name,
     type: credit.media_type === 'movie' ? 'movie' : 'series',
     posterUrl: getTMDBImageUrl(credit.poster_path),
     backdropUrl: credit.backdrop_path ? getTMDBImageUrl(credit.backdrop_path, 'original') : undefined,
