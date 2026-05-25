@@ -211,6 +211,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
         return {
           ...content,
           id: `movie-${numericId}`,
+          originalTitle: (details as unknown as { original_title?: string }).original_title || content.originalTitle,
           genres: details.genres.map(g => g.name),
           director: director?.name || content.director,
           cast: credits.cast.slice(0, 10).map(c => c.name),
