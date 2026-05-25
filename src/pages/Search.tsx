@@ -68,6 +68,7 @@ function tmdbTVToContent(tvShow: TMDBTVShow): Content & { popularity: number } {
   return {
     id: `tv-${tvShow.id}`,
     title: tvShow.name,
+    originalTitle: tvShow.original_name,
     type: 'series',
     posterUrl: getTMDBImageUrl(tvShow.poster_path),
     backdropUrl: tvShow.backdrop_path ? getTMDBImageUrl(tvShow.backdrop_path, 'original') : undefined,
