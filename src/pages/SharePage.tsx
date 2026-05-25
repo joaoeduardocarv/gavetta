@@ -23,11 +23,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, Film, Star, Tv, Languages } from "lucide-react";
+import { Calendar, Film, Star, Tv } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import { SignupPromptOverlay } from "@/components/SignupPromptOverlay";
-import { useTitleLanguage, hasAlternateTitle } from "@/hooks/useTitleLanguage";
+
 
 type ShareType = "movie" | "tv";
 
@@ -103,7 +103,7 @@ const SECTION_LABELS: Record<TMDBOfferType, string> = {
 export default function SharePage() {
   const { type, tmdbId } = useParams<{ type: ShareType; tmdbId: string }>();
   const { user } = useAuth();
-  const { lang: titleLang, toggle: toggleTitleLang, resolveTitle } = useTitleLanguage();
+  
   const [data, setData] = useState<LoadedData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -198,32 +198,12 @@ export default function SharePage() {
                 <AvatarFallback className="rounded-lg">{data.title[0]}</AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1 space-y-2">
-                <div className="flex items-start gap-2">
-                  <h1 className="font-heading text-2xl font-bold sm:text-3xl flex-1 min-w-0">
-                    {resolveTitle(data)}
-                  </h1>
-                  {hasAlternateTitle(data) && (
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <button
-                            onClick={toggleTitleLang}
-                            aria-label={titleLang === "original" ? "Mostrar em português" : "Mostrar título original"}
-                            className="mt-1 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground"
-                          >
-                            <Languages className="h-4 w-4" />
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="text-xs">
-                          {titleLang === "original" ? "Mostrar em português" : "Mostrar título original"}
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
-                {hasAlternateTitle(data) && (
+                <h1 className="font-heading text-2xl font-bold sm:text-3xl">
+                  {data.title}
+                </h1>
+                {data.originalTitle && data.originalTitle !== data.title && (
                   <p className="text-sm italic text-muted-foreground">
-                    {titleLang === "original" ? data.title : data.originalTitle}
+                    {data.originalTitle}
                   </p>
                 )}
                 <div className="flex flex-wrap items-center gap-2">

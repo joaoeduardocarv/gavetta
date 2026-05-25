@@ -1,4 +1,4 @@
-import { Star, Film, Tv, Check, Clock, Play, Bell, Clapperboard } from "lucide-react";
+import { Star, Film, Tv, Check, Clock, Play, Bell, Clapperboard, Languages } from "lucide-react";
 import { GavetaIcon } from "@/components/GavetaIcon";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -11,7 +11,7 @@ import { useContentNotifications } from "@/hooks/useContentNotifications";
 import { useSeriesEpisodeProgress } from "@/hooks/useWatchedEpisodes";
 import { extractTmdbInfoFromId } from "@/lib/contentNormalizer";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "./ui/tooltip";
-import { useTitleLanguage } from "@/hooks/useTitleLanguage";
+import { useTitleLanguage, hasAlternateTitle } from "@/hooks/useTitleLanguage";
 
 interface ContentCardProps {
   content: Content;
@@ -48,7 +48,8 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
   const StatusIcon = content.status ? statusIcons[content.status] : null;
   const { getContentDrawers } = useDrawers();
   const { getContentNotification } = useContentNotifications();
-  const { resolveTitle } = useTitleLanguage();
+  const { lang: titleLang, toggle: toggleTitleLang, resolveTitle } = useTitleLanguage();
+  const canToggleTitle = hasAlternateTitle(content);
 
   const { defaultDrawer, customDrawers } = getContentDrawers(content.id);
   const isInAnyDrawer = defaultDrawer !== null || customDrawers.length > 0;
@@ -122,18 +123,41 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
           <h3 className="font-heading font-bold text-foreground line-clamp-1">
             {safeTitle}
           </h3>
-          <DrawerPickerPopover content={content}>
-            <button 
-              className="p-1 -m-1 hover:bg-accent/10 rounded transition-colors"
-              onClick={(e) => e.stopPropagation()}
-              aria-label={isInAnyDrawer ? `${safeTitle} está em uma gavetta — alterar` : `Adicionar ${safeTitle} a uma gavetta`}
-            >
-              <GavetaIcon className={cn(
-                "h-4 w-4 flex-shrink-0 transition-opacity",
-                isInAnyDrawer ? "opacity-100" : "opacity-40"
-              )} />
-            </button>
-          </DrawerPickerPopover>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {canToggleTitle && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleTitleLang();
+                      }}
+                      className="p-1 -m-1 hover:bg-accent/10 rounded transition-colors text-muted-foreground hover:text-foreground"
+                      aria-label={titleLang === "original" ? "Mostrar em português" : "Mostrar título original"}
+                    >
+                      <Languages className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    {titleLang === "original" ? "Mostrar em português" : "Mostrar título original"}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            <DrawerPickerPopover content={content}>
+              <button
+                className="p-1 -m-1 hover:bg-accent/10 rounded transition-colors"
+                onClick={(e) => e.stopPropagation()}
+                aria-label={isInAnyDrawer ? `${safeTitle} está em uma gavetta — alterar` : `Adicionar ${safeTitle} a uma gavetta`}
+              >
+                <GavetaIcon className={cn(
+                  "h-4 w-4 flex-shrink-0 transition-opacity",
+                  isInAnyDrawer ? "opacity-100" : "opacity-40"
+                )} />
+              </button>
+            </DrawerPickerPopover>
+          </div>
         </div>
         
         <div className="flex flex-wrap items-center gap-2 mt-1">
