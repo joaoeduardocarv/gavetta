@@ -294,7 +294,7 @@ export default function Trending() {
       id: `tv-${series.id}`,
       type: 'series',
       title: series.name,
-      originalTitle: series.name,
+      originalTitle: series.original_name || series.name,
       releaseDate: series.first_air_date || '',
       synopsis: series.overview,
       posterUrl: getTMDBImageUrl(series.poster_path, 'w500'),
