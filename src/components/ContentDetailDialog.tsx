@@ -68,6 +68,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
     setContentRating,
     setContentComment
   } = useDrawers();
+  const { lang: titleLang, toggle: toggleTitleLang, resolveTitle } = useTitleLanguage();
   
   const [comment, setComment] = useState("");
   const [userHandle, setUserHandle] = useState<string | null>(null);
