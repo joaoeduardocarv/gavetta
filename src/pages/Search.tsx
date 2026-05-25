@@ -50,6 +50,7 @@ function tmdbMovieToContent(movie: TMDBMovie): Content & { popularity: number } 
   return {
     id: `movie-${movie.id}`,
     title: movie.title,
+    originalTitle: movie.original_title,
     type: 'movie',
     posterUrl: getTMDBImageUrl(movie.poster_path),
     backdropUrl: movie.backdrop_path ? getTMDBImageUrl(movie.backdrop_path, 'original') : undefined,
