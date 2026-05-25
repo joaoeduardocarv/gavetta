@@ -123,18 +123,41 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
           <h3 className="font-heading font-bold text-foreground line-clamp-1">
             {safeTitle}
           </h3>
-          <DrawerPickerPopover content={content}>
-            <button 
-              className="p-1 -m-1 hover:bg-accent/10 rounded transition-colors"
-              onClick={(e) => e.stopPropagation()}
-              aria-label={isInAnyDrawer ? `${safeTitle} está em uma gavetta — alterar` : `Adicionar ${safeTitle} a uma gavetta`}
-            >
-              <GavetaIcon className={cn(
-                "h-4 w-4 flex-shrink-0 transition-opacity",
-                isInAnyDrawer ? "opacity-100" : "opacity-40"
-              )} />
-            </button>
-          </DrawerPickerPopover>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {canToggleTitle && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleTitleLang();
+                      }}
+                      className="p-1 -m-1 hover:bg-accent/10 rounded transition-colors text-muted-foreground hover:text-foreground"
+                      aria-label={titleLang === "original" ? "Mostrar em português" : "Mostrar título original"}
+                    >
+                      <Languages className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    {titleLang === "original" ? "Mostrar em português" : "Mostrar título original"}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+            <DrawerPickerPopover content={content}>
+              <button
+                className="p-1 -m-1 hover:bg-accent/10 rounded transition-colors"
+                onClick={(e) => e.stopPropagation()}
+                aria-label={isInAnyDrawer ? `${safeTitle} está em uma gavetta — alterar` : `Adicionar ${safeTitle} a uma gavetta`}
+              >
+                <GavetaIcon className={cn(
+                  "h-4 w-4 flex-shrink-0 transition-opacity",
+                  isInAnyDrawer ? "opacity-100" : "opacity-40"
+                )} />
+              </button>
+            </DrawerPickerPopover>
+          </div>
         </div>
         
         <div className="flex flex-wrap items-center gap-2 mt-1">
