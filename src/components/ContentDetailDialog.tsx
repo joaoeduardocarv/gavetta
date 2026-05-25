@@ -9,7 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Film, Tv, Calendar, Star, Share2, MessageCircle, Check, Play, Eye, CheckCircle, Loader2, Link2 } from "lucide-react";
+import { Film, Tv, Calendar, Star, Share2, MessageCircle, Check, Play, Eye, CheckCircle, Loader2, Link2, Languages } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import { useTitleLanguage, hasAlternateTitle } from "@/hooks/useTitleLanguage";
 import { GavetaIcon } from "@/components/GavetaIcon";
 import { useStoryShare } from "@/hooks/useStoryShare";
 import { RecommendDialog } from "./RecommendDialog";
@@ -66,6 +68,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
     setContentRating,
     setContentComment
   } = useDrawers();
+  const { lang: titleLang, toggle: toggleTitleLang, resolveTitle } = useTitleLanguage();
   
   const [comment, setComment] = useState("");
   const [userHandle, setUserHandle] = useState<string | null>(null);
@@ -453,12 +456,32 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
               </Avatar>
 
               <div className="flex-1 min-w-0 space-y-2">
-                <h2 className="font-heading text-xl sm:text-2xl font-bold text-foreground break-words">
-                  {content.title}
-                </h2>
-                {content.originalTitle && (
+                <div className="flex items-start gap-2">
+                  <h2 className="font-heading text-xl sm:text-2xl font-bold text-foreground break-words flex-1 min-w-0">
+                    {resolveTitle(content)}
+                  </h2>
+                  {hasAlternateTitle(content) && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={toggleTitleLang}
+                            aria-label={titleLang === "original" ? "Mostrar em português" : "Mostrar título original"}
+                            className="mt-1 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent/10 hover:text-foreground"
+                          >
+                            <Languages className="h-4 w-4" />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs">
+                          {titleLang === "original" ? "Mostrar em português" : "Mostrar título original"}
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
+                {hasAlternateTitle(content) && (
                   <p className="text-sm text-muted-foreground italic">
-                    {content.originalTitle}
+                    {titleLang === "original" ? content.title : content.originalTitle}
                   </p>
                 )}
 
