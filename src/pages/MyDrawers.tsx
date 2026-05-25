@@ -104,7 +104,7 @@ export default function MyDrawers() {
             id: content.id,
             type: 'movie',
             title: details.title,
-            originalTitle: details.title,
+            originalTitle: (details as unknown as { original_title?: string }).original_title || details.title,
             releaseDate: details.release_date,
             synopsis: details.overview,
             posterUrl: getTMDBImageUrl(details.poster_path),
