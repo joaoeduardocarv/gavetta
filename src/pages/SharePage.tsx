@@ -103,6 +103,7 @@ const SECTION_LABELS: Record<TMDBOfferType, string> = {
 export default function SharePage() {
   const { type, tmdbId } = useParams<{ type: ShareType; tmdbId: string }>();
   const { user } = useAuth();
+  const { lang: titleLang, toggle: toggleTitleLang, resolveTitle } = useTitleLanguage();
   const [data, setData] = useState<LoadedData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
