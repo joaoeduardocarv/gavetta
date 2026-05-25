@@ -1,40 +1,37 @@
-## Diagnóstico
+## Toggle de idioma do título
 
-A parte visual **já está pronta**: o mini-card já mostra os ícones de aluguel/compra com badge `$` no canto, e o detalhe já agrupa por "Incluso na assinatura / Alugar / Comprar / Grátis". O que falta é a **notificação automática** quando um filme das suas gavetas "Quero ver" ou "Vendo" chega ao VOD (aluguel/compra) pela primeira vez.
+### Como vai funcionar
 
-Hoje já existe a notificação `streaming_change` (para assinatura), mas ela compara só `flatrate` — ignora `rent` e `buy`.
+- Um pequeno botão ícone (ex.: `Languages` do lucide, ou texto "Aa") fica ao lado do título no `ContentDetailDialog` e na `SharePage`.
+- Clicar nele alterna **globalmente** entre exibir o título em pt-BR (padrão atual) ou o `originalTitle` que o TMDB já devolve.
+- A escolha é salva em `localStorage` (`gavetta:titleLang` = `"pt"` | `"original"`) e propagada via um pequeno hook/contexto, então todos os `ContentCard` da busca, gavetas, trending, perfil público e detalhes refletem a mesma preferência sem nova requisição.
+- Quando não houver `originalTitle` (ou ele for igual ao traduzido), o componente cai silenciosamente para o título disponível — o toggle some nesse caso para não confundir.
 
-A migration que adiciona a coluna `vod_arrival` em `notification_preferences` (default `true`) já foi aplicada.
+### Onde aparece
 
-## Mudanças
+- `ContentDetailDialog` (modal de detalhes): toggle ao lado do título, com tooltip "Mostrar título original / Mostrar em português".
+- `SharePage` (`/share/:type/:tmdbId`): mesmo toggle, mesma lógica.
+- `ContentCard` (busca, gavetas, trending, recomendações, perfil público): apenas reage à preferência global; sem botão próprio para evitar poluição visual.
 
-### 1. Edge function `check-content-updates`
-- Adicionar helper `vodProvidersAppeared(oldProviders, newProviders)` que compara `rent ∪ buy` antigos vs novos e retorna `true` apenas quando passou de **zero para um ou mais provedores**.
-- Aplicar somente quando `production_type === 'movie'` (filme).
-- Disparar notificação tipo `vod_arrival` com título `💵 {título} já pode ser alugado` e mensagem listando os provedores que apareceram.
-- Respeitar `userWants(userId, 'vod_arrival')` na nova chave `vod_arrival` do mapa de preferências.
-- Reaproveita o dedup de 24h já existente.
+### Escopo intencionalmente limitado
 
-### 2. Front-end — UI da notificação
-- `src/hooks/useNotifications.tsx`: adicionar `"vod_arrival"` na união de tipos.
-- `src/hooks/useContentNotifications.tsx`: incluir `"vod_arrival"` em `CONTENT_NOTIFICATION_TYPES` para que o sino pisque no mini-card também por VOD.
-- `src/components/NotificationsPopover.tsx`: adicionar case `vod_arrival` em `getNotificationIcon` usando `DollarSign` em tom accent.
+- Sinopse, gêneros e elenco continuam em pt-BR (não muda esse texto).
+- Não toca em dados salvos no banco — `production_data.title` permanece como está; a troca é só de apresentação.
 
-### 3. Preferências de notificação
-- `src/components/NotificationSettingsDialog.tsx`:
-  - Adicionar `vod_arrival: boolean` no tipo `Preferences` e no `defaultPrefs`.
-  - Incluir no `select` da query e no `upsert`.
-  - Novo item de toggle com ícone `DollarSign`, label **"Disponível para alugar"** e descrição **"Quando um filme das suas gavetas chega para aluguel ou compra digital"**.
+### Detalhes técnicos
 
-## Comportamento final
+- Novo hook `useTitleLanguage()` em `src/hooks/useTitleLanguage.tsx`:
+  - Lê/escreve `localStorage` e expõe `{ lang, toggle, resolveTitle(content) }`.
+  - Usa um `Store` simples (event emitter ou `useSyncExternalStore`) para que todos os componentes re-renderizem ao alternar, sem precisar de Provider envolvendo a app.
+- `resolveTitle(content)` retorna `content.originalTitle` quando `lang === "original"` e o original existe e é diferente do título atual; caso contrário retorna `content.title`.
+- Componentes afetados (apenas substituem a leitura direta de `content.title` por `resolveTitle(content)`):
+  - `src/components/ContentCard.tsx`
+  - `src/components/ContentDetailDialog.tsx` (título + adiciona o botão)
+  - `src/pages/SharePage.tsx` (título + helmet/SEO + botão)
+- Garantir que `originalTitle` já vem do normalizador (`src/lib/contentNormalizer.ts` linha ~200 já preenche). Para `getMovieDetails`/`getTVDetails` na SharePage, o TMDB retorna `original_title`/`original_name` — vou passar pelo normalizador antes de exibir.
+- Sem mudanças de schema, sem migração, sem nova chamada ao TMDB.
 
-- Funciona apenas para **filmes** em `want_to_watch` ou `watching` (já é o filtro padrão da função).
-- Notifica **apenas a estreia em VOD** (primeira vez que aparece em `rent` ou `buy`). Se já havia VOD e só mudou o provedor, não notifica — evita ruído.
-- Quem desligar o toggle nas preferências para de receber.
-- Roda no mesmo cron diário (`check-content-updates`) que já existe.
+### Fora do escopo
 
-## Fora de escopo
-
-- Notificação de saída do VOD.
-- Notificação de mudança de preço.
-- Aplicar a séries (raro elas terem janela de VOD relevante).
+- Tradução de sinopse/gêneros (poderia ser feita depois com uma segunda chamada `language=en-US`, mas hoje não faz parte).
+- Preferência sincronizada com perfil no Supabase (fica só local por enquanto — simples e instantâneo).
