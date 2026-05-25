@@ -190,7 +190,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
 
   // Helper function to enrich content with full TMDB data
   const enrichContent = async (content: Content): Promise<Content> => {
-    const needsEnrichment = !content.genres?.length || !content.director || !content.availableOn?.length;
+    const needsEnrichment = !content.genres?.length || !content.director || !content.availableOn?.length || !content.originalTitle;
     if (!needsEnrichment) return content;
 
     const parsedId = extractTmdbInfoFromId(content.id);
