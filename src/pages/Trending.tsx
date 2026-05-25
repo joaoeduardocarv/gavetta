@@ -277,7 +277,7 @@ export default function Trending() {
       id: `movie-${movie.id}`,
       type: 'movie',
       title: movie.title,
-      originalTitle: movie.title,
+      originalTitle: movie.original_title || movie.title,
       releaseDate: movie.release_date || '',
       synopsis: movie.overview,
       posterUrl: getTMDBImageUrl(movie.poster_path, 'w500'),
