@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Bell, Check, UserPlus, ThumbsUp, Film, Trash2, Users, CheckCircle, X, Tv, Calendar, RefreshCw, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +53,7 @@ export function NotificationsPopover() {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [contentDialogOpen, setContentDialogOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleAcceptDrawerInvite = async (notification: Notification) => {
     if (!notification.related_content_id) return;
@@ -109,6 +111,12 @@ export function NotificationsPopover() {
   const handleNotificationClick = (notification: Notification) => {
     if (notification.type === "recommendation") {
       handleRecommendationClick(notification);
+      return;
+    }
+    if (notification.type === "friend_request" || notification.type === "friend_accepted") {
+      if (!notification.is_read) markAsRead.mutate(notification.id);
+      setPopoverOpen(false);
+      navigate("/friends");
       return;
     }
     if (!notification.is_read) {
