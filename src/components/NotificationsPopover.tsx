@@ -53,6 +53,7 @@ export function NotificationsPopover() {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [contentDialogOpen, setContentDialogOpen] = useState(false);
+  const navigate = useNavigate();
 
   const handleAcceptDrawerInvite = async (notification: Notification) => {
     if (!notification.related_content_id) return;
