@@ -111,6 +111,12 @@ export function NotificationsPopover() {
       handleRecommendationClick(notification);
       return;
     }
+    if (notification.type === "friend_request" || notification.type === "friend_accepted") {
+      if (!notification.is_read) markAsRead.mutate(notification.id);
+      setPopoverOpen(false);
+      navigate("/friends");
+      return;
+    }
     if (!notification.is_read) {
       markAsRead.mutate(notification.id);
     }
