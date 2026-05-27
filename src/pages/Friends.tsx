@@ -20,6 +20,7 @@ export default function Friends() {
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
+  const [addFriendInitialQuery, setAddFriendInitialQuery] = useState<string | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState("");
   const { friends, friendsLoading, removeFriend, sentRequests, cancelSentRequest } = useFriendships();
 
