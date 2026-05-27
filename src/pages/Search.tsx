@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Search as SearchIcon, Film, Tv, Loader2, X, User } from "lucide-react";
 import { ContentCard } from "@/components/ContentCard";
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
+import { DestinyDrawerCard } from "@/components/DestinyDrawerCard";
+import { DestinyDrawerDialog } from "@/components/DestinyDrawerDialog";
 import { Content } from "@/lib/mockData";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { 
