@@ -235,7 +235,11 @@ export default function Friends() {
 
       <AddFriendDialog
         open={isAddFriendOpen}
-        onOpenChange={setIsAddFriendOpen}
+        onOpenChange={(open) => {
+          setIsAddFriendOpen(open);
+          if (!open) setAddFriendInitialQuery(undefined);
+        }}
+        initialQuery={addFriendInitialQuery}
       />
     </div>
   );
