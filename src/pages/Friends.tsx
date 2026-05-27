@@ -179,9 +179,22 @@ export default function Friends() {
                 </CardContent>
               </Card>
             ) : filteredFriends.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                Nenhum amigo encontrado com "{searchQuery}"
-              </p>
+              <div className="flex flex-col items-center text-center py-8 gap-3">
+                <p className="text-sm text-muted-foreground">
+                  Nenhum amigo encontrado com "{searchQuery}"
+                </p>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => {
+                    setAddFriendInitialQuery(searchQuery);
+                    setIsAddFriendOpen(true);
+                  }}
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Buscar "{searchQuery}" em todos os usuários
+                </Button>
+              </div>
             ) : (
               filteredFriends.map((friend) => (
                 <FriendCard
