@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Search as SearchIcon, Film, Tv, Loader2, X, User } from "lucide-react";
 import { ContentCard } from "@/components/ContentCard";
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
+import { DestinyDrawerCard } from "@/components/DestinyDrawerCard";
+import { DestinyDrawerDialog } from "@/components/DestinyDrawerDialog";
 import { Content } from "@/lib/mockData";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { 
@@ -108,6 +110,7 @@ export default function Search() {
   const [isLoadingProviders, setIsLoadingProviders] = useState(false);
   const [activeFilter, setActiveFilter] = useState<ActiveFilter | null>(null);
   const [showGenres, setShowGenres] = useState(false);
+  const [destinyOpen, setDestinyOpen] = useState(false);
 
   // Person search state
   const [personSuggestions, setPersonSuggestions] = useState<PersonResult[]>([]);
@@ -384,6 +387,9 @@ export default function Search() {
           Buscar
         </h1>
 
+        {/* Gaveta do Destino */}
+        <DestinyDrawerCard onClick={() => setDestinyOpen(true)} />
+
         {/* Campo de Busca */}
         <div className="relative mb-6">
           <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -560,6 +566,8 @@ export default function Search() {
           onContentChange={handleContentChange}
         />
       )}
+
+      <DestinyDrawerDialog open={destinyOpen} onOpenChange={setDestinyOpen} />
     </div>
   );
 }
