@@ -391,13 +391,15 @@ serve(async (req) => {
       
       case 'discoverMovies': {
         const genreId = url.searchParams.get('genreId');
+        const genreIds = url.searchParams.get('genreIds');
         const page = url.searchParams.get('page') || '1';
         const params = new URLSearchParams({
           language: 'pt-BR',
           sort_by: 'popularity.desc',
           page
         });
-        if (genreId) params.append('with_genres', genreId);
+        if (genreIds) params.append('with_genres', genreIds);
+        else if (genreId) params.append('with_genres', genreId);
         
         const response = await fetchTMDB(`/discover/movie?${params}`);
         const result = await response.json();
@@ -407,13 +409,15 @@ serve(async (req) => {
       
       case 'discoverTVShows': {
         const genreId = url.searchParams.get('genreId');
+        const genreIds = url.searchParams.get('genreIds');
         const page = url.searchParams.get('page') || '1';
         const params = new URLSearchParams({
           language: 'pt-BR',
           sort_by: 'popularity.desc',
           page
         });
-        if (genreId) params.append('with_genres', genreId);
+        if (genreIds) params.append('with_genres', genreIds);
+        else if (genreId) params.append('with_genres', genreId);
         
         const response = await fetchTMDB(`/discover/tv?${params}`);
         const result = await response.json();
