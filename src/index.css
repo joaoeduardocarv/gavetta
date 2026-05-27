@@ -104,6 +104,8 @@ All colors MUST be HSL.
   .animate-gold-shimmer { animation: gold-shimmer 1.6s ease-in-out infinite; }
   .animate-gold-pulse-glow { animation: gold-pulse-glow 2.4s ease-in-out infinite; }
 }
+
+@layer base {
   * {
     @apply border-border;
   }
