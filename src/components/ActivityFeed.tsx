@@ -120,7 +120,11 @@ function ActivityCard({
               <span className="font-semibold text-foreground">
                 {activity.username || "Usuário"}
               </span>{" "}
-              <span className="text-muted-foreground">assistiu</span>
+              <span className="text-muted-foreground">
+                {activity.drawer_id === "watched"
+                  ? "assistiu"
+                  : `adicionou em ${activity.drawer_label}`}
+              </span>
             </p>
             <p className="font-medium text-foreground text-sm mt-0.5 truncate">
               {title}

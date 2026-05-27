@@ -23,7 +23,16 @@ export interface FriendActivity {
   rating: number | null;
   comment: string | null;
   created_at: string;
+  drawer_id: string;
+  drawer_label: string;
 }
+
+// Built-in drawers
+const DEFAULT_DRAWER_LABELS: Record<string, string> = {
+  watched: "assistidos",
+  "want-to-watch": "quero assistir",
+  favorites: "favoritos",
+};
 
 export function useFriendActivities() {
   const { user } = useAuth();
@@ -36,20 +45,18 @@ export function useFriendActivities() {
 
       const friendIds = friends.map((f) => f.id);
 
-      // Get friends' watched assignments
+      // Fetch ALL drawer assignments from friends (any drawer)
       const { data: assignments, error } = await supabase
         .from("user_drawer_assignments")
         .select("*")
-        .eq("drawer_id", "watched")
         .in("user_id", friendIds)
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(80);
 
       if (error) throw error;
-
       if (!assignments || assignments.length === 0) return [];
 
-      // Get profiles for all users in assignments
+      // Fetch profiles
       const userIds = [...new Set(assignments.map((a) => a.user_id))];
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
@@ -58,9 +65,31 @@ export function useFriendActivities() {
 
       if (profilesError) throw profilesError;
 
-      // Combine assignments with profile data
+      // Fetch custom drawer names (uuids only)
+      const customDrawerIds = [
+        ...new Set(
+          assignments
+            .map((a) => a.drawer_id)
+            .filter((id) => id && !DEFAULT_DRAWER_LABELS[id]) as string[]
+        ),
+      ];
+
+      let customDrawers: { id: string; name: string }[] = [];
+      if (customDrawerIds.length > 0) {
+        const { data } = await supabase
+          .from("user_custom_drawers")
+          .select("id, name")
+          .in("id", customDrawerIds);
+        customDrawers = data || [];
+      }
+
       return assignments.map((assignment) => {
         const profile = profiles?.find((p) => p.id === assignment.user_id);
+        const custom = customDrawers.find((d) => d.id === assignment.drawer_id);
+        const label =
+          DEFAULT_DRAWER_LABELS[assignment.drawer_id] ||
+          custom?.name?.toLowerCase() ||
+          "uma gaveta";
         return {
           id: assignment.id,
           user_id: assignment.user_id,
@@ -72,6 +101,8 @@ export function useFriendActivities() {
           rating: assignment.rating,
           comment: assignment.comment,
           created_at: assignment.created_at,
+          drawer_id: assignment.drawer_id,
+          drawer_label: label,
         } as FriendActivity;
       });
     },
