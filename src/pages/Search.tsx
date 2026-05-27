@@ -566,6 +566,8 @@ export default function Search() {
           onContentChange={handleContentChange}
         />
       )}
+
+      <DestinyDrawerDialog open={destinyOpen} onOpenChange={setDestinyOpen} />
     </div>
   );
 }
