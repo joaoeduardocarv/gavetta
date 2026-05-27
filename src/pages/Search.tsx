@@ -110,6 +110,7 @@ export default function Search() {
   const [isLoadingProviders, setIsLoadingProviders] = useState(false);
   const [activeFilter, setActiveFilter] = useState<ActiveFilter | null>(null);
   const [showGenres, setShowGenres] = useState(false);
+  const [destinyOpen, setDestinyOpen] = useState(false);
 
   // Person search state
   const [personSuggestions, setPersonSuggestions] = useState<PersonResult[]>([]);
