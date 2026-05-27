@@ -1,37 +1,69 @@
-## Toggle de idioma do título
+# Gaveta do Destino
 
-### Como vai funcionar
+Funcionalidade exclusiva na tela `/search` que sugere um único filme/série personalizado, usando apenas os dados de avaliações do próprio usuário + TMDB.
 
-- Um pequeno botão ícone (ex.: `Languages` do lucide, ou texto "Aa") fica ao lado do título no `ContentDetailDialog` e na `SharePage`.
-- Clicar nele alterna **globalmente** entre exibir o título em pt-BR (padrão atual) ou o `originalTitle` que o TMDB já devolve.
-- A escolha é salva em `localStorage` (`gavetta:titleLang` = `"pt"` | `"original"`) e propagada via um pequeno hook/contexto, então todos os `ContentCard` da busca, gavetas, trending, perfil público e detalhes refletem a mesma preferência sem nova requisição.
-- Quando não houver `originalTitle` (ou ele for igual ao traduzido), o componente cai silenciosamente para o título disponível — o toggle some nesse caso para não confundir.
+## 1. UI — Card de entrada (topo do Search)
 
-### Onde aparece
+Adicionar acima do campo de busca um card destacado:
+- Ícone de gaveta com brilho dourado (Sparkles + GavetaIcon, gradiente dourado coerente com o branding).
+- Título "Gaveta do Destino" + subtítulo curto ("Uma escolha feita pra você").
+- Tap abre um `Dialog` dedicado (`DestinyDrawerDialog`).
 
-- `ContentDetailDialog` (modal de detalhes): toggle ao lado do título, com tooltip "Mostrar título original / Mostrar em português".
-- `SharePage` (`/share/:type/:tmdbId`): mesmo toggle, mesma lógica.
-- `ContentCard` (busca, gavetas, trending, recomendações, perfil público): apenas reage à preferência global; sem botão próprio para evitar poluição visual.
+## 2. Algoritmo (client-side, em `src/lib/destinyDrawer.ts`)
 
-### Escopo intencionalmente limitado
+Entrada: avaliações do usuário em `user_drawer_assignments` (campo `rating`) — mesma fonte do RatingDialog.
 
-- Sinopse, gêneros e elenco continuam em pt-BR (não muda esse texto).
-- Não toca em dados salvos no banco — `production_data.title` permanece como está; a troca é só de apresentação.
+Passos:
+1. Buscar todas as assignments do usuário onde `rating >= 7`. Se `< 3` avaliações totais com rating, mostrar estado vazio ("Avalie pelo menos 3 títulos…").
+2. Para cada item, ler `production_data.genres` (já normalizado por `contentNormalizer`) e contar frequência. Empates desempatam pela média de rating do usuário no gênero.
+3. Pegar top 2–3 gêneros. Mapear nomes → IDs via `MOVIE_GENRES`/`TV_GENRES` de `src/lib/tmdb.ts`.
+4. Chamar `discoverMovies` + `discoverTVShows` com esses gêneros (ver §3) — sort por popularity, língua pt-BR.
+5. Filtrar resultados:
+   - Remover qualquer `tmdbId` presente em qualquer drawer do usuário (`assistidos`, `assistindo`, `watchlist`, customizadas).
+   - Remover itens já sorteados na sessão atual (lista mantida em estado do Dialog).
+   - Remover itens sem poster.
+6. Ordenar pelo score: `vote_average * 0.6 + popularity_normalizada * 0.4`. Pegar top 10 e sortear 1.
 
-### Detalhes técnicos
+## 3. Suporte a múltiplos gêneros na edge function TMDB
 
-- Novo hook `useTitleLanguage()` em `src/hooks/useTitleLanguage.tsx`:
-  - Lê/escreve `localStorage` e expõe `{ lang, toggle, resolveTitle(content) }`.
-  - Usa um `Store` simples (event emitter ou `useSyncExternalStore`) para que todos os componentes re-renderizem ao alternar, sem precisar de Provider envolvendo a app.
-- `resolveTitle(content)` retorna `content.originalTitle` quando `lang === "original"` e o original existe e é diferente do título atual; caso contrário retorna `content.title`.
-- Componentes afetados (apenas substituem a leitura direta de `content.title` por `resolveTitle(content)`):
-  - `src/components/ContentCard.tsx`
-  - `src/components/ContentDetailDialog.tsx` (título + adiciona o botão)
-  - `src/pages/SharePage.tsx` (título + helmet/SEO + botão)
-- Garantir que `originalTitle` já vem do normalizador (`src/lib/contentNormalizer.ts` linha ~200 já preenche). Para `getMovieDetails`/`getTVDetails` na SharePage, o TMDB retorna `original_title`/`original_name` — vou passar pelo normalizador antes de exibir.
-- Sem mudanças de schema, sem migração, sem nova chamada ao TMDB.
+`supabase/functions/tmdb/index.ts` hoje aceita um único `genreId` em `discoverMovies`/`discoverTVShows`. Estender para aceitar `genreIds` (CSV) e repassar como `with_genres=28,12` (OR no TMDB). Manter compatibilidade com `genreId`.
 
-### Fora do escopo
+Atualizar `discoverMovies`/`discoverTVShows` em `src/lib/tmdb.ts` para aceitar `genreIds?: number[]`.
 
-- Tradução de sinopse/gêneros (poderia ser feita depois com uma segunda chamada `language=en-US`, mas hoje não faz parte).
-- Preferência sincronizada com perfil no Supabase (fica só local por enquanto — simples e instantâneo).
+## 4. Dialog (`src/components/DestinyDrawerDialog.tsx`)
+
+Estados:
+- `loading` → animação temática (gaveta abrindo + partículas douradas via Tailwind `animate-*` + custom keyframes em `tailwind.config.ts`).
+- `empty` (< 3 avaliações) → mensagem orientativa + CTA "Ir para Buscar".
+- `result` → reusar visual do `ContentCard` (poster, nota TMDB, gêneros, plataformas BR via `getMovieWatchProviders`/`getTVWatchProviders`).
+- Abaixo do card: frase dinâmica "Você curte muito **{Gênero1}** e **{Gênero2}** — esse foi escolhido pra você."
+- Botões: **Revelar outro** (refaz exclui o atual) e **Adicionar à watchlist** (usa fluxo padrão de adicionar a gaveta `watchlist`).
+- Tap no card abre `ContentDetailDialog` existente (sem duplicar lógica).
+
+## 5. Identidade visual dourada
+
+Adicionar tokens em `src/index.css` (HSL):
+- `--destiny-gold` e `--destiny-gold-glow`
+- `--gradient-destiny: linear-gradient(135deg, hsl(var(--destiny-gold)), hsl(var(--destiny-gold-glow)))`
+- `--shadow-destiny`
+
+Adicionar keyframes `drawer-open` e `gold-particles` em `tailwind.config.ts` para a animação de loading. Sem libs novas.
+
+## 6. Arquivos
+
+Criar:
+- `src/components/DestinyDrawerCard.tsx` (entrada no topo do Search)
+- `src/components/DestinyDrawerDialog.tsx` (dialog principal)
+- `src/lib/destinyDrawer.ts` (algoritmo: fetch ratings, ranking de gêneros, seleção)
+
+Editar:
+- `src/pages/Search.tsx` — montar `<DestinyDrawerCard />` no topo do `<main>`.
+- `src/lib/tmdb.ts` — `discoverMovies/discoverTVShows` aceitando `genreIds`.
+- `supabase/functions/tmdb/index.ts` — suporte a `genreIds` CSV.
+- `src/index.css` + `tailwind.config.ts` — tokens dourados + keyframes.
+
+## 7. Fora do escopo
+
+- Sem nova tabela/migration (lê de `user_drawer_assignments` existente).
+- Sem IA externa, sem novas dependências.
+- Sem persistência da última recomendação (estado fica no Dialog).
