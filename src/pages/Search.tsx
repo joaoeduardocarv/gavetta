@@ -387,6 +387,9 @@ export default function Search() {
           Buscar
         </h1>
 
+        {/* Gaveta do Destino */}
+        <DestinyDrawerCard onClick={() => setDestinyOpen(true)} />
+
         {/* Campo de Busca */}
         <div className="relative mb-6">
           <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
