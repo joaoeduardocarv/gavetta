@@ -359,21 +359,36 @@ export async function searchPerson(name: string): Promise<{ id: number; name: st
 
 // =============== ACTION 12 — DISCOVER (FILMES POR GÊNERO/FILTROS) ===============
 
-export async function discoverMovies(options: { genreId?: number; genreIds?: number[]; page?: number } = {}): Promise<TMDBMovie[]> {
+export async function discoverMovies(options: { genreId?: number; genreIds?: number[]; watchProviderIds?: number[]; page?: number } = {}): Promise<TMDBMovie[]> {
   const params: Record<string, string> = {};
   if (options.genreIds && options.genreIds.length > 0) params.genreIds = options.genreIds.join(',');
   else if (options.genreId) params.genreId = String(options.genreId);
+  if (options.watchProviderIds && options.watchProviderIds.length > 0) params.watchProviderIds = options.watchProviderIds.join('|');
   if (options.page) params.page = String(options.page);
   return callTMDBFunction<TMDBMovie[]>('discoverMovies', params);
 }
 
-export async function discoverTVShows(options: { genreId?: number; genreIds?: number[]; page?: number } = {}): Promise<TMDBTVShow[]> {
+export async function discoverTVShows(options: { genreId?: number; genreIds?: number[]; watchProviderIds?: number[]; page?: number } = {}): Promise<TMDBTVShow[]> {
   const params: Record<string, string> = {};
   if (options.genreIds && options.genreIds.length > 0) params.genreIds = options.genreIds.join(',');
   else if (options.genreId) params.genreId = String(options.genreId);
+  if (options.watchProviderIds && options.watchProviderIds.length > 0) params.watchProviderIds = options.watchProviderIds.join('|');
   if (options.page) params.page = String(options.page);
   return callTMDBFunction<TMDBTVShow[]>('discoverTVShows', params);
 }
+
+// =============== STREAMINGS BR COMUNS (TMDB provider IDs) ===============
+
+export const BR_STREAMING_PROVIDERS = [
+  { id: 8, name: 'Netflix' },
+  { id: 119, name: 'Prime Video' },
+  { id: 337, name: 'Disney+' },
+  { id: 1899, name: 'Max' },
+  { id: 350, name: 'Apple TV+' },
+  { id: 531, name: 'Paramount+' },
+  { id: 307, name: 'Globoplay' },
+  { id: 619, name: 'MUBI' },
+];
 
 // =============== ACTION 13 — TRENDING (EM ALTA) ===============
 

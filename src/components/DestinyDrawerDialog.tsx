@@ -1,15 +1,18 @@
 import { useState, useEffect, useCallback } from "react";
-import { Sparkles, Loader2, RefreshCw, Plus, Star, Film, Tv } from "lucide-react";
+import { Sparkles, Loader2, RefreshCw, Plus, Star, Film, Tv, Wand2, SlidersHorizontal, X } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GavetaIcon } from "@/components/GavetaIcon";
+import { DrawerPickerPopover } from "@/components/DrawerPickerPopover";
 import { useDrawers } from "@/contexts/DrawerContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
-import { pickDestinyContent, buildDestinyMessage, DestinyPick } from "@/lib/destinyDrawer";
+import { pickDestinyContent, buildDestinyMessage, DestinyPick, DestinyFilters } from "@/lib/destinyDrawer";
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
+import { MOVIE_GENRES, TV_GENRES, BR_STREAMING_PROVIDERS } from "@/lib/tmdb";
 import type { Content } from "@/lib/mockData";
 
 interface DestinyDrawerDialogProps {
@@ -18,10 +21,24 @@ interface DestinyDrawerDialogProps {
 }
 
 const MIN_RATINGS = 3;
+const MIN_LOADING_MS = 2200; // delay artificial para parecer "pensando"
+
+// Lista única de gêneros (movies + tv, sem duplicatas por nome)
+const ALL_GENRES = (() => {
+  const seen = new Set<string>();
+  const out: { name: string }[] = [];
+  [...MOVIE_GENRES, ...TV_GENRES].forEach(g => {
+    if (!seen.has(g.name)) {
+      seen.add(g.name);
+      out.push({ name: g.name });
+    }
+  });
+  return out.sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'));
+})();
 
 export function DestinyDrawerDialog({ open, onOpenChange }: DestinyDrawerDialogProps) {
   const { user } = useAuth();
-  const { assignments, setDefaultDrawer, getContentDrawers } = useDrawers();
+  const { assignments } = useDrawers();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [pick, setPick] = useState<DestinyPick | null>(null);
@@ -30,18 +47,37 @@ export function DestinyDrawerDialog({ open, onOpenChange }: DestinyDrawerDialogP
   const [detailContent, setDetailContent] = useState<Content | null>(null);
   const [empty, setEmpty] = useState(false);
   const [noMore, setNoMore] = useState(false);
-  const [addingToWatchlist, setAddingToWatchlist] = useState(false);
+
+  // Filtros
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterType, setFilterType] = useState<'all' | 'movie' | 'series'>('all');
+  const [filterGenre, setFilterGenre] = useState<string>('all');
+  const [filterProvider, setFilterProvider] = useState<string>('all');
 
   const ratedCount = assignments.filter(a => a.rating != null && a.rating >= 7).length;
 
   const reveal = useCallback(async (excludeCurrent: boolean) => {
     setLoading(true);
     setNoMore(false);
+    const startedAt = Date.now();
     try {
       const nextShown = new Set(shownIds);
       if (excludeCurrent && pick) nextShown.add(pick.content.id);
 
-      const result = await pickDestinyContent(assignments, nextShown);
+      const filters: DestinyFilters = {
+        type: filterType,
+        genreName: filterGenre !== 'all' ? filterGenre : null,
+        watchProviderId: filterProvider !== 'all' ? parseInt(filterProvider) : null,
+      };
+
+      const result = await pickDestinyContent(assignments, nextShown, filters);
+
+      // Garante delay mínimo para sensação de "buscando"
+      const elapsed = Date.now() - startedAt;
+      if (elapsed < MIN_LOADING_MS) {
+        await new Promise(r => setTimeout(r, MIN_LOADING_MS - elapsed));
+      }
+
       if (!result) {
         setNoMore(true);
         setPick(null);
@@ -50,22 +86,25 @@ export function DestinyDrawerDialog({ open, onOpenChange }: DestinyDrawerDialogP
         setShownIds(new Set([...nextShown, result.content.id]));
       }
     } catch (e) {
-      console.error('[DestinyDrawer] erro:', e);
+      console.error('[GavettaMagica] erro:', e);
       toast({ title: 'Erro ao revelar', description: 'Tente novamente em instantes.', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
-  }, [assignments, pick, shownIds]);
+  }, [assignments, pick, shownIds, filterType, filterGenre, filterProvider]);
 
   // Inicializa quando o dialog abre
   useEffect(() => {
     if (!open) return;
-    // Reset state on open
     setPick(null);
     setShownIds(new Set());
     setNoMore(false);
     setDetailOpen(false);
     setDetailContent(null);
+    setShowFilters(false);
+    setFilterType('all');
+    setFilterGenre('all');
+    setFilterProvider('all');
 
     if (!user) {
       setEmpty(true);
@@ -80,26 +119,19 @@ export function DestinyDrawerDialog({ open, onOpenChange }: DestinyDrawerDialogP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  const handleAddToWatchlist = async () => {
-    if (!pick) return;
-    setAddingToWatchlist(true);
-    try {
-      await setDefaultDrawer(pick.content, 'to-watch');
-      toast({ title: 'Adicionado à watchlist', description: pick.content.title });
-    } catch (e) {
-      toast({ title: 'Erro ao adicionar', variant: 'destructive' });
-    } finally {
-      setAddingToWatchlist(false);
-    }
-  };
+  const hasActiveFilters = filterType !== 'all' || filterGenre !== 'all' || filterProvider !== 'all';
 
-  const isInWatchlist = pick ? getContentDrawers(pick.content.id).defaultDrawer === 'to-watch' : false;
+  const clearFilters = () => {
+    setFilterType('all');
+    setFilterGenre('all');
+    setFilterProvider('all');
+  };
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="z-[60] max-w-md p-0 overflow-hidden border-destiny-gold">
-          <DialogTitle className="sr-only">Gaveta do Destino</DialogTitle>
+        <DialogContent className="z-[60] max-w-md p-0 overflow-hidden border-destiny-gold max-h-[90vh] overflow-y-auto">
+          <DialogTitle className="sr-only">Gavetta Mágica</DialogTitle>
 
           {/* Header dourado */}
           <div className="bg-gradient-destiny p-5 text-center relative overflow-hidden">
@@ -111,20 +143,88 @@ export function DestinyDrawerDialog({ open, onOpenChange }: DestinyDrawerDialogP
             </div>
             <div className="relative">
               <div className="flex items-center justify-center gap-2 mb-1">
-                <GavetaIcon className="w-7 h-7 brightness-0 invert" />
-                <h2 className="font-heading font-bold text-xl text-white">Gaveta do Destino</h2>
+                <Wand2 className="w-6 h-6 text-white" />
+                <h2 className="font-heading font-bold text-xl text-white">Gavetta Mágica</h2>
               </div>
               <p className="text-xs text-white/85">Uma escolha feita especialmente pra você</p>
             </div>
           </div>
 
           <div className="p-5 min-h-[280px] flex flex-col">
+            {/* Filtros — visível quando não vazio/loading */}
+            {!empty && (
+              <div className="mb-4">
+                <button
+                  type="button"
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                  Filtros
+                  {hasActiveFilters && (
+                    <Badge variant="secondary" className="ml-1 h-4 px-1.5 text-[10px]">
+                      ativo
+                    </Badge>
+                  )}
+                </button>
+
+                {showFilters && (
+                  <div className="mt-3 grid grid-cols-1 gap-2 animate-fade-in">
+                    <Select value={filterType} onValueChange={(v) => setFilterType(v as 'all' | 'movie' | 'series')}>
+                      <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Tipo" /></SelectTrigger>
+                      <SelectContent className="z-[70]">
+                        <SelectItem value="all">Filmes e séries</SelectItem>
+                        <SelectItem value="movie">Apenas filmes</SelectItem>
+                        <SelectItem value="series">Apenas séries</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={filterProvider} onValueChange={setFilterProvider}>
+                      <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Disponível em" /></SelectTrigger>
+                      <SelectContent className="z-[70]">
+                        <SelectItem value="all">Qualquer streaming</SelectItem>
+                        {BR_STREAMING_PROVIDERS.map(p => (
+                          <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={filterGenre} onValueChange={setFilterGenre}>
+                      <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Gênero" /></SelectTrigger>
+                      <SelectContent className="z-[70] max-h-72">
+                        <SelectItem value="all">Baseado no meu gosto</SelectItem>
+                        {ALL_GENRES.map(g => (
+                          <SelectItem key={g.name} value={g.name}>{g.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+
+                    <div className="flex gap-2 mt-1">
+                      {hasActiveFilters && (
+                        <Button variant="ghost" size="sm" className="flex-1 h-8 text-xs" onClick={clearFilters}>
+                          <X className="w-3 h-3 mr-1" /> Limpar
+                        </Button>
+                      )}
+                      <Button
+                        size="sm"
+                        className="flex-1 h-8 text-xs bg-gradient-destiny text-white border-0 hover:opacity-90"
+                        onClick={() => { setShownIds(new Set()); reveal(false); }}
+                        disabled={loading}
+                      >
+                        Aplicar
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Estado: vazio (poucas avaliações) */}
             {empty && (
               <div className="flex-1 flex flex-col items-center justify-center text-center py-8 gap-3">
                 <Sparkles className="w-10 h-10 text-destiny-gold animate-gold-shimmer" />
                 <p className="text-sm text-foreground font-medium px-4">
-                  Avalie pelo menos {MIN_RATINGS} títulos para a Gaveta do Destino te conhecer melhor.
+                  Avalie pelo menos {MIN_RATINGS} títulos para a Gavetta Mágica te conhecer melhor.
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Você tem {ratedCount} {ratedCount === 1 ? 'avaliação' : 'avaliações'} com nota 7+.
@@ -142,24 +242,32 @@ export function DestinyDrawerDialog({ open, onOpenChange }: DestinyDrawerDialogP
 
             {/* Estado: carregando */}
             {!empty && loading && (
-              <div className="flex-1 flex flex-col items-center justify-center text-center py-8 gap-4">
+              <div className="flex-1 flex flex-col items-center justify-center text-center py-10 gap-4">
                 <div className="relative">
                   <div className="w-20 h-20 rounded-2xl bg-gradient-destiny shadow-destiny animate-gold-pulse-glow flex items-center justify-center animate-drawer-open">
                     <GavetaIcon className="w-10 h-10 brightness-0 invert" />
                   </div>
                   <Sparkles className="absolute -top-2 -right-2 w-5 h-5 text-destiny-gold animate-gold-shimmer" />
                   <Sparkles className="absolute -bottom-2 -left-2 w-4 h-4 text-destiny-gold animate-gold-shimmer" style={{ animationDelay: '0.8s' }} />
+                  <Sparkles className="absolute top-1/2 -right-4 w-3 h-3 text-destiny-gold animate-gold-shimmer" style={{ animationDelay: '1.2s' }} />
                 </div>
-                <p className="text-sm text-muted-foreground">Abrindo sua gaveta...</p>
+                <div className="space-y-1">
+                  <p className="text-sm text-foreground font-medium">Consultando suas gavetas...</p>
+                  <p className="text-xs text-muted-foreground">Analisando o seu gosto</p>
+                </div>
               </div>
             )}
 
             {/* Estado: sem mais picks */}
             {!empty && !loading && noMore && (
               <div className="flex-1 flex flex-col items-center justify-center text-center py-8 gap-3">
-                <p className="text-sm text-foreground">Esgotamos as sugestões por agora.</p>
+                <p className="text-sm text-foreground">
+                  {hasActiveFilters
+                    ? 'Nenhum título encontrado com esses filtros.'
+                    : 'Esgotamos as sugestões por agora.'}
+                </p>
                 <Button variant="outline" size="sm" onClick={() => { setShownIds(new Set()); reveal(false); }}>
-                  Recomeçar
+                  Tentar de novo
                 </Button>
               </div>
             )}
@@ -237,19 +345,15 @@ export function DestinyDrawerDialog({ open, onOpenChange }: DestinyDrawerDialogP
                     <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
                     Revelar outro
                   </Button>
-                  <Button
-                    size="sm"
-                    className="flex-1 bg-gradient-destiny text-white border-0 hover:opacity-90 shadow-destiny"
-                    onClick={handleAddToWatchlist}
-                    disabled={addingToWatchlist || isInWatchlist}
-                  >
-                    {addingToWatchlist ? (
-                      <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-                    ) : (
+                  <DrawerPickerPopover content={pick.content}>
+                    <Button
+                      size="sm"
+                      className="flex-1 bg-gradient-destiny text-white border-0 hover:opacity-90 shadow-destiny"
+                    >
                       <Plus className="w-3.5 h-3.5 mr-1.5" />
-                    )}
-                    {isInWatchlist ? 'Na watchlist' : 'À watchlist'}
-                  </Button>
+                      Adicionar à gavetta
+                    </Button>
+                  </DrawerPickerPopover>
                 </div>
               </div>
             )}

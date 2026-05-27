@@ -387,11 +387,8 @@ export default function Search() {
           Buscar
         </h1>
 
-        {/* Gaveta do Destino */}
-        <DestinyDrawerCard onClick={() => setDestinyOpen(true)} />
-
         {/* Campo de Busca */}
-        <div className="relative mb-6">
+        <div className="relative mb-3">
           <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar filmes, séries, atores..."
@@ -405,6 +402,9 @@ export default function Search() {
             }}
           />
         </div>
+
+        {/* Gavetta Mágica */}
+        <DestinyDrawerCard onClick={() => setDestinyOpen(true)} />
 
         {/* Person suggestions — shown inline above results */}
         {!selectedPerson && personSuggestions.length > 0 && !isLoading && (

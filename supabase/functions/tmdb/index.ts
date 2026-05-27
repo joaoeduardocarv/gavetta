@@ -392,6 +392,7 @@ serve(async (req) => {
       case 'discoverMovies': {
         const genreId = url.searchParams.get('genreId');
         const genreIds = url.searchParams.get('genreIds');
+        const providerIds = url.searchParams.get('watchProviderIds');
         const page = url.searchParams.get('page') || '1';
         const params = new URLSearchParams({
           language: 'pt-BR',
@@ -400,6 +401,10 @@ serve(async (req) => {
         });
         if (genreIds) params.append('with_genres', genreIds);
         else if (genreId) params.append('with_genres', genreId);
+        if (providerIds) {
+          params.append('with_watch_providers', providerIds);
+          params.append('watch_region', 'BR');
+        }
         
         const response = await fetchTMDB(`/discover/movie?${params}`);
         const result = await response.json();
@@ -410,6 +415,7 @@ serve(async (req) => {
       case 'discoverTVShows': {
         const genreId = url.searchParams.get('genreId');
         const genreIds = url.searchParams.get('genreIds');
+        const providerIds = url.searchParams.get('watchProviderIds');
         const page = url.searchParams.get('page') || '1';
         const params = new URLSearchParams({
           language: 'pt-BR',
@@ -418,6 +424,10 @@ serve(async (req) => {
         });
         if (genreIds) params.append('with_genres', genreIds);
         else if (genreId) params.append('with_genres', genreId);
+        if (providerIds) {
+          params.append('with_watch_providers', providerIds);
+          params.append('watch_region', 'BR');
+        }
         
         const response = await fetchTMDB(`/discover/tv?${params}`);
         const result = await response.json();
