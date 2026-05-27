@@ -96,36 +96,65 @@ function tmdbTVToContent(t: TMDBTVShow): Content & { popularity: number; vote_av
   };
 }
 
+export interface DestinyFilters {
+  type?: 'movie' | 'series' | 'all';
+  genreName?: string | null;
+  watchProviderId?: number | null;
+}
+
 /**
  * Seleciona um único título personalizado.
  * @param assignments — todas as assignments do usuário (com ratings + drawers)
  * @param alreadyShown — ids já revelados na sessão (ex: "movie-123")
+ * @param filters — filtros opcionais (tipo, gênero, streaming). Quando filtros estão setados, complementam o ranking de gêneros do usuário.
  */
 export async function pickDestinyContent(
   assignments: ContentDrawerAssignment[],
   alreadyShown: Set<string> = new Set(),
+  filters: DestinyFilters = {},
 ): Promise<DestinyPick | null> {
   const ranked = rankUserGenres(assignments);
-  if (ranked.length === 0) return null;
+  const filterType = filters.type ?? 'all';
 
-  const topGenres = ranked.slice(0, TOP_GENRES_COUNT);
-  const topGenreNames = topGenres.map(g => g.name);
-
-  // Resolve gêneros para IDs TMDB
+  // Define gêneros de busca: filtro explícito tem prioridade, senão usa top do usuário
+  let topGenreNames: string[];
   const movieIds = new Set<number>();
   const tvIds = new Set<number>();
-  for (const g of topGenres) {
-    const { movieIds: mi, tvIds: ti } = genreNameToIds(g.name);
+
+  if (filters.genreName) {
+    topGenreNames = [filters.genreName];
+    const { movieIds: mi, tvIds: ti } = genreNameToIds(filters.genreName);
     mi.forEach(id => movieIds.add(id));
     ti.forEach(id => tvIds.add(id));
+  } else {
+    if (ranked.length === 0) return null;
+    const topGenres = ranked.slice(0, TOP_GENRES_COUNT);
+    topGenreNames = topGenres.map(g => g.name);
+    for (const g of topGenres) {
+      const { movieIds: mi, tvIds: ti } = genreNameToIds(g.name);
+      mi.forEach(id => movieIds.add(id));
+      ti.forEach(id => tvIds.add(id));
+    }
   }
 
-  // Busca discover em paralelo (página 1 e 2 para mais variedade)
+  const providerIds = filters.watchProviderId ? [filters.watchProviderId] : undefined;
+  const wantMovies = filterType === 'all' || filterType === 'movie';
+  const wantSeries = filterType === 'all' || filterType === 'series';
+
+  // Busca discover em paralelo (páginas 1 e 2)
   const [movies1, movies2, tvs1, tvs2] = await Promise.all([
-    movieIds.size > 0 ? discoverMovies({ genreIds: Array.from(movieIds), page: 1 }) : Promise.resolve([]),
-    movieIds.size > 0 ? discoverMovies({ genreIds: Array.from(movieIds), page: 2 }) : Promise.resolve([]),
-    tvIds.size > 0 ? discoverTVShows({ genreIds: Array.from(tvIds), page: 1 }) : Promise.resolve([]),
-    tvIds.size > 0 ? discoverTVShows({ genreIds: Array.from(tvIds), page: 2 }) : Promise.resolve([]),
+    wantMovies && movieIds.size > 0
+      ? discoverMovies({ genreIds: Array.from(movieIds), watchProviderIds: providerIds, page: 1 })
+      : Promise.resolve([] as TMDBMovie[]),
+    wantMovies && movieIds.size > 0
+      ? discoverMovies({ genreIds: Array.from(movieIds), watchProviderIds: providerIds, page: 2 })
+      : Promise.resolve([] as TMDBMovie[]),
+    wantSeries && tvIds.size > 0
+      ? discoverTVShows({ genreIds: Array.from(tvIds), watchProviderIds: providerIds, page: 1 })
+      : Promise.resolve([] as TMDBTVShow[]),
+    wantSeries && tvIds.size > 0
+      ? discoverTVShows({ genreIds: Array.from(tvIds), watchProviderIds: providerIds, page: 2 })
+      : Promise.resolve([] as TMDBTVShow[]),
   ]);
 
   const excluded = extractExcludedTmdbIds(assignments);
@@ -139,10 +168,9 @@ export async function pickDestinyContent(
 
   if (allCandidates.length === 0) return null;
 
-  // Score = vote_average * 0.6 + popularity normalizada * 0.4
   const maxPop = Math.max(...allCandidates.map(c => c.popularity), 1);
   const scored = allCandidates
-    .filter(c => c.vote_average >= 6) // qualidade mínima
+    .filter(c => c.vote_average >= 6)
     .map(c => ({
       ...c,
       _score: c.vote_average * 0.6 + (c.popularity / maxPop) * 10 * 0.4,
@@ -167,7 +195,6 @@ export async function pickDestinyContent(
     // segue sem providers
   }
 
-  // strip helper fields
   const { popularity: _p, vote_average: _v, _score, ...content } = chosen as Content & {
     popularity: number; vote_average: number; _score: number;
   };
