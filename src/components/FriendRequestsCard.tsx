@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, X, UserPlus, Loader2 } from "lucide-react";
+import { UserCheck, UserX, UserPlus, Loader2 } from "lucide-react";
 import { useFriendships, FriendProfile } from "@/hooks/useFriendships";
 import { resolveAvatarSrc } from "@/components/AvatarPickerDialog";
 
@@ -57,8 +57,10 @@ export function FriendRequestsCard() {
                 className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-100"
                 onClick={() => acceptRequest.mutate(request.friendship_id)}
                 disabled={acceptRequest.isPending}
+                title="Aceitar amizade"
+                aria-label="Aceitar amizade"
               >
-                <Check className="h-4 w-4" />
+                <UserCheck className="h-4 w-4" />
               </Button>
               <Button
                 size="icon"
@@ -66,8 +68,10 @@ export function FriendRequestsCard() {
                 className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                 onClick={() => rejectRequest.mutate(request.friendship_id)}
                 disabled={rejectRequest.isPending}
+                title="Recusar"
+                aria-label="Recusar amizade"
               >
-                <X className="h-4 w-4" />
+                <UserX className="h-4 w-4" />
               </Button>
             </div>
           </div>
