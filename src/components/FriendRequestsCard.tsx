@@ -1,7 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, X, UserPlus, Loader2 } from "lucide-react";
+import { UserCheck, UserX, UserPlus, Loader2 } from "lucide-react";
 import { useFriendships, FriendProfile } from "@/hooks/useFriendships";
 import { resolveAvatarSrc } from "@/components/AvatarPickerDialog";
 
