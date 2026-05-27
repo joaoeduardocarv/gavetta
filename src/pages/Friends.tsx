@@ -20,6 +20,7 @@ export default function Friends() {
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
+  const [addFriendInitialQuery, setAddFriendInitialQuery] = useState<string | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState("");
   const { friends, friendsLoading, removeFriend, sentRequests, cancelSentRequest } = useFriendships();
 
@@ -178,9 +179,22 @@ export default function Friends() {
                 </CardContent>
               </Card>
             ) : filteredFriends.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">
-                Nenhum amigo encontrado com "{searchQuery}"
-              </p>
+              <div className="flex flex-col items-center text-center py-8 gap-3">
+                <p className="text-sm text-muted-foreground">
+                  Nenhum amigo encontrado com "{searchQuery}"
+                </p>
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => {
+                    setAddFriendInitialQuery(searchQuery);
+                    setIsAddFriendOpen(true);
+                  }}
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Buscar "{searchQuery}" em todos os usuários
+                </Button>
+              </div>
             ) : (
               filteredFriends.map((friend) => (
                 <FriendCard
@@ -221,7 +235,11 @@ export default function Friends() {
 
       <AddFriendDialog
         open={isAddFriendOpen}
-        onOpenChange={setIsAddFriendOpen}
+        onOpenChange={(open) => {
+          setIsAddFriendOpen(open);
+          if (!open) setAddFriendInitialQuery(undefined);
+        }}
+        initialQuery={addFriendInitialQuery}
       />
     </div>
   );

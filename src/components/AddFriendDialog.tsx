@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,9 +20,10 @@ interface UserResult {
 interface AddFriendDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialQuery?: string;
 }
 
-export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
+export function AddFriendDialog({ open, onOpenChange, initialQuery }: AddFriendDialogProps) {
   const { user } = useAuth();
   const { friends, sendRequest } = useFriendships();
   const { toast } = useToast();
@@ -30,6 +31,30 @@ export function AddFriendDialog({ open, onOpenChange }: AddFriendDialogProps) {
   const [results, setResults] = useState<UserResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [sentRequests, setSentRequests] = useState<Set<string>>(new Set());
+
+  // Auto-search when opened with an initial query
+  useEffect(() => {
+    if (open && initialQuery && initialQuery.trim().length >= 2) {
+      const q = initialQuery.replace(/^@/, "").trim();
+      setSearchQuery(q);
+      // run search after state set
+      (async () => {
+        setIsSearching(true);
+        try {
+          const { data, error } = await supabase
+            .rpc("search_profiles_by_handle", { _query: q.toLowerCase() });
+          if (error) throw error;
+          const friendIds = new Set(friends.map((f) => f.id));
+          setResults((data || []).filter((u) => !friendIds.has(u.id)));
+        } catch (error: any) {
+          toast({ title: "Erro na busca", description: error.message, variant: "destructive" });
+        } finally {
+          setIsSearching(false);
+        }
+      })();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialQuery]);
 
   const handleSearch = async () => {
     if (!searchQuery.trim() || searchQuery.length < 2) {
