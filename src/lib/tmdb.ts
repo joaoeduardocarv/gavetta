@@ -359,16 +359,18 @@ export async function searchPerson(name: string): Promise<{ id: number; name: st
 
 // =============== ACTION 12 — DISCOVER (FILMES POR GÊNERO/FILTROS) ===============
 
-export async function discoverMovies(options: { genreId?: number; page?: number } = {}): Promise<TMDBMovie[]> {
+export async function discoverMovies(options: { genreId?: number; genreIds?: number[]; page?: number } = {}): Promise<TMDBMovie[]> {
   const params: Record<string, string> = {};
-  if (options.genreId) params.genreId = String(options.genreId);
+  if (options.genreIds && options.genreIds.length > 0) params.genreIds = options.genreIds.join(',');
+  else if (options.genreId) params.genreId = String(options.genreId);
   if (options.page) params.page = String(options.page);
   return callTMDBFunction<TMDBMovie[]>('discoverMovies', params);
 }
 
-export async function discoverTVShows(options: { genreId?: number; page?: number } = {}): Promise<TMDBTVShow[]> {
+export async function discoverTVShows(options: { genreId?: number; genreIds?: number[]; page?: number } = {}): Promise<TMDBTVShow[]> {
   const params: Record<string, string> = {};
-  if (options.genreId) params.genreId = String(options.genreId);
+  if (options.genreIds && options.genreIds.length > 0) params.genreIds = options.genreIds.join(',');
+  else if (options.genreId) params.genreId = String(options.genreId);
   if (options.page) params.page = String(options.page);
   return callTMDBFunction<TMDBTVShow[]>('discoverTVShows', params);
 }
