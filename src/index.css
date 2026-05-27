@@ -64,10 +64,46 @@ All colors MUST be HSL.
     --gradient-primary: linear-gradient(135deg, hsl(217, 91%, 60%) 0%, hsl(217, 91%, 45%) 100%);
     --gradient-card: linear-gradient(to bottom, hsl(222, 47%, 14%), hsl(222, 47%, 11%));
     --shadow-glow: 0 8px 32px 0 hsla(217, 91%, 60%, 0.2);
+
+    --destiny-gold: 43 96% 60%;
+    --destiny-gold-glow: 38 100% 72%;
+    --destiny-gold-deep: 35 85% 45%;
+    --gradient-destiny: linear-gradient(135deg, hsl(var(--destiny-gold-deep)) 0%, hsl(var(--destiny-gold)) 50%, hsl(var(--destiny-gold-glow)) 100%);
+    --shadow-destiny: 0 8px 32px 0 hsla(43, 96%, 60%, 0.45);
   }
 }
 
-@layer base {
+@layer utilities {
+  .bg-gradient-destiny {
+    background-image: var(--gradient-destiny);
+  }
+  .text-destiny-gold {
+    color: hsl(var(--destiny-gold));
+  }
+  .shadow-destiny {
+    box-shadow: var(--shadow-destiny);
+  }
+  .border-destiny-gold {
+    border-color: hsl(var(--destiny-gold) / 0.4);
+  }
+
+  @keyframes drawer-open {
+    0% { transform: translateY(0) scaleY(0.6); opacity: 0.6; }
+    50% { transform: translateY(-4px) scaleY(1); opacity: 1; }
+    100% { transform: translateY(0) scaleY(1); opacity: 1; }
+  }
+  @keyframes gold-shimmer {
+    0%, 100% { opacity: 0.4; transform: scale(0.9); }
+    50% { opacity: 1; transform: scale(1.1); }
+  }
+  @keyframes gold-pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 hsla(43, 96%, 60%, 0.5); }
+    50% { box-shadow: 0 0 24px 6px hsla(43, 96%, 60%, 0.3); }
+  }
+  .animate-drawer-open { animation: drawer-open 0.9s ease-out; }
+  .animate-gold-shimmer { animation: gold-shimmer 1.6s ease-in-out infinite; }
+  .animate-gold-pulse-glow { animation: gold-pulse-glow 2.4s ease-in-out infinite; }
+}
   * {
     @apply border-border;
   }
