@@ -174,6 +174,27 @@ export function DestinyDrawerDialog({ open, onOpenChange }: DestinyDrawerDialogP
                   )}
                 </button>
 
+                {hasActiveFilters && (
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground">Filtrando por:</span>
+                    {typeLabel && (
+                      <Badge variant="outline" className="text-[10px] font-normal border-destiny-gold/40 bg-destiny-gold/10 text-foreground">
+                        Tipo: {typeLabel}
+                      </Badge>
+                    )}
+                    {providerLabel && (
+                      <Badge variant="outline" className="text-[10px] font-normal border-destiny-gold/40 bg-destiny-gold/10 text-foreground">
+                        Streaming: {providerLabel}
+                      </Badge>
+                    )}
+                    {genreLabel && (
+                      <Badge variant="outline" className="text-[10px] font-normal border-destiny-gold/40 bg-destiny-gold/10 text-foreground">
+                        Gênero: {genreLabel}
+                      </Badge>
+                    )}
+                  </div>
+                )}
+
                 {showFilters && (
                   <div className="mt-3 grid grid-cols-1 gap-2 animate-fade-in">
                     <Select value={filterType} onValueChange={(v) => setFilterType(v as 'all' | 'movie' | 'series')}>
