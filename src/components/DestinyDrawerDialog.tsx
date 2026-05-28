@@ -54,7 +54,7 @@ export function DestinyDrawerDialog({ open, onOpenChange }: DestinyDrawerDialogP
   const [filterGenre, setFilterGenre] = useState<string>('all');
   const [filterProvider, setFilterProvider] = useState<string>('all');
 
-  const ratedCount = assignments.filter(a => a.rating != null && a.rating >= 7).length;
+  const ratedCount = assignments.filter(a => a.defaultDrawer === 'watched' && a.rating != null).length;
 
   const reveal = useCallback(async (excludeCurrent: boolean) => {
     setLoading(true);
