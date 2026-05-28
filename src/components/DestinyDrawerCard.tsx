@@ -25,7 +25,7 @@ export function DestinyDrawerCard({ onClick }: DestinyDrawerCardProps) {
         Gavetta Mágica
       </span>
       <span className="relative text-xs text-white/85 ml-auto hidden sm:inline">
-        Descubra o que assistir
+        IA que sugere filmes e séries pra você
       </span>
     </button>
   );
