@@ -20,7 +20,7 @@ interface DestinyDrawerDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const MIN_RATINGS = 3;
+const MIN_RATINGS = 10;
 const MIN_LOADING_MS = 2200; // delay artificial para parecer "pensando"
 
 // Lista única de gêneros (movies + tv, sem duplicatas por nome)
