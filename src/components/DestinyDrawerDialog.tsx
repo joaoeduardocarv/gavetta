@@ -224,10 +224,10 @@ export function DestinyDrawerDialog({ open, onOpenChange }: DestinyDrawerDialogP
               <div className="flex-1 flex flex-col items-center justify-center text-center py-8 gap-3">
                 <Sparkles className="w-10 h-10 text-destiny-gold animate-gold-shimmer" />
                 <p className="text-sm text-foreground font-medium px-4">
-                  Avalie pelo menos {MIN_RATINGS} títulos para a Gavetta Mágica te conhecer melhor.
+                  Para a Gavetta Mágica te conhecer, adicione pelo menos {MIN_RATINGS} filmes ou séries em "Assistidos" com nota.
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Você tem {ratedCount} {ratedCount === 1 ? 'avaliação' : 'avaliações'} com nota 7+.
+                  Você tem {ratedCount} {ratedCount === 1 ? 'título avaliado' : 'títulos avaliados'} em Assistidos.
                 </p>
                 <Button
                   variant="outline"
