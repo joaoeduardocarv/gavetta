@@ -127,6 +127,12 @@ export function DestinyDrawerDialog({ open, onOpenChange }: DestinyDrawerDialogP
     setFilterProvider('all');
   };
 
+  const typeLabel = filterType === 'movie' ? 'Filmes' : filterType === 'series' ? 'Séries' : null;
+  const providerLabel = filterProvider !== 'all'
+    ? BR_STREAMING_PROVIDERS.find(p => String(p.id) === filterProvider)?.name ?? null
+    : null;
+  const genreLabel = filterGenre !== 'all' ? filterGenre : null;
+
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
