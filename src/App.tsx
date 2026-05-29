@@ -4,31 +4,52 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Suspense, lazy } from "react";
+import { Loader2 } from "lucide-react";
 import { DrawerProvider } from "@/contexts/DrawerContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useMigrateIncompleteContent } from "@/hooks/useMigrateIncompleteContent";
 import { GlobalRatingDialog } from "@/components/GlobalRatingDialog";
-import MyDrawers from "./pages/MyDrawers";
-import Friends from "./pages/Friends";
-import Search from "./pages/Search";
-import Trending from "./pages/Trending";
-import Profile from "./pages/Profile";
-import Auth from "./pages/Auth";
-import SignupHelp from "./pages/SignupHelp";
-import NotFound from "./pages/NotFound";
-import PublicProfile from "./pages/PublicProfile";
-import Welcome from "./pages/Welcome";
-import AdminSignupDebug from "./pages/AdminSignupDebug";
-import SharePage from "./pages/SharePage";
 
-const queryClient = new QueryClient();
+// Eager: landing/auth (first paint critical)
+import Welcome from "./pages/Welcome";
+import Auth from "./pages/Auth";
+import MyDrawers from "./pages/MyDrawers";
+
+// Lazy: everything else (code split)
+const Friends = lazy(() => import("./pages/Friends"));
+const Search = lazy(() => import("./pages/Search"));
+const Trending = lazy(() => import("./pages/Trending"));
+const Profile = lazy(() => import("./pages/Profile"));
+const SignupHelp = lazy(() => import("./pages/SignupHelp"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const PublicProfile = lazy(() => import("./pages/PublicProfile"));
+const AdminSignupDebug = lazy(() => import("./pages/AdminSignupDebug"));
+const SharePage = lazy(() => import("./pages/SharePage"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 60_000, // 1 min — avoid refetch storms on remount
+      gcTime: 5 * 60_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 // Component to run migration inside providers
 function MigrationRunner({ children }: { children: React.ReactNode }) {
   useMigrateIncompleteContent();
   return <>{children}</>;
 }
+
+const RouteFallback = () => (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+  </div>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -41,22 +62,24 @@ const App = () => (
               <Sonner />
               <GlobalRatingDialog />
               <BrowserRouter>
-                <Routes>
-                  <Route path="/welcome" element={<Welcome />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/signup-help" element={<SignupHelp />} />
-                  <Route path="/" element={<ProtectedRoute><MyDrawers /></ProtectedRoute>} />
-                  <Route path="/my-drawers" element={<ProtectedRoute><MyDrawers /></ProtectedRoute>} />
-                  <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
-                  <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
-                  <Route path="/trending" element={<ProtectedRoute><Trending /></ProtectedRoute>} />
-                  <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                  <Route path="/u/:username" element={<PublicProfile />} />
-                  <Route path="/share/:type/:tmdbId" element={<SharePage />} />
-                  <Route path="/admin/signup-debug" element={<ProtectedRoute><AdminSignupDebug /></ProtectedRoute>} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
+                <Suspense fallback={<RouteFallback />}>
+                  <Routes>
+                    <Route path="/welcome" element={<Welcome />} />
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/signup-help" element={<SignupHelp />} />
+                    <Route path="/" element={<ProtectedRoute><MyDrawers /></ProtectedRoute>} />
+                    <Route path="/my-drawers" element={<ProtectedRoute><MyDrawers /></ProtectedRoute>} />
+                    <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
+                    <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
+                    <Route path="/trending" element={<ProtectedRoute><Trending /></ProtectedRoute>} />
+                    <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                    <Route path="/u/:username" element={<PublicProfile />} />
+                    <Route path="/share/:type/:tmdbId" element={<SharePage />} />
+                    <Route path="/admin/signup-debug" element={<ProtectedRoute><AdminSignupDebug /></ProtectedRoute>} />
+                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
               </BrowserRouter>
             </MigrationRunner>
           </DrawerProvider>
