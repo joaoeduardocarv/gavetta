@@ -162,8 +162,16 @@ function ActivityCard({
           <img
             src={posterUrl}
             alt={title}
-            className="w-12 h-18 rounded object-cover flex-shrink-0"
+            loading="lazy"
+            decoding="async"
+            width={48}
+            height={72}
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).src = "/placeholder.svg";
+            }}
+            className="w-12 h-[72px] rounded object-cover flex-shrink-0 bg-muted"
           />
+
         </div>
       </div>
     </div>
