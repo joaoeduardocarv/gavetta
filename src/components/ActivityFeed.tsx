@@ -158,19 +158,21 @@ function ActivityCard({
             )}
           </div>
 
-          {/* Poster */}
+          {/* Poster (square, like inside drawers) */}
           <img
             src={posterUrl}
             alt={title}
             loading="lazy"
             decoding="async"
-            width={48}
-            height={72}
+            width={56}
+            height={56}
+            referrerPolicy="no-referrer"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).src = "/placeholder.svg";
             }}
-            className="w-12 h-[72px] rounded object-cover flex-shrink-0 bg-muted"
+            className="w-14 h-14 rounded-md object-cover object-top flex-shrink-0 bg-muted"
           />
+
 
         </div>
       </div>
