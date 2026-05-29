@@ -232,7 +232,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
                   return (
                     <span key={i} className="relative flex-shrink-0">
                       <img
-                        src={getTMDBImageUrl((provider as any).logoPath || (provider as any).logo_path, 'w200')}
+                        src={getTMDBImageUrl((provider as any).logoPath || (provider as any).logo_path, 'w92')}
                         alt={name}
                         title={`${name}${titleSuffix}`}
                         className={cn(
