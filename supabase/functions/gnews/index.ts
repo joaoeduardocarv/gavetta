@@ -107,7 +107,15 @@ serve(async (req) => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('GNews API error:', response.status, errorText);
-        throw new Error(`GNews API error: ${response.status}`);
+        // Gracefully degrade on upstream errors (e.g. 429 rate limit) so the UI doesn't break
+        return new Response(
+          JSON.stringify({
+            news: [],
+            totalArticles: 0,
+            warning: response.status === 429 ? 'rate_limited' : 'upstream_error',
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
       }
 
       const data = await response.json();
