@@ -156,10 +156,11 @@ export async function searchPersonWithCredits(name: string): Promise<PersonWithC
 
 // =============== UTILITÁRIOS DE IMAGEM ===============
 
-export function getTMDBImageUrl(path: string | null, size: 'w200' | 'w300' | 'w500' | 'original' = 'w500'): string {
+export function getTMDBImageUrl(path: string | null, size: 'w92' | 'w154' | 'w185' | 'w200' | 'w300' | 'w500' | 'original' = 'w300'): string {
   if (!path) return '/placeholder.svg';
   return `https://image.tmdb.org/t/p/${size}${path}`;
 }
+
 
 export function getTMDBProfileUrl(path: string | null): string {
   return getTMDBImageUrl(path, 'w300');

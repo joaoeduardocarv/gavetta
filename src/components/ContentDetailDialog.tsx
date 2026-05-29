@@ -635,7 +635,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                             {logos.map((l) => (
                               <div key={l.name} className="flex items-center gap-1.5 px-2 py-1 rounded-md border border-border bg-card">
                                 <img
-                                  src={getTMDBImageUrl(l.logoPath, 'w200')}
+                                  src={getTMDBImageUrl(l.logoPath, 'w92')}
                                   alt={l.name}
                                   className="h-5 w-5 rounded-sm object-cover"
                                   loading="lazy"
@@ -662,7 +662,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                                     title={`${l.name} · ${label}`}
                                   >
                                     <img
-                                      src={getTMDBImageUrl(l.logoPath, 'w200')}
+                                      src={getTMDBImageUrl(l.logoPath, 'w92')}
                                       alt={l.name}
                                       className="h-5 w-5 rounded-sm object-cover"
                                       loading="lazy"
