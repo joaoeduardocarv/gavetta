@@ -122,7 +122,9 @@ function ActivityCard({
               </span>{" "}
               <span className="text-muted-foreground">
                 {activity.drawer_id === "watched"
-                  ? "assistiu"
+                  ? activity.rewatch_count > 0
+                    ? `reviu (${activity.rewatch_count + 1}ª vez)`
+                    : "assistiu"
                   : `adicionou em ${activity.drawer_label}`}
               </span>
             </p>
