@@ -104,6 +104,7 @@ export function useFriendActivities() {
           created_at: assignment.created_at,
           drawer_id: assignment.drawer_id,
           drawer_label: label,
+          rewatch_count: ((assignment as any).rewatch_count as number | null) ?? 0,
         } as FriendActivity;
       });
     },
