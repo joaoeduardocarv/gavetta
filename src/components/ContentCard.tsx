@@ -1,4 +1,4 @@
-import { Star, Film, Tv, Check, Clock, Play, Bell, Clapperboard, Languages } from "lucide-react";
+import { Star, Film, Tv, Check, Clock, Play, Bell, Clapperboard, Languages, Repeat } from "lucide-react";
 import { GavetaIcon } from "@/components/GavetaIcon";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
