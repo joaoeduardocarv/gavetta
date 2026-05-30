@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Film, Tv, Calendar, Star, Share2, MessageCircle, Check, Play, Eye, CheckCircle, Loader2, Link2, Languages } from "lucide-react";
+import { Film, Tv, Calendar, Star, Share2, MessageCircle, Check, Play, Eye, CheckCircle, Loader2, Link2, Languages, Repeat, Plus, Minus } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { useTitleLanguage, hasAlternateTitle } from "@/hooks/useTitleLanguage";
 import { GavetaIcon } from "@/components/GavetaIcon";
