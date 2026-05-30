@@ -66,7 +66,9 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
     removeFromCustomDrawer,
     isInCustomDrawer,
     setContentRating,
-    setContentComment
+    setContentComment,
+    incrementRewatch,
+    decrementRewatch,
   } = useDrawers();
   const { lang: titleLang, toggle: toggleTitleLang, resolveTitle } = useTitleLanguage();
   
