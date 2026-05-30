@@ -151,6 +151,12 @@ function ActivityCard({
                   <span>{activity.rating}/10</span>
                 </div>
               )}
+              {activity.drawer_id === "watched" && activity.rewatch_count > 0 && (
+                <Badge variant="outline" className="gap-1 text-xs px-1.5 py-0 border-accent/40 text-accent">
+                  <Repeat className="h-3 w-3" />
+                  {activity.rewatch_count + 1}x
+                </Badge>
+              )}
               <span className="text-xs text-muted-foreground">{timeAgo}</span>
             </div>
             {activity.comment && (
