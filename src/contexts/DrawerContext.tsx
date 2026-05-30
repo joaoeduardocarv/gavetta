@@ -691,7 +691,10 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
       getContentComment,
       pendingWatchedAssignment,
       confirmWatchedRating,
-      cancelWatchedRating
+      cancelWatchedRating,
+      incrementRewatch,
+      decrementRewatch,
+      getRewatchCount,
     }}>
       {children}
     </DrawerContext.Provider>
