@@ -25,6 +25,7 @@ export interface FriendActivity {
   created_at: string;
   drawer_id: string;
   drawer_label: string;
+  rewatch_count: number;
 }
 
 // Built-in drawers
