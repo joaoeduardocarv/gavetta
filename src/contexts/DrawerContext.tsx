@@ -571,6 +571,41 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
     }
   }, [user, assignments, refetchAssignments]);
 
+  const getRewatchCount = (contentId: string): number => {
+    return assignments.find(a => a.contentId === contentId)?.rewatchCount || 0;
+  };
+
+  const updateRewatchCount = useCallback(async (contentId: string, delta: number) => {
+    if (!user) return;
+    const assignment = assignments.find(a => a.contentId === contentId);
+    if (!assignment || assignment.defaultDrawer !== 'watched') return;
+
+    const newCount = Math.max(0, (assignment.rewatchCount || 0) + delta);
+
+    // Optimistic
+    setAssignments(prev =>
+      prev.map(a => (a.contentId === contentId ? { ...a, rewatchCount: newCount } : a))
+    );
+
+    try {
+      const { error } = await supabase
+        .from('user_drawer_assignments')
+        .update({ rewatch_count: newCount } as any)
+        .eq('user_id', user.id)
+        .eq('production_id', assignment.productionId)
+        .eq('production_type', assignment.productionType)
+        .eq('drawer_id', 'watched');
+      if (error) throw error;
+    } catch (err) {
+      console.error('Error updating rewatch count:', err);
+      await refetchAssignments();
+    }
+  }, [user, assignments, refetchAssignments]);
+
+  const incrementRewatch = useCallback((contentId: string) => updateRewatchCount(contentId, 1), [updateRewatchCount]);
+  const decrementRewatch = useCallback((contentId: string) => updateRewatchCount(contentId, -1), [updateRewatchCount]);
+
+
   const getDrawerContents = (drawerId: string): Content[] => {
     if (isDefaultDrawer(drawerId)) {
       return assignments
