@@ -192,7 +192,26 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
               </Badge>
             );
           })()}
+          {isWatched && rewatchCount > 0 && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge
+                    variant="outline"
+                    className="gap-1 text-xs border-accent/40 text-accent"
+                  >
+                    <Repeat className="h-3 w-3" />
+                    {rewatchCount + 1}x
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  Você viu {rewatchCount + 1} vezes
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
+
         
         <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
           {safeGenres.join(" • ")}
