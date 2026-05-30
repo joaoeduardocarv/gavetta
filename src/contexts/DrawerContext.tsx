@@ -478,7 +478,8 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
       defaultDrawer: assignment?.defaultDrawer || null,
       customDrawers: assignment?.customDrawers || [],
       rating: assignment?.rating || null,
-      comment: assignment?.comment || null
+      comment: assignment?.comment || null,
+      rewatchCount: assignment?.rewatchCount || 0,
     };
   };
 
