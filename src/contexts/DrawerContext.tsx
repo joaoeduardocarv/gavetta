@@ -113,6 +113,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
 
         const rating = a.rating as number | null;
         const comment = a.comment as string | null;
+        const rewatchCount = ((a as any).rewatch_count as number | null) ?? 0;
         
         const existing = assignmentMap.get(contentKey);
         if (existing) {
@@ -121,6 +122,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
             if (a.drawer_id === 'watched') {
               existing.rating = rating;
               existing.comment = comment;
+              existing.rewatchCount = rewatchCount;
             }
           } else {
             existing.customDrawers.push(a.drawer_id);
@@ -138,7 +140,8 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
               ? [] 
               : [a.drawer_id],
             rating: a.drawer_id === 'watched' ? rating : null,
-            comment: a.drawer_id === 'watched' ? comment : null
+            comment: a.drawer_id === 'watched' ? comment : null,
+            rewatchCount: a.drawer_id === 'watched' ? rewatchCount : 0,
           });
         }
       });
