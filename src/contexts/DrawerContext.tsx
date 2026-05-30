@@ -63,7 +63,7 @@ interface DrawerContextType {
   setContentComment: (contentId: string, comment: string) => Promise<void>;
   getContentComment: (contentId: string) => string | null;
   
-  getContentDrawers: (contentId: string) => { defaultDrawer: DefaultDrawerId | null; customDrawers: string[]; rating: number | null; comment: string | null };
+  getContentDrawers: (contentId: string) => { defaultDrawer: DefaultDrawerId | null; customDrawers: string[]; rating: number | null; comment: string | null; rewatchCount: number };
   getDrawerContents: (drawerId: string) => Content[];
   isDefaultDrawer: (drawerId: string) => boolean;
   isLoading: boolean;
@@ -71,6 +71,10 @@ interface DrawerContextType {
   pendingWatchedAssignment: PendingWatchedAssignment | null;
   confirmWatchedRating: (rating: number, comment: string) => void;
   cancelWatchedRating: () => void;
+
+  incrementRewatch: (contentId: string) => Promise<void>;
+  decrementRewatch: (contentId: string) => Promise<void>;
+  getRewatchCount: (contentId: string) => number;
 }
 
 const DrawerContext = createContext<DrawerContextType | null>(null);
