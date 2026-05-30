@@ -25,6 +25,7 @@ export interface FriendActivity {
   created_at: string;
   drawer_id: string;
   drawer_label: string;
+  rewatch_count: number;
 }
 
 // Built-in drawers
@@ -103,6 +104,7 @@ export function useFriendActivities() {
           created_at: assignment.created_at,
           drawer_id: assignment.drawer_id,
           drawer_label: label,
+          rewatch_count: ((assignment as any).rewatch_count as number | null) ?? 0,
         } as FriendActivity;
       });
     },

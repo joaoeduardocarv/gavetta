@@ -2,7 +2,7 @@ import { useFriendActivities, FriendActivity } from "@/hooks/useFriendActivities
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Star, Film, Tv, Activity } from "lucide-react";
+import { Loader2, Star, Film, Tv, Activity, Repeat } from "lucide-react";
 import { resolveAvatarSrc } from "@/components/AvatarPickerDialog";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -122,7 +122,9 @@ function ActivityCard({
               </span>{" "}
               <span className="text-muted-foreground">
                 {activity.drawer_id === "watched"
-                  ? "assistiu"
+                  ? activity.rewatch_count > 0
+                    ? `reviu (${activity.rewatch_count + 1}ª vez)`
+                    : "assistiu"
                   : `adicionou em ${activity.drawer_label}`}
               </span>
             </p>
@@ -148,6 +150,12 @@ function ActivityCard({
                   <Star className="h-3 w-3 fill-current" />
                   <span>{activity.rating}/10</span>
                 </div>
+              )}
+              {activity.drawer_id === "watched" && activity.rewatch_count > 0 && (
+                <Badge variant="outline" className="gap-1 text-xs px-1.5 py-0 border-accent/40 text-accent">
+                  <Repeat className="h-3 w-3" />
+                  {activity.rewatch_count + 1}x
+                </Badge>
               )}
               <span className="text-xs text-muted-foreground">{timeAgo}</span>
             </div>

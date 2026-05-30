@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Film, Tv, Calendar, Star, Share2, MessageCircle, Check, Play, Eye, CheckCircle, Loader2, Link2, Languages } from "lucide-react";
+import { Film, Tv, Calendar, Star, Share2, MessageCircle, Check, Play, Eye, CheckCircle, Loader2, Link2, Languages, Repeat, Plus, Minus } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { useTitleLanguage, hasAlternateTitle } from "@/hooks/useTitleLanguage";
 import { GavetaIcon } from "@/components/GavetaIcon";
@@ -66,7 +66,9 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
     removeFromCustomDrawer,
     isInCustomDrawer,
     setContentRating,
-    setContentComment
+    setContentComment,
+    incrementRewatch,
+    decrementRewatch,
   } = useDrawers();
   const { lang: titleLang, toggle: toggleTitleLang, resolveTitle } = useTitleLanguage();
   
@@ -96,7 +98,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
   const [isLoadingCredit, setIsLoadingCredit] = useState(false);
   
   // Obter gavetas e rating atuais do conteúdo
-  const contentDrawers = content ? getContentDrawers(content.id) : { defaultDrawer: null, customDrawers: [], rating: null, comment: null };
+  const contentDrawers = content ? getContentDrawers(content.id) : { defaultDrawer: null, customDrawers: [], rating: null, comment: null, rewatchCount: 0 };
   
   // Sincronizar comentário local com o do contexto quando o conteúdo mudar
   useEffect(() => {
@@ -434,6 +436,51 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
               </DropdownMenuContent>
             </DropdownMenu>
         </div>
+
+        {/* Contador de revisitas (só para Assistido) */}
+        {contentDrawers.defaultDrawer === 'watched' && content && (
+          <div className="px-4 pt-3 pb-1 flex items-center justify-between gap-3 border-b border-border/40">
+            <div className="flex items-center gap-2 text-sm">
+              <Repeat className="h-4 w-4 text-accent" />
+              <span className="text-foreground">
+                {contentDrawers.rewatchCount === 0
+                  ? 'Vista 1 vez'
+                  : `Vista ${contentDrawers.rewatchCount + 1} vezes`}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              {contentDrawers.rewatchCount > 0 && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={async () => {
+                    await decrementRewatch(content.id);
+                    toast({ title: 'Revisita removida' });
+                  }}
+                  aria-label="Diminuir revisitas"
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5"
+                onClick={async () => {
+                  await incrementRewatch(content.id);
+                  toast({
+                    title: `Marcado como ${contentDrawers.rewatchCount + 2}ª vez`,
+                    description: 'Boa! Mais uma revisita registrada.',
+                  });
+                }}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Vi de novo
+              </Button>
+            </div>
+          </div>
+        )}
           {/* Backdrop Image */}
           {content.backdropUrl && (
             <div className="relative h-64 w-full overflow-hidden">

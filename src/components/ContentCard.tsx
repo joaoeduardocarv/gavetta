@@ -1,4 +1,4 @@
-import { Star, Film, Tv, Check, Clock, Play, Bell, Clapperboard, Languages } from "lucide-react";
+import { Star, Film, Tv, Check, Clock, Play, Bell, Clapperboard, Languages, Repeat } from "lucide-react";
 import { GavetaIcon } from "@/components/GavetaIcon";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -51,8 +51,9 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
   const { lang: titleLang, toggle: toggleTitleLang, resolveTitle } = useTitleLanguage();
   const canToggleTitle = hasAlternateTitle(content);
 
-  const { defaultDrawer, customDrawers } = getContentDrawers(content.id);
+  const { defaultDrawer, customDrawers, rewatchCount } = getContentDrawers(content.id);
   const isInAnyDrawer = defaultDrawer !== null || customDrawers.length > 0;
+  const isWatched = defaultDrawer === 'watched';
   const contentNotif = getContentNotification(content.id);
 
   // Episode-watched progress (series only)
@@ -191,7 +192,26 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
               </Badge>
             );
           })()}
+          {isWatched && rewatchCount > 0 && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge
+                    variant="outline"
+                    className="gap-1 text-xs border-accent/40 text-accent"
+                  >
+                    <Repeat className="h-3 w-3" />
+                    {rewatchCount + 1}x
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  Você viu {rewatchCount + 1} vezes
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
         </div>
+
         
         <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
           {safeGenres.join(" • ")}
