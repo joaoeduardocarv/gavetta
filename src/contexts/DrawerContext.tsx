@@ -36,6 +36,7 @@ export interface ContentDrawerAssignment {
   customDrawers: string[];
   rating: number | null;
   comment: string | null;
+  rewatchCount: number;
 }
 
 interface PendingWatchedAssignment {
