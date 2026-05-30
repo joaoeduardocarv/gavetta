@@ -98,7 +98,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
   const [isLoadingCredit, setIsLoadingCredit] = useState(false);
   
   // Obter gavetas e rating atuais do conteúdo
-  const contentDrawers = content ? getContentDrawers(content.id) : { defaultDrawer: null, customDrawers: [], rating: null, comment: null };
+  const contentDrawers = content ? getContentDrawers(content.id) : { defaultDrawer: null, customDrawers: [], rating: null, comment: null, rewatchCount: 0 };
   
   // Sincronizar comentário local com o do contexto quando o conteúdo mudar
   useEffect(() => {
