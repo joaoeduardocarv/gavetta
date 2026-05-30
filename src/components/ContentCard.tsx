@@ -51,8 +51,9 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
   const { lang: titleLang, toggle: toggleTitleLang, resolveTitle } = useTitleLanguage();
   const canToggleTitle = hasAlternateTitle(content);
 
-  const { defaultDrawer, customDrawers } = getContentDrawers(content.id);
+  const { defaultDrawer, customDrawers, rewatchCount } = getContentDrawers(content.id);
   const isInAnyDrawer = defaultDrawer !== null || customDrawers.length > 0;
+  const isWatched = defaultDrawer === 'watched';
   const contentNotif = getContentNotification(content.id);
 
   // Episode-watched progress (series only)
