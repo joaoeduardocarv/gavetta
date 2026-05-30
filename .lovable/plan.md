@@ -1,69 +1,67 @@
-# Gaveta do Destino
+## Contador de revisitas (rewatches)
 
-Funcionalidade exclusiva na tela `/search` que sugere um único filme/série personalizado, usando apenas os dados de avaliações do próprio usuário + TMDB.
+Permite marcar quantas vezes você já reviu um filme/série depois que ele entra em **Assistidos**. A nota original permanece intocada — só conta quantas vezes você revisitou.
 
-## 1. UI — Card de entrada (topo do Search)
+### Backend
 
-Adicionar acima do campo de busca um card destacado:
-- Ícone de gaveta com brilho dourado (Sparkles + GavetaIcon, gradiente dourado coerente com o branding).
-- Título "Gaveta do Destino" + subtítulo curto ("Uma escolha feita pra você").
-- Tap abre um `Dialog` dedicado (`DestinyDrawerDialog`).
+Nova coluna simples em `user_drawer_assignments`:
+- `rewatch_count` (integer, default 0, not null)
 
-## 2. Algoritmo (client-side, em `src/lib/destinyDrawer.ts`)
+Sem tabela de histórico — só o número, conforme escolhido. Atualização via `UPDATE` no próprio assignment (RLS já cobre: `auth.uid() = user_id`).
 
-Entrada: avaliações do usuário em `user_drawer_assignments` (campo `rating`) — mesma fonte do RatingDialog.
+### Regras
 
-Passos:
-1. Buscar todas as assignments do usuário onde `rating >= 7`. Se `< 3` avaliações totais com rating, mostrar estado vazio ("Avalie pelo menos 3 títulos…").
-2. Para cada item, ler `production_data.genres` (já normalizado por `contentNormalizer`) e contar frequência. Empates desempatam pela média de rating do usuário no gênero.
-3. Pegar top 2–3 gêneros. Mapear nomes → IDs via `MOVIE_GENRES`/`TV_GENRES` de `src/lib/tmdb.ts`.
-4. Chamar `discoverMovies` + `discoverTVShows` com esses gêneros (ver §3) — sort por popularity, língua pt-BR.
-5. Filtrar resultados:
-   - Remover qualquer `tmdbId` presente em qualquer drawer do usuário (`assistidos`, `assistindo`, `watchlist`, customizadas).
-   - Remover itens já sorteados na sessão atual (lista mantida em estado do Dialog).
-   - Remover itens sem poster.
-6. Ordenar pelo score: `vote_average * 0.6 + popularity_normalizada * 0.4`. Pegar top 10 e sortear 1.
+- Só aparece quando o item está no drawer `watched`
+- A 1ª vez que entra em Assistidos = 0 revisitas (badge oculto)
+- Botão "Vi de novo" incrementa para 1, 2, 3… → aí o badge passa a aparecer
+- Permite decrementar (caso de erro) via long-press / menu
 
-## 3. Suporte a múltiplos gêneros na edge function TMDB
+### UI
 
-`supabase/functions/tmdb/index.ts` hoje aceita um único `genreId` em `discoverMovies`/`discoverTVShows`. Estender para aceitar `genreIds` (CSV) e repassar como `with_genres=28,12` (OR no TMDB). Manter compatibilidade com `genreId`.
+**ContentCard** (`src/components/ContentCard.tsx`)
+- Badge pequeno ao lado do rating: ícone `Repeat` (lucide) + número, ex: `↻ 3`
+- Estilo: `Badge variant="outline"` com `border-accent/40 text-accent` (segue padrão do badge de episódios)
+- Só renderiza se `rewatch_count > 0` e está em Assistidos
 
-Atualizar `discoverMovies`/`discoverTVShows` em `src/lib/tmdb.ts` para aceitar `genreIds?: number[]`.
+**ContentDetailDialog** (`src/components/ContentDetailDialog.tsx`)
+- Quando o conteúdo está em Assistidos, mostrar uma linha tipo:
+  - `↻ Vista 3 vezes` + botão `+ Vi de novo`
+  - Botão secundário `−` discreto para corrigir (com confirmação se for pra 0)
+- Toast: "Marcado como revisita #4 ↻"
 
-## 4. Dialog (`src/components/DestinyDrawerDialog.tsx`)
+**Feed de amigos** (`src/components/ActivityFeed.tsx` + `src/hooks/useFriendActivities.tsx`)
+- Nova entrada de atividade tipo `rewatch`: "João reviu *Interestelar* (4ª vez)"
+- Mesmo card visual das outras atividades (poster 56×56)
+- Disparada toda vez que `rewatch_count` é incrementado
 
-Estados:
-- `loading` → animação temática (gaveta abrindo + partículas douradas via Tailwind `animate-*` + custom keyframes em `tailwind.config.ts`).
-- `empty` (< 3 avaliações) → mensagem orientativa + CTA "Ir para Buscar".
-- `result` → reusar visual do `ContentCard` (poster, nota TMDB, gêneros, plataformas BR via `getMovieWatchProviders`/`getTVWatchProviders`).
-- Abaixo do card: frase dinâmica "Você curte muito **{Gênero1}** e **{Gênero2}** — esse foi escolhido pra você."
-- Botões: **Revelar outro** (refaz exclui o atual) e **Adicionar à watchlist** (usa fluxo padrão de adicionar a gaveta `watchlist`).
-- Tap no card abre `ContentDetailDialog` existente (sem duplicar lógica).
+### Acesso aos dados
 
-## 5. Identidade visual dourada
+Hook novo `useRewatch(productionId)`:
+- `count: number`
+- `increment(): Promise<void>` — UPDATE + toast + (opcional) notificação a amigos
+- `decrement(): Promise<void>`
 
-Adicionar tokens em `src/index.css` (HSL):
-- `--destiny-gold` e `--destiny-gold-glow`
-- `--gradient-destiny: linear-gradient(135deg, hsl(var(--destiny-gold)), hsl(var(--destiny-gold-glow)))`
-- `--shadow-destiny`
+Usar dentro de `DrawerContext` ou compor com `getContentDrawers` pra saber se está em Assistidos antes de mostrar UI.
 
-Adicionar keyframes `drawer-open` e `gold-particles` em `tailwind.config.ts` para a animação de loading. Sem libs novas.
+### Privacidade
 
-## 6. Arquivos
+- `rewatch_count` herda RLS do `user_drawer_assignments` (amigos já podem ver assignments de `watched` — policy "Users can view friends watched assignments")
+- Perfil público também vê (policy "Public profile drawer assignments are viewable")
 
-Criar:
-- `src/components/DestinyDrawerCard.tsx` (entrada no topo do Search)
-- `src/components/DestinyDrawerDialog.tsx` (dialog principal)
-- `src/lib/destinyDrawer.ts` (algoritmo: fetch ratings, ranking de gêneros, seleção)
+### Arquivos afetados
 
-Editar:
-- `src/pages/Search.tsx` — montar `<DestinyDrawerCard />` no topo do `<main>`.
-- `src/lib/tmdb.ts` — `discoverMovies/discoverTVShows` aceitando `genreIds`.
-- `supabase/functions/tmdb/index.ts` — suporte a `genreIds` CSV.
-- `src/index.css` + `tailwind.config.ts` — tokens dourados + keyframes.
+```
+supabase/migrations/...        (nova coluna rewatch_count)
+src/contexts/DrawerContext.tsx (expor count + ações)
+src/hooks/useRewatch.tsx       (novo)
+src/components/ContentCard.tsx (badge ↻N)
+src/components/ContentDetailDialog.tsx (botão + linha "Vista Nx")
+src/hooks/useFriendActivities.tsx (incluir eventos rewatch)
+src/components/ActivityFeed.tsx (renderizar "reviu X")
+```
 
-## 7. Fora do escopo
+### Fora de escopo (decidido)
 
-- Sem nova tabela/migration (lê de `user_drawer_assignments` existente).
-- Sem IA externa, sem novas dependências.
-- Sem persistência da última recomendação (estado fica no Dialog).
+- Sem histórico de datas
+- Sem re-avaliação a cada revisita (nota original preservada)
+- Sem stats agregadas no perfil ("mais revisto") — pode vir depois

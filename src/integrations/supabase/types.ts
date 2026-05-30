@@ -287,6 +287,7 @@ export type Database = {
           production_id: string
           production_type: string
           rating: number | null
+          rewatch_count: number
           user_id: string
         }
         Insert: {
@@ -298,6 +299,7 @@ export type Database = {
           production_id: string
           production_type: string
           rating?: number | null
+          rewatch_count?: number
           user_id: string
         }
         Update: {
@@ -309,6 +311,7 @@ export type Database = {
           production_id?: string
           production_type?: string
           rating?: number | null
+          rewatch_count?: number
           user_id?: string
         }
         Relationships: []

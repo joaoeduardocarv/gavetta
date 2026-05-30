@@ -1,0 +1,1 @@
+ALTER TABLE public.user_drawer_assignments ADD COLUMN IF NOT EXISTS rewatch_count integer NOT NULL DEFAULT 0;
