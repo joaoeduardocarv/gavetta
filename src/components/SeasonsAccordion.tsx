@@ -60,12 +60,15 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
   const [autoOpenRatingKey, setAutoOpenRatingKey] = useState<string | null>(null);
   /** Whether the "move to Assistido" prompt is open. */
   const [showMoveToWatchedPrompt, setShowMoveToWatchedPrompt] = useState(false);
+  /** Whether the "move to Assistindo" prompt is open. */
+  const [showMoveToWatchingPrompt, setShowMoveToWatchingPrompt] = useState(false);
   /** Confirmation prompt for "mark every aired episode across all seasons". */
   const [showMarkAllConfirm, setShowMarkAllConfirm] = useState(false);
   const [markAllPreview, setMarkAllPreview] = useState<{ totalEps: number; seasonCount: number } | null>(null);
   const [isPreparingMarkAll, setIsPreparingMarkAll] = useState(false);
   /** Avoid re-prompting in the same view session. */
   const promptShownRef = useRef(false);
+  const watchingPromptShownRef = useRef(false);
 
   const { setDefaultDrawer, getContentDrawers } = useDrawers();
   const { toast } = useToast();
@@ -287,6 +290,47 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
     }
   };
 
+  /** If the series is in "Quero Ver" and the user just marked an episode, prompt to move to "Assistindo". */
+  const maybePromptMoveToWatching = (): boolean => {
+    if (!content) return false;
+    if (watchingPromptShownRef.current) return false;
+    const current = getContentDrawers(content.id).defaultDrawer;
+    if (current !== "to-watch") return false;
+    watchingPromptShownRef.current = true;
+    setShowMoveToWatchingPrompt(true);
+    return true;
+  };
+
+  const handleConfirmMoveToWatching = async () => {
+    setShowMoveToWatchingPrompt(false);
+    if (!content) return;
+    const previousDrawer = getContentDrawers(content.id).defaultDrawer;
+    try {
+      await setDefaultDrawer(content, "watching");
+      toast({
+        title: "Movido para Assistindo",
+        description: `${content.title} foi movido para a gaveta Assistindo.`,
+        action: (
+          <ToastAction
+            altText="Desfazer"
+            onClick={async () => {
+              try {
+                await setDefaultDrawer(content, previousDrawer);
+                watchingPromptShownRef.current = false;
+              } catch (err) {
+                console.error("Error undoing move:", err);
+              }
+            }}
+          >
+            Desfazer
+          </ToastAction>
+        ),
+      });
+    } catch (err) {
+      console.error("Error moving content to 'Assistindo':", err);
+    }
+  };
+
   const handleAccordionChange = async (value: string) => {
     if (!value) return;
     const seasonNumber = Number(value.replace("season-", ""));
@@ -497,10 +541,13 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
                                 await toggleEpisode(season.season_number, ep.episode_number);
                                 if (!wasWatched) {
                                   setAutoOpenRatingKey(`${season.season_number}:${ep.episode_number}`);
-                                  maybePromptMoveToWatched({
-                                    season: season.season_number,
-                                    episode: ep.episode_number,
-                                  });
+                                  const promptedWatching = maybePromptMoveToWatching();
+                                  if (!promptedWatching) {
+                                    maybePromptMoveToWatched({
+                                      season: season.season_number,
+                                      episode: ep.episode_number,
+                                    });
+                                  }
                                 }
                               }}
                               className="mt-0.5"
@@ -609,6 +656,25 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={showMoveToWatchingPrompt} onOpenChange={setShowMoveToWatchingPrompt}>
+        <AlertDialogContent className="z-[60]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Começou a assistir!</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta série está na sua gaveta <strong>Quero Ver</strong>. Quer movê-la para <strong>Assistindo</strong>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Agora não</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmMoveToWatching}>
+              Mover para Assistindo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+
 
       <AlertDialog open={showMarkAllConfirm} onOpenChange={setShowMarkAllConfirm}>
         <AlertDialogContent className="z-[60]">
