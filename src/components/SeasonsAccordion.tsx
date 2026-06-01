@@ -541,10 +541,13 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
                                 await toggleEpisode(season.season_number, ep.episode_number);
                                 if (!wasWatched) {
                                   setAutoOpenRatingKey(`${season.season_number}:${ep.episode_number}`);
-                                  maybePromptMoveToWatched({
-                                    season: season.season_number,
-                                    episode: ep.episode_number,
-                                  });
+                                  const promptedWatching = maybePromptMoveToWatching();
+                                  if (!promptedWatching) {
+                                    maybePromptMoveToWatched({
+                                      season: season.season_number,
+                                      episode: ep.episode_number,
+                                    });
+                                  }
                                 }
                               }}
                               className="mt-0.5"
