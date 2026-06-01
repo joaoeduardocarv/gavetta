@@ -82,7 +82,7 @@ export function RatingPicker({
       <PopoverContent
         align="end"
         side="top"
-        className="w-auto p-3"
+        className="z-[70] w-auto p-3"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="space-y-2">
