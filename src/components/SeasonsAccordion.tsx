@@ -60,12 +60,15 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
   const [autoOpenRatingKey, setAutoOpenRatingKey] = useState<string | null>(null);
   /** Whether the "move to Assistido" prompt is open. */
   const [showMoveToWatchedPrompt, setShowMoveToWatchedPrompt] = useState(false);
+  /** Whether the "move to Assistindo" prompt is open. */
+  const [showMoveToWatchingPrompt, setShowMoveToWatchingPrompt] = useState(false);
   /** Confirmation prompt for "mark every aired episode across all seasons". */
   const [showMarkAllConfirm, setShowMarkAllConfirm] = useState(false);
   const [markAllPreview, setMarkAllPreview] = useState<{ totalEps: number; seasonCount: number } | null>(null);
   const [isPreparingMarkAll, setIsPreparingMarkAll] = useState(false);
   /** Avoid re-prompting in the same view session. */
   const promptShownRef = useRef(false);
+  const watchingPromptShownRef = useRef(false);
 
   const { setDefaultDrawer, getContentDrawers } = useDrawers();
   const { toast } = useToast();
