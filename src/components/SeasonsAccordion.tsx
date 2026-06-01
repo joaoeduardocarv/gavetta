@@ -672,6 +672,9 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
+      </AlertDialog>
+
+
 
       <AlertDialog open={showMarkAllConfirm} onOpenChange={setShowMarkAllConfirm}>
         <AlertDialogContent className="z-[60]">
