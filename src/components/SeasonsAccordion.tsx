@@ -657,6 +657,22 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog open={showMoveToWatchingPrompt} onOpenChange={setShowMoveToWatchingPrompt}>
+        <AlertDialogContent className="z-[60]">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Começou a assistir!</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta série está na sua gaveta <strong>Quero Ver</strong>. Quer movê-la para <strong>Assistindo</strong>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Agora não</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmMoveToWatching}>
+              Mover para Assistindo
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+
       <AlertDialog open={showMarkAllConfirm} onOpenChange={setShowMarkAllConfirm}>
         <AlertDialogContent className="z-[60]">
           <AlertDialogHeader>
