@@ -583,7 +583,7 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
                               )}
                             </div>
                             {/* Episode rating — only enabled if watched */}
-                            <div className="shrink-0 mt-0.5">
+                            <div className="shrink-0 mt-0.5" onClick={(e) => e.stopPropagation()}>
                               {(() => {
                                 const epKey = `${season.season_number}:${ep.episode_number}`;
                                 const isAutoOpen = autoOpenRatingKey === epKey;
@@ -603,9 +603,13 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
                                         : "Marque como assistido para avaliar"
                                     }
                                     open={isAutoOpen ? true : undefined}
-                                    onOpenChange={(o) => {
-                                      if (!o && isAutoOpen) setAutoOpenRatingKey(null);
-                                    }}
+                                    onOpenChange={
+                                      isAutoOpen
+                                        ? (o) => {
+                                            if (!o) setAutoOpenRatingKey(null);
+                                          }
+                                        : undefined
+                                    }
                                     onChange={(v) => {
                                       setEpisodeRating(season.season_number, ep.episode_number, v);
                                       if (isAutoOpen) setAutoOpenRatingKey(null);
