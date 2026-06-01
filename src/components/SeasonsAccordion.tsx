@@ -587,17 +587,16 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
                               {(() => {
                                 const epKey = `${season.season_number}:${ep.episode_number}`;
                                 const isAutoOpen = autoOpenRatingKey === epKey;
-                                // For unwatched episodes, never surface an inherited
-                                // season-average rating — show an empty picker so the
-                                // user doesn't think the episode is already "marked".
-                                const showInherited = watched || epStored != null;
-                                const displayValue = showInherited ? epRating.value : null;
-                                const displayIsAverage = showInherited ? epRating.isAverage : false;
+                                // Only the episode's OWN stored rating is shown.
+                                // We intentionally ignore inherited season/series
+                                // ratings here so every watched episode reads as
+                                // "rate me" until the user picks an explicit value.
+                                const displayValue = epStored ?? null;
                                 return (
                                   <RatingPicker
                                     value={displayValue}
-                                    isAverage={displayIsAverage}
-                                    disabled={!watched && epStored == null}
+                                    isAverage={false}
+                                    disabled={!watched}
                                     label={
                                       watched
                                         ? `Sua nota para o episódio ${ep.episode_number}`
