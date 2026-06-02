@@ -9,7 +9,9 @@ export function Header() {
         <div className="flex items-center gap-2">
           <img src={logo} alt="Gavetta" className="h-6 dark:brightness-0 dark:invert" />
         </div>
-        <NotificationsPopover />
+        <div data-onboarding="header-notifications">
+          <NotificationsPopover />
+        </div>
       </div>
     </header>
   );
