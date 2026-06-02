@@ -12,6 +12,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useMigrateIncompleteContent } from "@/hooks/useMigrateIncompleteContent";
 import { GlobalRatingDialog } from "@/components/GlobalRatingDialog";
 import { OnboardingDialog } from "@/components/OnboardingDialog";
+import { QuickStartLibrary } from "@/components/QuickStartLibrary";
 
 // Eager: landing/auth (first paint critical)
 import Welcome from "./pages/Welcome";
