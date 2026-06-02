@@ -9,6 +9,7 @@ export function BottomNav() {
         {/* Minhas Gavettas */}
         <NavLink
           to="/"
+          data-onboarding="nav-gavettas"
           className="flex flex-col items-center justify-center gap-0.5 px-2 py-2 rounded-lg text-muted-foreground transition-colors"
           activeClassName="text-primary"
         >
@@ -19,6 +20,7 @@ export function BottomNav() {
         {/* Meus Amigos */}
         <NavLink
           to="/friends"
+          data-onboarding="nav-friends"
           className="flex flex-col items-center justify-center gap-0.5 px-2 py-2 rounded-lg text-muted-foreground transition-colors"
           activeClassName="text-primary"
         >
@@ -29,6 +31,7 @@ export function BottomNav() {
         {/* Botão Central - Busca */}
         <NavLink
           to="/search"
+          data-onboarding="nav-search"
           className="flex flex-col items-center justify-center -mt-4"
           activeClassName=""
         >
@@ -44,6 +47,7 @@ export function BottomNav() {
         {/* Em Alta */}
         <NavLink
           to="/trending"
+          data-onboarding="nav-trending"
           className="flex flex-col items-center justify-center gap-0.5 px-2 py-2 rounded-lg text-muted-foreground transition-colors"
           activeClassName="text-primary"
         >
@@ -54,6 +58,7 @@ export function BottomNav() {
         {/* Meu Perfil */}
         <NavLink
           to="/profile"
+          data-onboarding="nav-profile"
           className="flex flex-col items-center justify-center gap-0.5 px-2 py-2 rounded-lg text-muted-foreground transition-colors"
           activeClassName="text-primary"
         >
