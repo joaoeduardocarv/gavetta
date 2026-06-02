@@ -121,6 +121,11 @@ export function OnboardingDialog() {
     }
     setOpen(false);
     setStep(0);
+    try {
+      window.dispatchEvent(new Event("gavetta:onboarding-finished"));
+    } catch {
+      // ignore
+    }
   };
 
   if (!open) return null;
