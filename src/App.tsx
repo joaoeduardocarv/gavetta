@@ -64,6 +64,7 @@ const App = () => (
               <Sonner />
               <GlobalRatingDialog />
               <OnboardingDialog />
+              <QuickStartLibrary />
               <BrowserRouter>
                 <Suspense fallback={<RouteFallback />}>
                   <Routes>
