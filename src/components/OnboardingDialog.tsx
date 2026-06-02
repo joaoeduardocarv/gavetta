@@ -1,65 +1,95 @@
-import { useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import {
-  Bookmark,
-  Search,
-  Users,
-  TrendingUp,
-  Sparkles,
-  Share2,
-  ChevronRight,
-  ChevronLeft,
-} from "lucide-react";
-import logo from "@/assets/gavettalogo.png";
+import { createPortal } from "react-dom";
+import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 
 const STORAGE_PREFIX = "gavetta:onboarding-seen:";
 
 interface Step {
-  icon: React.ComponentType<{ className?: string }>;
+  target?: string; // data-onboarding attribute; undefined = welcome (centered)
   title: string;
   description: string;
 }
 
 const steps: Step[] = [
   {
-    icon: Sparkles,
     title: "Bem-vindo à Gavetta",
     description:
-      "Seu organizador pessoal de filmes e séries. Guarde tudo o que quer assistir, está assistindo e já viu — em um só lugar.",
+      "Faça um tour rápido pelos botões principais para descobrir como organizar tudo o que você assiste.",
   },
   {
-    icon: Bookmark,
-    title: "Organize em Gavettas",
+    target: "nav-gavettas",
+    title: "Suas Gavettas",
     description:
-      "Use as gavettas padrão (Para Assistir, Assistindo e Assistidos) ou crie as suas próprias para temas, listas e maratonas.",
+      "Aqui ficam suas gavettas: Para Assistir, Assistindo e Assistidos. Crie também gavettas personalizadas para listas e maratonas.",
   },
   {
-    icon: Search,
-    title: "Busque e adicione",
+    target: "nav-search",
+    title: "Buscar filmes e séries",
     description:
-      "Toque na busca central para encontrar filmes, séries e artistas. Veja onde assistir, elenco e detalhes completos antes de salvar.",
+      "Toque no botão central para buscar títulos, ver onde assistir, elenco, detalhes e adicionar à sua gaveta.",
   },
   {
-    icon: TrendingUp,
-    title: "Acompanhe episódios",
+    target: "nav-friends",
+    title: "Amigos",
     description:
-      "Marque episódios assistidos, avalie de 1 a 10 e receba alertas quando novos episódios ou temporadas chegarem.",
+      "Adicione amigos pelo @handle, acompanhe o que estão assistindo e envie recomendações diretas.",
   },
   {
-    icon: Users,
-    title: "Conecte-se com amigos",
+    target: "nav-trending",
+    title: "Em Alta",
     description:
-      "Adicione amigos pelo @handle, veja o que estão assistindo e recomende títulos diretamente para eles.",
+      "Descubra os filmes, séries e notícias mais comentados do momento, com filtros diário e semanal.",
   },
   {
-    icon: Share2,
-    title: "Compartilhe suas descobertas",
+    target: "nav-profile",
+    title: "Seu Perfil",
     description:
-      "Gere cards no formato Stories para o Instagram e mostre suas avaliações e gavettas favoritas.",
+      "Edite avatar, @handle, ajustes de privacidade, notificações e compartilhe seu perfil público.",
+  },
+  {
+    target: "header-notifications",
+    title: "Notificações",
+    description:
+      "Receba avisos de novos episódios, estreias, mudanças de streaming, pedidos de amizade e recomendações.",
   },
 ];
+
+type Rect = { top: number; left: number; width: number; height: number };
+
+function useTargetRect(selector: string | undefined) {
+  const [rect, setRect] = useState<Rect | null>(null);
+
+  useLayoutEffect(() => {
+    if (!selector) {
+      setRect(null);
+      return;
+    }
+    const update = () => {
+      const el = document.querySelector<HTMLElement>(
+        `[data-onboarding="${selector}"]`,
+      );
+      if (!el) {
+        setRect(null);
+        return;
+      }
+      const r = el.getBoundingClientRect();
+      setRect({ top: r.top, left: r.left, width: r.width, height: r.height });
+    };
+    update();
+    const id = window.setTimeout(update, 50);
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      window.clearTimeout(id);
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [selector]);
+
+  return rect;
+}
 
 export function OnboardingDialog() {
   const { user, loading } = useAuth();
@@ -78,6 +108,9 @@ export function OnboardingDialog() {
     }
   }, [user, loading]);
 
+  const current = steps[step];
+  const rect = useTargetRect(open ? current.target : undefined);
+
   const finish = () => {
     if (user) {
       try {
@@ -90,45 +123,123 @@ export function OnboardingDialog() {
     setStep(0);
   };
 
+  if (!open) return null;
+
   const isLast = step === steps.length - 1;
-  const current = steps[step];
-  const Icon = current.icon;
+  const PAD = 8;
+  const vw = typeof window !== "undefined" ? window.innerWidth : 0;
+  const vh = typeof window !== "undefined" ? window.innerHeight : 0;
 
-  return (
-    <Dialog
-      open={open}
-      onOpenChange={(next) => {
-        if (!next) finish();
-      }}
+  // Spotlight box
+  const spot = rect
+    ? {
+        top: Math.max(0, rect.top - PAD),
+        left: Math.max(0, rect.left - PAD),
+        width: rect.width + PAD * 2,
+        height: rect.height + PAD * 2,
+      }
+    : null;
+
+  // Tooltip card position: prefer above target; fallback below; else center
+  const CARD_W = Math.min(340, vw - 24);
+  const CARD_EST_H = 200;
+  let cardStyle: React.CSSProperties;
+  if (!spot) {
+    cardStyle = {
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      width: CARD_W,
+    };
+  } else {
+    const spaceAbove = spot.top;
+    const spaceBelow = vh - (spot.top + spot.height);
+    const placeAbove = spaceAbove > spaceBelow;
+    const top = placeAbove
+      ? Math.max(12, spot.top - CARD_EST_H - 12)
+      : Math.min(vh - CARD_EST_H - 12, spot.top + spot.height + 12);
+    const centerX = spot.left + spot.width / 2;
+    const left = Math.min(
+      Math.max(12, centerX - CARD_W / 2),
+      vw - CARD_W - 12,
+    );
+    cardStyle = { top, left, width: CARD_W };
+  }
+
+  return createPortal(
+    <div
+      className="fixed inset-0 z-[100]"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Tour de boas-vindas"
     >
-      <DialogContent className="max-w-sm sm:max-w-md text-center">
-        <div className="flex justify-center pt-2">
-          <img
-            src={logo}
-            alt="Gavetta"
-            className="h-6 dark:brightness-0 dark:invert"
-          />
-        </div>
+      {/* Backdrop with spotlight via SVG mask */}
+      <svg
+        className="absolute inset-0 h-full w-full"
+        width="100%"
+        height="100%"
+        aria-hidden="true"
+      >
+        <defs>
+          <mask id="onboarding-spot-mask">
+            <rect width="100%" height="100%" fill="white" />
+            {spot && (
+              <rect
+                x={spot.left}
+                y={spot.top}
+                width={spot.width}
+                height={spot.height}
+                rx={16}
+                ry={16}
+                fill="black"
+              />
+            )}
+          </mask>
+        </defs>
+        <rect
+          width="100%"
+          height="100%"
+          fill="rgba(0,0,0,0.7)"
+          mask="url(#onboarding-spot-mask)"
+        />
+      </svg>
 
-        <div className="mx-auto mt-2 flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-[#4ADE80] via-[#3B82F6] to-[#FBBF24]">
-          <Icon className="h-8 w-8 text-white" />
-        </div>
+      {/* Highlight ring on target */}
+      {spot && (
+        <div
+          className="pointer-events-none absolute rounded-2xl ring-2 ring-primary animate-pulse"
+          style={{
+            top: spot.top,
+            left: spot.left,
+            width: spot.width,
+            height: spot.height,
+          }}
+        />
+      )}
 
-        <DialogTitle className="font-heading text-2xl">
-          {current.title}
-        </DialogTitle>
-        <DialogDescription className="text-base px-2">
+      {/* Tooltip card */}
+      <div
+        className="absolute rounded-xl border border-border bg-background p-4 shadow-2xl"
+        style={cardStyle}
+      >
+        {!current.target && (
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-[#4ADE80] via-[#3B82F6] to-[#FBBF24]">
+            <Sparkles className="h-6 w-6 text-white" />
+          </div>
+        )}
+        <h3 className="font-heading text-lg text-center">{current.title}</h3>
+        <p className="mt-1.5 text-sm text-muted-foreground text-center">
           {current.description}
-        </DialogDescription>
+        </p>
 
         {/* Dots */}
-        <div className="flex justify-center gap-1.5 mt-2">
+        <div className="mt-3 flex justify-center gap-1.5">
           {steps.map((_, i) => (
             <button
               key={i}
               type="button"
               onClick={() => setStep(i)}
-              aria-label={`Ir para passo ${i + 1}`}
+              aria-label={`Passo ${i + 1}`}
               className={`h-1.5 rounded-full transition-all ${
                 i === step ? "w-6 bg-primary" : "w-1.5 bg-muted"
               }`}
@@ -136,42 +247,39 @@ export function OnboardingDialog() {
           ))}
         </div>
 
-        <div className="flex flex-col gap-2 mt-3">
-          <div className="flex items-center gap-2">
-            {step > 0 && (
-              <Button
-                variant="outline"
-                size="lg"
-                className="flex-1"
-                onClick={() => setStep((s) => Math.max(0, s - 1))}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Voltar
-              </Button>
-            )}
+        <div className="mt-3 flex items-center gap-2">
+          {step > 0 && (
             <Button
-              size="lg"
+              variant="outline"
+              size="sm"
               className="flex-1"
-              onClick={() => {
-                if (isLast) finish();
-                else setStep((s) => s + 1);
-              }}
+              onClick={() => setStep((s) => Math.max(0, s - 1))}
             >
-              {isLast ? "Começar a usar" : "Próximo"}
-              {!isLast && <ChevronRight className="h-4 w-4" />}
+              <ChevronLeft className="h-4 w-4" />
+              Voltar
             </Button>
-          </div>
-          {!isLast && (
-            <button
-              type="button"
-              onClick={finish}
-              className="text-xs text-muted-foreground underline-offset-2 hover:underline"
-            >
-              Pular tour
-            </button>
           )}
+          <Button
+            size="sm"
+            className="flex-1"
+            onClick={() => (isLast ? finish() : setStep((s) => s + 1))}
+          >
+            {isLast ? "Começar a usar" : "Próximo"}
+            {!isLast && <ChevronRight className="h-4 w-4" />}
+          </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+
+        {!isLast && (
+          <button
+            type="button"
+            onClick={finish}
+            className="mt-2 w-full text-center text-xs text-muted-foreground underline-offset-2 hover:underline"
+          >
+            Pular tour
+          </button>
+        )}
+      </div>
+    </div>,
+    document.body,
   );
 }
