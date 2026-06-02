@@ -62,6 +62,7 @@ const App = () => (
               <Toaster />
               <Sonner />
               <GlobalRatingDialog />
+              <OnboardingDialog />
               <BrowserRouter>
                 <Suspense fallback={<RouteFallback />}>
                   <Routes>
