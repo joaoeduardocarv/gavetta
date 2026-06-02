@@ -11,6 +11,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { useMigrateIncompleteContent } from "@/hooks/useMigrateIncompleteContent";
 import { GlobalRatingDialog } from "@/components/GlobalRatingDialog";
+import { OnboardingDialog } from "@/components/OnboardingDialog";
 
 // Eager: landing/auth (first paint critical)
 import Welcome from "./pages/Welcome";
