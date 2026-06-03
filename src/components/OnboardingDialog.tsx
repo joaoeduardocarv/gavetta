@@ -1,10 +1,10 @@
 import { useEffect, useLayoutEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 
-const STORAGE_PREFIX = "gavetta:onboarding-seen:";
 
 interface Step {
   target?: string; // data-onboarding attribute; undefined = welcome (centered)
@@ -98,14 +98,21 @@ export function OnboardingDialog() {
 
   useEffect(() => {
     if (loading || !user) return;
-    try {
-      const key = STORAGE_PREFIX + user.id;
-      if (!localStorage.getItem(key)) {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("onboarded_at")
+        .eq("id", user.id)
+        .maybeSingle();
+      if (cancelled) return;
+      if (!error && data && !data.onboarded_at) {
         setOpen(true);
       }
-    } catch {
-      // ignore
-    }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [user, loading]);
 
   const current = steps[step];
@@ -113,11 +120,10 @@ export function OnboardingDialog() {
 
   const finish = () => {
     if (user) {
-      try {
-        localStorage.setItem(STORAGE_PREFIX + user.id, "1");
-      } catch {
-        // ignore
-      }
+      void supabase
+        .from("profiles")
+        .update({ onboarded_at: new Date().toISOString() })
+        .eq("id", user.id);
     }
     setOpen(false);
     setStep(0);
@@ -127,6 +133,7 @@ export function OnboardingDialog() {
       // ignore
     }
   };
+
 
   if (!open) return null;
 

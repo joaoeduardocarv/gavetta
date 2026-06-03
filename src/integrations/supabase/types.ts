@@ -156,6 +156,7 @@ export type Database = {
           handle: string | null
           id: string
           is_public: boolean
+          onboarded_at: string | null
           updated_at: string
           username: string | null
         }
@@ -165,6 +166,7 @@ export type Database = {
           handle?: string | null
           id: string
           is_public?: boolean
+          onboarded_at?: string | null
           updated_at?: string
           username?: string | null
         }
@@ -174,6 +176,7 @@ export type Database = {
           handle?: string | null
           id?: string
           is_public?: boolean
+          onboarded_at?: string | null
           updated_at?: string
           username?: string | null
         }

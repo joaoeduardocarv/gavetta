@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { useAuth } from "@/hooks/useAuth";
+
 import { useDrawers } from "@/contexts/DrawerContext";
 import {
   getTrendingMovies,
@@ -14,9 +14,8 @@ import { Content } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Check, Plus, SkipForward, X, Loader2, Sparkles } from "lucide-react";
 
-const ONBOARDING_KEY = "gavetta:onboarding-seen:";
-const QUICKSTART_KEY = "gavetta:quickstart-done:";
 const BATCH_SIZE = 20;
+
 
 function interleave(movies: Content[], series: Content[]): Content[] {
   // ~60% movies / 40% series
@@ -35,13 +34,12 @@ function interleave(movies: Content[], series: Content[]): Content[] {
 }
 
 export function QuickStartLibrary() {
-  const { user, loading: authLoading } = useAuth();
   const {
     assignments,
     setDefaultDrawer,
     pendingWatchedAssignment,
-    isLoading: drawersLoading,
   } = useDrawers();
+
 
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Content[] | null>(null);
@@ -49,36 +47,15 @@ export function QuickStartLibrary() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // Should we offer the quick start?
-  const eligible = useMemo(() => {
-    if (authLoading || drawersLoading || !user) return false;
-    try {
-      const tourDone = !!localStorage.getItem(ONBOARDING_KEY + user.id);
-      const qsDone = !!localStorage.getItem(QUICKSTART_KEY + user.id);
-      return tourDone && !qsDone;
-    } catch {
-      return false;
-    }
-  }, [user, authLoading, drawersLoading]);
-
-  // Open when eligible (initial mount + when onboarding finishes)
+  // Quick-start is part of first-login onboarding: only open when the tour
+  // finishes (event below). Persistence lives on profiles.onboarded_at.
   useEffect(() => {
-    if (eligible) setOpen(true);
-  }, [eligible]);
-
-  useEffect(() => {
-    const handler = () => {
-      if (!user) return;
-      try {
-        if (!localStorage.getItem(QUICKSTART_KEY + user.id)) setOpen(true);
-      } catch {
-        // ignore
-      }
-    };
+    const handler = () => setOpen(true);
     window.addEventListener("gavetta:onboarding-finished", handler);
     return () =>
       window.removeEventListener("gavetta:onboarding-finished", handler);
-  }, [user]);
+  }, []);
+
 
   // Fetch trending titles once when opened
   useEffect(() => {
@@ -122,15 +99,9 @@ export function QuickStartLibrary() {
   }, [open, items, assignments]);
 
   const finish = () => {
-    if (user) {
-      try {
-        localStorage.setItem(QUICKSTART_KEY + user.id, "1");
-      } catch {
-        // ignore
-      }
-    }
     setOpen(false);
   };
+
 
   const advance = () => {
     if (!items) return;
