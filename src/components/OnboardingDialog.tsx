@@ -1,10 +1,10 @@
 import { useEffect, useLayoutEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 
-const STORAGE_PREFIX = "gavetta:onboarding-seen:";
 
 interface Step {
   target?: string; // data-onboarding attribute; undefined = welcome (centered)
