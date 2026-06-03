@@ -49,36 +49,15 @@ export function QuickStartLibrary() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
-  // Should we offer the quick start?
-  const eligible = useMemo(() => {
-    if (authLoading || drawersLoading || !user) return false;
-    try {
-      const tourDone = !!localStorage.getItem(ONBOARDING_KEY + user.id);
-      const qsDone = !!localStorage.getItem(QUICKSTART_KEY + user.id);
-      return tourDone && !qsDone;
-    } catch {
-      return false;
-    }
-  }, [user, authLoading, drawersLoading]);
-
-  // Open when eligible (initial mount + when onboarding finishes)
+  // Quick-start is part of first-login onboarding: only open when the tour
+  // finishes (event below). Persistence lives on profiles.onboarded_at.
   useEffect(() => {
-    if (eligible) setOpen(true);
-  }, [eligible]);
-
-  useEffect(() => {
-    const handler = () => {
-      if (!user) return;
-      try {
-        if (!localStorage.getItem(QUICKSTART_KEY + user.id)) setOpen(true);
-      } catch {
-        // ignore
-      }
-    };
+    const handler = () => setOpen(true);
     window.addEventListener("gavetta:onboarding-finished", handler);
     return () =>
       window.removeEventListener("gavetta:onboarding-finished", handler);
-  }, [user]);
+  }, []);
+
 
   // Fetch trending titles once when opened
   useEffect(() => {
