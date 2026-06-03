@@ -10,7 +10,7 @@ import { useDrawers } from "@/contexts/DrawerContext";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
-import { pickDestinyContent, buildDestinyMessage, DestinyPick, DestinyFilters } from "@/lib/destinyDrawer";
+import { pickDestinyContent, buildDestinyMessage, DestinyPick, DestinyFilters, loadDestinyRecentIds, rememberDestinyPick } from "@/lib/destinyDrawer";
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { MOVIE_GENRES, TV_GENRES, BR_STREAMING_PROVIDERS } from "@/lib/tmdb";
 import type { Content } from "@/lib/mockData";
@@ -70,7 +70,8 @@ export function DestinyDrawerDialog({ open, onOpenChange }: DestinyDrawerDialogP
         watchProviderId: filterProvider !== 'all' ? parseInt(filterProvider) : null,
       };
 
-      const result = await pickDestinyContent(assignments, nextShown, filters);
+      const recentlyShown = loadDestinyRecentIds(user?.id);
+      const result = await pickDestinyContent(assignments, nextShown, filters, recentlyShown);
 
       // Garante delay mínimo para sensação de "buscando"
       const elapsed = Date.now() - startedAt;
@@ -84,6 +85,7 @@ export function DestinyDrawerDialog({ open, onOpenChange }: DestinyDrawerDialogP
       } else {
         setPick(result);
         setShownIds(new Set([...nextShown, result.content.id]));
+        rememberDestinyPick(user?.id, result.content.id);
       }
     } catch (e) {
       console.error('[GavettaMagica] erro:', e);
@@ -91,7 +93,8 @@ export function DestinyDrawerDialog({ open, onOpenChange }: DestinyDrawerDialogP
     } finally {
       setLoading(false);
     }
-  }, [assignments, pick, shownIds, filterType, filterGenre, filterProvider]);
+  }, [assignments, pick, shownIds, filterType, filterGenre, filterProvider, user?.id]);
+
 
   // Inicializa quando o dialog abre
   useEffect(() => {
