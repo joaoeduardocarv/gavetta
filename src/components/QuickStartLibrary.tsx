@@ -14,9 +14,8 @@ import { Content } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Check, Plus, SkipForward, X, Loader2, Sparkles } from "lucide-react";
 
-const ONBOARDING_KEY = "gavetta:onboarding-seen:";
-const QUICKSTART_KEY = "gavetta:quickstart-done:";
 const BATCH_SIZE = 20;
+
 
 function interleave(movies: Content[], series: Content[]): Content[] {
   // ~60% movies / 40% series
