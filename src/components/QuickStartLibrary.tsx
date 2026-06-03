@@ -100,15 +100,9 @@ export function QuickStartLibrary() {
   }, [open, items, assignments]);
 
   const finish = () => {
-    if (user) {
-      try {
-        localStorage.setItem(QUICKSTART_KEY + user.id, "1");
-      } catch {
-        // ignore
-      }
-    }
     setOpen(false);
   };
+
 
   const advance = () => {
     if (!items) return;
