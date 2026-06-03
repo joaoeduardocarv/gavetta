@@ -34,13 +34,12 @@ function interleave(movies: Content[], series: Content[]): Content[] {
 }
 
 export function QuickStartLibrary() {
-  const { user, loading: authLoading } = useAuth();
   const {
     assignments,
     setDefaultDrawer,
     pendingWatchedAssignment,
-    isLoading: drawersLoading,
   } = useDrawers();
+
 
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Content[] | null>(null);
