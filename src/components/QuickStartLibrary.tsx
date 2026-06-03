@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { useAuth } from "@/hooks/useAuth";
+
 import { useDrawers } from "@/contexts/DrawerContext";
 import {
   getTrendingMovies,
