@@ -190,16 +190,23 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
   const handleMarkAllAired = async () => {
     setShowMarkAllConfirm(false);
     // Episodes are already loaded by prepareMarkAllAired
+    let markedAny = false;
     for (const s of seasons) {
       const eps = episodesBySeason[s.season_number];
       if (!eps) continue;
       const airedNumbers = eps.filter((ep) => hasAired(ep.air_date)).map((ep) => ep.episode_number);
       if (airedNumbers.length > 0) {
         await markSeason(s.season_number, airedNumbers);
+        markedAny = true;
       }
     }
 
-    maybePromptMoveToWatched();
+    // After marking everything aired, every aired episode is now watched.
+    // Prompt to move to "Assistido" directly (avoids stale `isWatched` closure).
+    if (markedAny && content && !isAlreadyWatched && !promptShownRef.current) {
+      promptShownRef.current = true;
+      setShowMoveToWatchedPrompt(true);
+    }
   };
 
   /** Loads any season's episode list that is still missing and returns the merged map. */
