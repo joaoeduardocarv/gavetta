@@ -409,12 +409,13 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
         <Button
           size="sm"
           variant="default"
-          className="w-full gap-2"
+          className="w-full gap-2 h-auto min-h-9 py-2 px-3 whitespace-normal text-xs sm:text-sm text-center leading-tight"
           onClick={prepareMarkAllAired}
           disabled={isPreparingMarkAll}
         >
-          {isPreparingMarkAll ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCheck className="h-4 w-4" />}
-          Marcar episódios já lançados como assistidos
+          {isPreparingMarkAll ? <Loader2 className="h-4 w-4 animate-spin shrink-0" /> : <CheckCheck className="h-4 w-4 shrink-0" />}
+          <span className="sm:hidden">Marcar episódios lançados</span>
+          <span className="hidden sm:inline">Marcar episódios já lançados como assistidos</span>
         </Button>
       )}
 
