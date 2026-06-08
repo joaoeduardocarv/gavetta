@@ -167,19 +167,19 @@ function ActivityCard({
           </div>
 
           {/* Poster (square, like inside drawers) */}
-          <img
-            src={posterUrl}
-            alt={title}
-            loading="lazy"
-            decoding="async"
-            width={56}
-            height={56}
-            referrerPolicy="no-referrer"
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).src = "/placeholder.svg";
-            }}
-            className="w-14 h-14 rounded-md object-cover object-top flex-shrink-0 bg-muted"
-          />
+          <Avatar className="h-20 w-20 rounded-lg flex-shrink-0 bg-muted">
+            <AvatarImage
+              src={posterUrl}
+              alt={title}
+              className="object-cover"
+              loading="lazy"
+            />
+            <AvatarFallback className="rounded-lg bg-muted">
+              {isMovie ? <Film className="h-8 w-8 text-muted-foreground" /> : <Tv className="h-8 w-8 text-muted-foreground" />}
+            </AvatarFallback>
+          </Avatar>
+
+
 
 
         </div>
