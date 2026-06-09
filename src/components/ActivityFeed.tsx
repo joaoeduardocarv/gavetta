@@ -9,6 +9,13 @@ import { ptBR } from "date-fns/locale";
 import { useState } from "react";
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { Content } from "@/lib/mockData";
+import { normalizeStoredContent } from "@/lib/contentNormalizer";
+
+const getActivityContent = (activity: FriendActivity): Content =>
+  normalizeStoredContent(activity.production_data, {
+    productionId: activity.production_id,
+    productionType: activity.production_type,
+  });
 
 export function ActivityFeed() {
   const { activities, isLoading } = useFriendActivities();
@@ -16,24 +23,7 @@ export function ActivityFeed() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleActivityClick = (activity: FriendActivity) => {
-    const rawPoster = activity.production_data.poster_path as string | undefined;
-    const posterUrl = rawPoster
-      ? rawPoster.startsWith("http")
-        ? rawPoster
-        : `https://image.tmdb.org/t/p/w500${rawPoster}`
-      : "/placeholder.svg";
-    const content: Content = {
-      id: activity.production_id || String(activity.production_data.id),
-      title: activity.production_data.title || activity.production_data.name || "",
-      type: activity.production_type === "movie" ? "movie" : "series",
-      posterUrl,
-      releaseDate: activity.production_data.release_date ||
-                   activity.production_data.first_air_date || "",
-      synopsis: "",
-      genres: [],
-      rating: activity.production_data.vote_average || 0,
-    };
-    setSelectedContent(content);
+    setSelectedContent(getActivityContent(activity));
     setIsDialogOpen(true);
   };
 
@@ -94,15 +84,11 @@ function ActivityCard({
   activity: FriendActivity;
   onClick: () => void;
 }) {
-  const title = activity.production_data.title || activity.production_data.name || "Sem título";
-  const rawPoster = activity.production_data.poster_path as string | undefined;
-  const posterUrl = rawPoster
-    ? rawPoster.startsWith("http")
-      ? rawPoster
-      : `https://image.tmdb.org/t/p/w300${rawPoster}`
-    : "/placeholder.svg";
+  const content = getActivityContent(activity);
+  const title = content.title;
+  const posterUrl = content.posterUrl;
 
-  const isMovie = activity.production_type === "movie";
+  const isMovie = content.type === "movie";
   const timeAgo = formatDistanceToNow(new Date(activity.created_at), {
     addSuffix: true,
     locale: ptBR,
