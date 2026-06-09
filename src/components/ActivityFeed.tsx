@@ -95,9 +95,13 @@ function ActivityCard({
   onClick: () => void;
 }) {
   const title = activity.production_data.title || activity.production_data.name || "Sem título";
-  const posterUrl = activity.production_data.poster_path
-    ? `https://image.tmdb.org/t/p/w92${activity.production_data.poster_path}`
+  const rawPoster = activity.production_data.poster_path as string | undefined;
+  const posterUrl = rawPoster
+    ? rawPoster.startsWith("http")
+      ? rawPoster
+      : `https://image.tmdb.org/t/p/w300${rawPoster}`
     : "/placeholder.svg";
+
   const isMovie = activity.production_type === "movie";
   const timeAgo = formatDistanceToNow(new Date(activity.created_at), {
     addSuffix: true,
