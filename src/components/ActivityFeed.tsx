@@ -16,14 +16,18 @@ export function ActivityFeed() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleActivityClick = (activity: FriendActivity) => {
+    const rawPoster = activity.production_data.poster_path as string | undefined;
+    const posterUrl = rawPoster
+      ? rawPoster.startsWith("http")
+        ? rawPoster
+        : `https://image.tmdb.org/t/p/w500${rawPoster}`
+      : "/placeholder.svg";
     const content: Content = {
-      id: String(activity.production_data.id),
+      id: activity.production_id || String(activity.production_data.id),
       title: activity.production_data.title || activity.production_data.name || "",
       type: activity.production_type === "movie" ? "movie" : "series",
-      posterUrl: activity.production_data.poster_path
-        ? `https://image.tmdb.org/t/p/w500${activity.production_data.poster_path}`
-        : "/placeholder.svg",
-      releaseDate: activity.production_data.release_date || 
+      posterUrl,
+      releaseDate: activity.production_data.release_date ||
                    activity.production_data.first_air_date || "",
       synopsis: "",
       genres: [],
@@ -32,6 +36,7 @@ export function ActivityFeed() {
     setSelectedContent(content);
     setIsDialogOpen(true);
   };
+
 
   if (isLoading) {
     return (
@@ -90,9 +95,13 @@ function ActivityCard({
   onClick: () => void;
 }) {
   const title = activity.production_data.title || activity.production_data.name || "Sem título";
-  const posterUrl = activity.production_data.poster_path
-    ? `https://image.tmdb.org/t/p/w92${activity.production_data.poster_path}`
+  const rawPoster = activity.production_data.poster_path as string | undefined;
+  const posterUrl = rawPoster
+    ? rawPoster.startsWith("http")
+      ? rawPoster
+      : `https://image.tmdb.org/t/p/w300${rawPoster}`
     : "/placeholder.svg";
+
   const isMovie = activity.production_type === "movie";
   const timeAgo = formatDistanceToNow(new Date(activity.created_at), {
     addSuffix: true,
