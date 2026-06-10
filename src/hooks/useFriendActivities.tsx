@@ -30,9 +30,9 @@ export interface FriendActivity {
 
 // Built-in drawers
 const DEFAULT_DRAWER_LABELS: Record<string, string> = {
-  watched: "assistidos",
-  "want-to-watch": "quero assistir",
-  favorites: "favoritos",
+  watched: "Assistidos",
+  watching: "Assistindo",
+  "to-watch": "Para Assistir",
 };
 
 export function useFriendActivities() {
@@ -89,8 +89,8 @@ export function useFriendActivities() {
         const custom = customDrawers.find((d) => d.id === assignment.drawer_id);
         const label =
           DEFAULT_DRAWER_LABELS[assignment.drawer_id] ||
-          custom?.name?.toLowerCase() ||
-          "uma gaveta";
+          custom?.name ||
+          "uma gavetta";
         return {
           id: assignment.id,
           user_id: assignment.user_id,
