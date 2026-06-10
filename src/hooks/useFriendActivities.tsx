@@ -89,8 +89,8 @@ export function useFriendActivities() {
         const custom = customDrawers.find((d) => d.id === assignment.drawer_id);
         const label =
           DEFAULT_DRAWER_LABELS[assignment.drawer_id] ||
-          custom?.name?.toLowerCase() ||
-          "uma gaveta";
+          custom?.name ||
+          "uma gavetta";
         return {
           id: assignment.id,
           user_id: assignment.user_id,
