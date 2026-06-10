@@ -161,8 +161,8 @@ function ActivityCard({
             )}
           </div>
 
-          {/* Poster (square, like inside drawers) */}
-          <Avatar className="h-20 w-20 rounded-lg flex-shrink-0 bg-muted">
+          {/* Poster (same size as ContentCard mini poster) */}
+          <Avatar className="h-14 w-14 rounded-lg flex-shrink-0 bg-muted">
             <AvatarImage
               src={posterUrl}
               alt={title}
@@ -170,7 +170,7 @@ function ActivityCard({
               loading="lazy"
             />
             <AvatarFallback className="rounded-lg bg-muted">
-              {isMovie ? <Film className="h-8 w-8 text-muted-foreground" /> : <Tv className="h-8 w-8 text-muted-foreground" />}
+              {isMovie ? <Film className="h-7 w-7 text-muted-foreground" /> : <Tv className="h-7 w-7 text-muted-foreground" />}
             </AvatarFallback>
           </Avatar>
 
