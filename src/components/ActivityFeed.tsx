@@ -116,11 +116,9 @@ function ActivityCard({
                 {activity.username || "Usuário"}
               </span>{" "}
               <span className="text-muted-foreground">
-                {activity.drawer_id === "watched"
-                  ? activity.rewatch_count > 0
-                    ? `reviu (${activity.rewatch_count + 1}ª vez)`
-                    : "assistiu"
-                  : `adicionou em ${activity.drawer_label}`}
+                {activity.drawer_id === "watched" && activity.rewatch_count > 0
+                  ? `reviu (${activity.rewatch_count + 1}ª vez) — adicionou na gavetta ${activity.drawer_label}`
+                  : `adicionou na gavetta ${activity.drawer_label}`}
               </span>
             </p>
             <p className="font-medium text-foreground text-sm mt-0.5 truncate">
