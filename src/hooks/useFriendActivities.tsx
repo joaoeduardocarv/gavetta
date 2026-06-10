@@ -30,9 +30,9 @@ export interface FriendActivity {
 
 // Built-in drawers
 const DEFAULT_DRAWER_LABELS: Record<string, string> = {
-  watched: "assistidos",
-  "want-to-watch": "quero assistir",
-  favorites: "favoritos",
+  watched: "Assistidos",
+  watching: "Assistindo",
+  "to-watch": "Para Assistir",
 };
 
 export function useFriendActivities() {
