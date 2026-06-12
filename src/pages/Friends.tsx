@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, UserPlus, Users, Loader2, UserX, Activity, Gift, Clock, X } from "lucide-react";
+import { Search, UserPlus, Users, Loader2, UserX, Activity, Gift } from "lucide-react";
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { Content } from "@/lib/mockData";
 import { useFriendships, FriendProfile } from "@/hooks/useFriendships";
 import { AddFriendDialog } from "@/components/AddFriendDialog";
 import { FriendRequestsCard } from "@/components/FriendRequestsCard";
+import { SentRequestsCard } from "@/components/SentRequestsCard";
 import { ActivityFeed } from "@/components/ActivityFeed";
 import { resolveAvatarSrc } from "@/components/AvatarPickerDialog";
 
@@ -22,7 +23,7 @@ export default function Friends() {
   const [isAddFriendOpen, setIsAddFriendOpen] = useState(false);
   const [addFriendInitialQuery, setAddFriendInitialQuery] = useState<string | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState("");
-  const { friends, friendsLoading, removeFriend, sentRequests, cancelSentRequest } = useFriendships();
+  const { friends, friendsLoading, removeFriend } = useFriendships();
 
   // Pré-aquece o cache do navegador com os avatares dos amigos assim que
   // a lista é resolvida, para que apareçam instantâneos nos cards.
@@ -116,44 +117,7 @@ export default function Friends() {
               </Button>
             </div>
 
-            {sentRequests.length > 0 && (
-              <div className="space-y-2">
-                <h3 className="font-heading text-sm font-semibold text-muted-foreground flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  Aguardando resposta ({sentRequests.length})
-                </h3>
-                {sentRequests.map((req) => (
-                  <div
-                    key={req.friendship_id}
-                    className="flex items-center gap-3 p-3 bg-card rounded-lg border border-border/50"
-                  >
-                    <Avatar className="h-10 w-10 flex-shrink-0">
-                      <AvatarImage src={resolveAvatarSrc(req.avatar_url)} alt={req.username || ""} />
-                      <AvatarFallback className="bg-primary/10 text-primary font-semibold text-xs">
-                        {req.username?.slice(0, 2).toUpperCase() || "??"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">
-                        {req.username || "Usuário"}
-                      </p>
-                      <p className="text-xs text-muted-foreground">Pedido pendente</p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      onClick={() => cancelSentRequest.mutate(req.friendship_id)}
-                      disabled={cancelSentRequest.isPending}
-                      title="Cancelar pedido"
-                      aria-label={`Cancelar pedido para ${req.username || "usuário"}`}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            )}
+            <SentRequestsCard />
 
             <h3 className="font-heading text-lg font-semibold text-foreground">
               Seus Amigos ({friends.length})
