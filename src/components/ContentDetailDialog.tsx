@@ -860,7 +860,8 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                     toast({ title: "Não foi possível gerar o link", variant: "destructive" });
                     return;
                   }
-                  const url = `${window.location.origin}/share/${parsed.mediaType}/${parsed.tmdbId}`;
+                  const prefix = parsed.mediaType === "movie" ? "m" : "s";
+                  const url = `${window.location.origin}/${prefix}/${parsed.tmdbId}`;
                   try {
                     if (navigator.share) {
                       await navigator.share({ title: String(content.title), url });
