@@ -1,49 +1,44 @@
-Gostei muito da ideia. Hoje o usuário sai do tour com a biblioteca vazia, e ter que buscar item por item é o maior atrito do onboarding. Um "quick-start" com populares resolve isso em segundos e ainda gera dado real de catálogo (gavetas Assistidos / Para Assistir) que melhora recomendações futuras (Destiny Drawer, feed de amigos, etc.).
+## Objetivo
+Cada filme/série passa a ter URL pública curta:
+- Filme: `gavetta.com.br/m/{tmdbId}`
+- Série: `gavetta.com.br/s/{tmdbId}`
 
-## O que será construído
+Os links antigos `/share/movie/{id}` e `/share/tv/{id}` continuam funcionando via redirect automático para o novo formato.
 
-Um novo passo final no fluxo de onboarding: **"Vamos montar sua estante em 1 minuto"**. Aparece logo após o usuário concluir (ou pular) o tour dos botões, na primeira sessão. Pode ser pulado a qualquer momento.
+## Mudanças
 
-### Fluxo
+### 1. Roteamento (`src/App.tsx`)
+- Adicionar duas rotas novas apontando para `SharePage`:
+  - `/m/:tmdbId` → renderiza `<SharePage forcedType="movie" />`
+  - `/s/:tmdbId` → renderiza `<SharePage forcedType="tv" />`
+- Manter `/share/:type/:tmdbId`, porém apontando para um pequeno componente `LegacyShareRedirect` que faz `<Navigate replace to={`/${type === 'movie' ? 'm' : 's'}/${tmdbId}`} />`. Isso preserva todo link já compartilhado por usuários.
 
-```text
-Tour de botões  →  Tela "Monte sua estante"  →  MyDrawers populado
-                          │
-                          ├─ Card grande do título atual (poster, ano, gêneros, sinopse curta)
-                          ├─ [✓ Já vi] → abre seletor de nota 1-10 + comentário opcional
-                          │              → salva em Assistidos
-                          ├─ [+ Quero ver] → salva em Para Assistir
-                          ├─ [↪ Pular]    → próximo
-                          └─ Indicador "3 de 20"  ·  botão "Encerrar" no topo
-```
+### 2. `src/pages/SharePage.tsx`
+- Aceitar a prop opcional `forcedType?: "movie" | "tv"`. Quando presente, usa ela; quando ausente, mantém o comportamento atual de ler `type` da URL (fallback de segurança, mas as novas rotas sempre passam `forcedType`).
+- Resto da página (loader, Helmet OG/Twitter, layout) permanece igual.
 
-- Lote de **20 títulos populares**, mistura ~60% filmes e ~40% séries, tirados do TMDB `trending/all/week` via a Edge Function `tmdb` já existente.
-- Filtra títulos já presentes em qualquer gaveta do usuário para não repetir.
-- "Já vi" reaproveita o `GlobalRatingDialog` / fluxo de avaliação obrigatória que já vigora para Assistidos.
-- Ao encerrar, marca conclusão em localStorage (`gavetta:quickstart-done:{userId}`) para não reaparecer.
-- Botão **"Adicionar mais populares"** discreto no topo da página Minhas Gavettas quando a estante estiver com menos de 5 itens, caso o usuário queira voltar.
+### 3. Geração de link de compartilhamento (`src/components/ContentDetailDialog.tsx` linha 863)
+- Trocar:
+  ```ts
+  const url = `${window.location.origin}/share/${parsed.mediaType}/${parsed.tmdbId}`;
+  ```
+  por:
+  ```ts
+  const prefix = parsed.mediaType === "movie" ? "m" : "s";
+  const url = `${window.location.origin}/${prefix}/${parsed.tmdbId}`;
+  ```
+- Mesmo tratamento em qualquer outro local que monte URL de share (verificar `useStoryShare` e geração de imagem de Story; ajustar se também montarem `/share/...`).
 
-### Aparência
+### 4. Riscos de colisão
+- Rotas existentes ocupam: `/welcome`, `/auth`, `/signup-help`, `/`, `/my-drawers`, `/friends`, `/search`, `/trending`, `/profile`, `/u/:username`, `/share/...`, `/admin/...`. Os prefixos `/m/` e `/s/` estão livres e não conflitam com nada planejado.
 
-- Mobile-first, fullscreen sheet com fundo escurecido (mesmo padrão visual do tour).
-- Poster grande centralizado, título e metadados abaixo, três botões grandes empilhados (verde "Já vi", azul "Quero ver", neutro "Pular").
-- Pequena barra de progresso no topo.
-- Animação suave de swipe horizontal ao trocar de item.
+### 5. SEO
+- `public/sitemap.xml`: hoje é estático e não lista conteúdos individuais. Não vamos gerar entradas por filme/série agora (seriam dezenas de milhares vindas do TMDB). As metatags OG/Twitter já existentes em `SharePage` continuam cobrindo o preview por link.
 
-## Detalhes técnicos
+### 6. Sem mudanças de backend
+- Nenhuma migração necessária. RLS e edge functions permanecem intactas.
 
-- **Novo componente:** `src/components/QuickStartLibrary.tsx` (renderizado no `App.tsx` após `OnboardingDialog`).
-- **Dados:** chamada única a `supabase.functions.invoke('tmdb', { body: { endpoint: 'trending/all/week' } })`. Normaliza via `src/lib/contentNormalizer.ts` antes de exibir.
-- **Filtro de duplicatas:** consulta `user_drawer_assignments` do usuário (já cacheada por `useDrawers`) e remove tmdb_ids já existentes.
-- **Persistência:**
-  - "Quero ver" → insert em `user_drawer_assignments` com `drawer_id = 'to_watch'`.
-  - "Já vi" → abre o fluxo padrão de avaliação obrigatória (`GlobalRatingDialog`) e, ao confirmar, insere em `drawer_id = 'watched'` com `rating` e `comment`.
-- **Gatilho:** após `OnboardingDialog.finish()`, seta um estado em contexto/localStorage que dispara o quick-start na próxima renderização do `/` (rota MyDrawers). Não aparece em outras rotas para não atrapalhar.
-- **Skip total:** botão "Encerrar agora" sempre visível; também é registrado como concluído.
-- **Sem novas tabelas nem mudanças de RLS** — usa as existentes.
-
-## Fora do escopo desta etapa
-
-- Algoritmo de recomendação personalizado em si (apenas captura os dados que servirão de base).
-- Filtros por gênero, plataforma de streaming ou década (pode virar v2).
-- Importar histórico de outras plataformas (Letterboxd, Trakt).
+## Validação
+- Abrir `/m/550` (Clube da Luta) e `/s/1399` (Game of Thrones) e conferir carregamento + metatags.
+- Abrir um link antigo `/share/movie/550` e confirmar redirect para `/m/550`.
+- Clicar em "Compartilhar" num card e verificar que a URL copiada está no novo formato.
