@@ -10,6 +10,13 @@ interface StoryShareContent {
   type: 'movie' | 'series';
   rating?: number | null;
   userHandle?: string | null;
+  tmdbId?: number;
+}
+
+function buildShareUrl(content: StoryShareContent): string {
+  if (!content.tmdbId) return 'https://gavetta.com.br';
+  const prefix = content.type === 'movie' ? 'm' : 's';
+  return `https://gavetta.com.br/${prefix}/${content.tmdbId}`;
 }
 
 export function useStoryShare() {
@@ -36,6 +43,7 @@ export function useStoryShare() {
   };
 
   const generateStoryImage = useCallback(async (content: StoryShareContent): Promise<Blob | null> => {
+    const shareUrlDisplay = buildShareUrl(content).replace(/^https?:\/\//, '');
     const STORY_WIDTH = 1080;
     const STORY_HEIGHT = 1920;
 
@@ -315,9 +323,10 @@ export function useStoryShare() {
     ctx.font = 'bold 32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.fillText('Crie sua conta grátis!', STORY_WIDTH / 2, STORY_HEIGHT - 170);
 
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-    ctx.font = '500 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    ctx.fillText('gavetta.com.br', STORY_WIDTH / 2, STORY_HEIGHT - 120);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.75)';
+    ctx.font = '600 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.fillText(shareUrlDisplay, STORY_WIDTH / 2, STORY_HEIGHT - 120);
+
 
     // Converter para blob
     return new Promise((resolve) => {
@@ -329,9 +338,22 @@ export function useStoryShare() {
   const shareToStory = useCallback(async (content: StoryShareContent) => {
     setIsGenerating(true);
 
+    const shareUrl = buildShareUrl(content);
+
+    // Tenta copiar o link para clipboard (pode falhar silenciosamente em contextos sem permissão)
+    let clipboardOk = false;
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(shareUrl);
+        clipboardOk = true;
+      }
+    } catch {
+      clipboardOk = false;
+    }
+
     try {
       const imageBlob = await generateStoryImage(content);
-      
+
       if (!imageBlob) {
         throw new Error('Falha ao gerar imagem');
       }
@@ -340,24 +362,30 @@ export function useStoryShare() {
         type: 'image/png',
       });
 
-      // Verificar se o Web Share API está disponível e suporta arquivos
+      const shareText = `Confira "${content.title}" no Gavetta! 🎬\n\n${shareUrl}`;
+
+      const pasteHint = clipboardOk
+        ? "Link copiado — cole no adesivo \"Link\" do Instagram para deixar clicável."
+        : "Copie o link mostrado no Story e cole no adesivo \"Link\" do Instagram.";
+
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
           files: [file],
           title: `${content.title} - Gavetta`,
-          text: `Confira "${content.title}" no Gavetta! 🎬\n\nhttps://gavetta.com.br`,
+          text: shareText,
+          url: shareUrl,
         });
 
         toast({
-          title: "Compartilhado!",
-          description: "Story pronto para publicar no Instagram.",
+          title: "Story pronto!",
+          description: pasteHint,
         });
       } else if (navigator.share) {
         // Fallback: compartilhar apenas texto/link se não suportar arquivos
         await navigator.share({
           title: `${content.title} - Gavetta`,
-          text: `Confira "${content.title}" no Gavetta! 🎬`,
-          url: 'https://gavetta.com.br',
+          text: shareText,
+          url: shareUrl,
         });
 
         toast({
@@ -377,7 +405,9 @@ export function useStoryShare() {
 
         toast({
           title: "Imagem baixada!",
-          description: "Abra o Instagram e compartilhe a imagem nos Stories.",
+          description: clipboardOk
+            ? "Link do card copiado. Abra o Instagram, adicione a imagem e cole o link no adesivo \"Link\"."
+            : "Abra o Instagram, adicione a imagem e cole o link mostrado no Story no adesivo \"Link\".",
         });
       }
     } catch (error) {
