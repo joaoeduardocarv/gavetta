@@ -1,44 +1,64 @@
 ## Objetivo
-Cada filme/série passa a ter URL pública curta:
-- Filme: `gavetta.com.br/m/{tmdbId}`
-- Série: `gavetta.com.br/s/{tmdbId}`
+Toda vez que o usuário compartilhar um Story do Instagram a partir de um filme/série no Gavetta, o link curto do card (`gavetta.com.br/m/{id}` ou `/s/{id}`) acompanha o compartilhamento, para que quem vir o Story consiga abrir aquele card específico.
 
-Os links antigos `/share/movie/{id}` e `/share/tv/{id}` continuam funcionando via redirect automático para o novo formato.
+## Limitação técnica importante (será comunicada ao usuário no toast)
+O Instagram **não torna automaticamente clicável** um link que vem dentro de uma imagem compartilhada via Web Share API. Para virar clicável, o usuário precisa colar o link no **adesivo "Link"** do editor de Stories. Por isso, a estratégia é tripla:
+
+1. **Imprimir o link no rodapé da imagem do Story** (visível para qualquer espectador digitar/lembrar).
+2. **Copiar o link automaticamente para a área de transferência** antes de abrir o compartilhamento — assim o usuário só precisa colar no adesivo "Link" do Instagram.
+3. **Incluir o link também no `text` do `navigator.share`** — em alguns destinos (não Stories) ele aparece como legenda.
 
 ## Mudanças
 
-### 1. Roteamento (`src/App.tsx`)
-- Adicionar duas rotas novas apontando para `SharePage`:
-  - `/m/:tmdbId` → renderiza `<SharePage forcedType="movie" />`
-  - `/s/:tmdbId` → renderiza `<SharePage forcedType="tv" />`
-- Manter `/share/:type/:tmdbId`, porém apontando para um pequeno componente `LegacyShareRedirect` que faz `<Navigate replace to={`/${type === 'movie' ? 'm' : 's'}/${tmdbId}`} />`. Isso preserva todo link já compartilhado por usuários.
-
-### 2. `src/pages/SharePage.tsx`
-- Aceitar a prop opcional `forcedType?: "movie" | "tv"`. Quando presente, usa ela; quando ausente, mantém o comportamento atual de ler `type` da URL (fallback de segurança, mas as novas rotas sempre passam `forcedType`).
-- Resto da página (loader, Helmet OG/Twitter, layout) permanece igual.
-
-### 3. Geração de link de compartilhamento (`src/components/ContentDetailDialog.tsx` linha 863)
-- Trocar:
+### 1. `src/hooks/useStoryShare.tsx`
+- Estender `StoryShareContent` com:
   ```ts
-  const url = `${window.location.origin}/share/${parsed.mediaType}/${parsed.tmdbId}`;
+  tmdbId?: number;
+  // type já existe como 'movie' | 'series'
   ```
-  por:
+- Calcular `shareUrl`:
   ```ts
-  const prefix = parsed.mediaType === "movie" ? "m" : "s";
-  const url = `${window.location.origin}/${prefix}/${parsed.tmdbId}`;
+  const prefix = content.type === 'movie' ? 'm' : 's';
+  const shareUrl = content.tmdbId
+    ? `https://gavetta.com.br/${prefix}/${content.tmdbId}`
+    : 'https://gavetta.com.br';
   ```
-- Mesmo tratamento em qualquer outro local que monte URL de share (verificar `useStoryShare` e geração de imagem de Story; ajustar se também montarem `/share/...`).
+- Em `generateStoryImage`, substituir o rodapé atual:
+  - Linha `gavetta.com.br` (linha 320) passa a renderizar `shareUrl` sem o prefixo `https://` (ex.: `gavetta.com.br/m/550`).
+  - Manter "Crie sua conta grátis!" acima.
+- Em `shareToStory`:
+  - Antes do `navigator.share`, tentar `navigator.clipboard.writeText(shareUrl)` dentro de um try/catch (ignorar erro silenciosamente — clipboard pode falhar em alguns browsers/contextos sem HTTPS).
+  - No payload `navigator.share({ files, ... })`, trocar o `text` para:
+    ```
+    Confira "${title}" no Gavetta! 🎬\n\n${shareUrl}
+    ```
+    e adicionar `url: shareUrl` (alguns targets usam um, outros outro).
+  - No fallback "só texto" (`navigator.share` sem arquivos), passar `url: shareUrl`.
+  - No fallback desktop (download), também copiar o link para clipboard.
+  - Atualizar os toasts:
+    - Sucesso com arquivo: "Story pronto! Link do card copiado — cole no adesivo **Link** do Instagram para deixar clicável."
+    - Sucesso só texto: mensagem similar.
+    - Desktop download: "Imagem baixada e link copiado. Abra o Instagram, adicione a imagem e cole o link no adesivo Link."
 
-### 4. Riscos de colisão
-- Rotas existentes ocupam: `/welcome`, `/auth`, `/signup-help`, `/`, `/my-drawers`, `/friends`, `/search`, `/trending`, `/profile`, `/u/:username`, `/share/...`, `/admin/...`. Os prefixos `/m/` e `/s/` estão livres e não conflitam com nada planejado.
+### 2. `src/components/ContentDetailDialog.tsx`
+- Passar `tmdbId` para `shareToStory`. Já existe `extractTmdbInfoFromId(content.id)` usado no botão "Compartilhar link"; reaproveitar:
+  ```ts
+  const parsed = extractTmdbInfoFromId(content.id);
+  shareToStory({
+    title: content.title,
+    posterUrl: content.posterUrl,
+    backdropUrl: content.backdropUrl,
+    type: content.type === 'movie' ? 'movie' : 'series',
+    rating: contentDrawers.rating,
+    userHandle: userHandle,
+    tmdbId: parsed?.tmdbId,
+  });
+  ```
 
-### 5. SEO
-- `public/sitemap.xml`: hoje é estático e não lista conteúdos individuais. Não vamos gerar entradas por filme/série agora (seriam dezenas de milhares vindas do TMDB). As metatags OG/Twitter já existentes em `SharePage` continuam cobrindo o preview por link.
-
-### 6. Sem mudanças de backend
-- Nenhuma migração necessária. RLS e edge functions permanecem intactas.
+### 3. Sem mudanças de backend, rotas ou SEO
+- A rota `/m/:id` e `/s/:id` já foi criada na etapa anterior, então o link já resolve.
 
 ## Validação
-- Abrir `/m/550` (Clube da Luta) e `/s/1399` (Game of Thrones) e conferir carregamento + metatags.
-- Abrir um link antigo `/share/movie/550` e confirmar redirect para `/m/550`.
-- Clicar em "Compartilhar" num card e verificar que a URL copiada está no novo formato.
+- Compartilhar um Story de um filme no mobile: confirmar que (a) a imagem mostra `gavetta.com.br/m/{id}` no rodapé, (b) o clipboard contém o mesmo link, (c) o toast orienta colar no adesivo Link.
+- Mesmo fluxo numa série → URL com prefixo `/s/`.
+- Desktop: confirmar download + clipboard + toast atualizado.

@@ -834,14 +834,18 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
               <Button 
                 variant="outline" 
                 className="flex-1 min-w-[140px] gap-2"
-                onClick={() => shareToStory({
-                  title: content.title,
-                  posterUrl: content.posterUrl,
-                  backdropUrl: content.backdropUrl,
-                  type: content.type === 'movie' ? 'movie' : 'series',
-                  rating: contentDrawers.rating,
-                  userHandle: userHandle,
-                })}
+                onClick={() => {
+                  const parsedStory = extractTmdbInfoFromId(content.id);
+                  shareToStory({
+                    title: content.title,
+                    posterUrl: content.posterUrl,
+                    backdropUrl: content.backdropUrl,
+                    type: content.type === 'movie' ? 'movie' : 'series',
+                    rating: contentDrawers.rating,
+                    userHandle: userHandle,
+                    tmdbId: parsedStory?.tmdbId,
+                  });
+                }}
                 disabled={isGeneratingStory}
               >
                 {isGeneratingStory ? (
