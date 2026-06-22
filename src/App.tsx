@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useParams } from "react-router-dom";
 import { Suspense, lazy } from "react";
 import { Loader2 } from "lucide-react";
 import { DrawerProvider } from "@/contexts/DrawerContext";
@@ -53,6 +53,16 @@ const RouteFallback = () => (
   </div>
 );
 
+// Legacy /share/:type/:tmdbId → /m/:tmdbId or /s/:tmdbId
+const LegacyShareRedirect = () => {
+  const { type, tmdbId } = useParams<{ type: string; tmdbId: string }>();
+  if (!tmdbId || (type !== "movie" && type !== "tv")) {
+    return <Navigate to="/" replace />;
+  }
+  const prefix = type === "movie" ? "m" : "s";
+  return <Navigate to={`/${prefix}/${tmdbId}`} replace />;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
@@ -78,7 +88,9 @@ const App = () => (
                     <Route path="/trending" element={<ProtectedRoute><Trending /></ProtectedRoute>} />
                     <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                     <Route path="/u/:username" element={<PublicProfile />} />
-                    <Route path="/share/:type/:tmdbId" element={<SharePage />} />
+                    <Route path="/m/:tmdbId" element={<SharePage forcedType="movie" />} />
+                    <Route path="/s/:tmdbId" element={<SharePage forcedType="tv" />} />
+                    <Route path="/share/:type/:tmdbId" element={<LegacyShareRedirect />} />
                     <Route path="/admin/signup-debug" element={<ProtectedRoute><AdminSignupDebug /></ProtectedRoute>} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />

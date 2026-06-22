@@ -100,8 +100,14 @@ const SECTION_LABELS: Record<TMDBOfferType, string> = {
   buy: "Comprar",
 };
 
-export default function SharePage() {
-  const { type, tmdbId } = useParams<{ type: ShareType; tmdbId: string }>();
+interface SharePageProps {
+  forcedType?: ShareType;
+}
+
+export default function SharePage({ forcedType }: SharePageProps = {}) {
+  const params = useParams<{ type?: ShareType; tmdbId: string }>();
+  const type: ShareType | undefined = forcedType ?? params.type;
+  const tmdbId = params.tmdbId;
   const { user } = useAuth();
   
   const [data, setData] = useState<LoadedData | null>(null);
