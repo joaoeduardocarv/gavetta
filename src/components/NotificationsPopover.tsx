@@ -13,9 +13,9 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Content } from "@/lib/mockData";
 import { supabase } from "@/integrations/supabase/client";
-import { normalizeStoredContent } from "@/lib/contentNormalizer";
+import { normalizeStoredContent, extractTmdbInfoFromId } from "@/lib/contentNormalizer";
 import { ContentDetailDialog } from "./ContentDetailDialog";
-import { extractTmdbInfoFromId } from "@/lib/contentNormalizer";
+import { getMovieDetails, getTVDetails, getTMDBImageUrl } from "@/lib/tmdb";
 
 const CONTENT_NOTIFICATION_TYPES: Notification["type"][] = [
   "streaming_change",
@@ -118,6 +118,46 @@ export function NotificationsPopover() {
     }
   };
 
+  const openContentDialogFromTmdb = async (mediaType: "movie" | "tv", tmdbId: number) => {
+    setPopoverOpen(false);
+    try {
+      if (mediaType === "movie") {
+        const d = await getMovieDetails(tmdbId);
+        setSelectedContent({
+          id: `movie-${tmdbId}`,
+          type: "movie",
+          title: d.title,
+          originalTitle: (d as any).original_title || d.title,
+          releaseDate: d.release_date || "",
+          synopsis: d.overview || "",
+          posterUrl: getTMDBImageUrl(d.poster_path, "w500"),
+          backdropUrl: getTMDBImageUrl(d.backdrop_path, "w500"),
+          genres: d.genres?.map((g) => g.name) ?? [],
+          rating: d.vote_average,
+        } as Content);
+      } else {
+        const d = await getTVDetails(tmdbId);
+        setSelectedContent({
+          id: `tv-${tmdbId}`,
+          type: "series",
+          title: d.name,
+          originalTitle: (d as any).original_name || d.name,
+          releaseDate: d.first_air_date || "",
+          synopsis: d.overview || "",
+          posterUrl: getTMDBImageUrl(d.poster_path, "w500"),
+          backdropUrl: getTMDBImageUrl(d.backdrop_path, "w500"),
+          genres: d.genres?.map((g) => g.name) ?? [],
+          rating: d.vote_average,
+        } as Content);
+      }
+      setContentDialogOpen(true);
+    } catch (e) {
+      console.error("Erro ao abrir conteúdo da notificação:", e);
+      toast({ title: "Erro", description: "Não foi possível abrir este conteúdo.", variant: "destructive" });
+    }
+  };
+
+
   const handleNotificationClick = (notification: Notification) => {
     if (notification.type === "recommendation") {
       handleRecommendationClick(notification);
@@ -136,8 +176,7 @@ export function NotificationsPopover() {
       const parsed = extractTmdbInfoFromId(notification.related_content_id);
       if (parsed) {
         if (!notification.is_read) markAsRead.mutate(notification.id);
-        setPopoverOpen(false);
-        navigate(`/${parsed.mediaType === "movie" ? "m" : "s"}/${parsed.tmdbId}`);
+        openContentDialogFromTmdb(parsed.mediaType, parsed.tmdbId);
         return;
       }
     }
