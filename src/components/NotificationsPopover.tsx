@@ -115,6 +115,7 @@ export function NotificationsPopover() {
       setSelectedContent(content);
       setPopoverOpen(false);
       setContentDialogOpen(true);
+    }
   };
 
   const openContentDialogFromTmdb = async (mediaType: "movie" | "tv", tmdbId: number) => {
