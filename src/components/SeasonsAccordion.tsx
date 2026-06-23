@@ -237,6 +237,25 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
     if (totalEpisodes === 0) return;
     try {
       const loaded = await ensureAllSeasonsLoaded();
+
+      // When marking a single episode, only prompt if it completes its season's aired episodes.
+      // (The "mark all aired" flow passes no justMarked and bypasses this guard.)
+      if (justMarked) {
+        const seasonEps = loaded[justMarked.season];
+        if (!seasonEps) return;
+        let seasonAired = 0;
+        let seasonAiredWatched = 0;
+        for (const ep of seasonEps) {
+          if (!hasAired(ep.air_date)) continue;
+          seasonAired++;
+          const isJustMarked = justMarked.episode === ep.episode_number;
+          if (isJustMarked || isWatched(justMarked.season, ep.episode_number)) {
+            seasonAiredWatched++;
+          }
+        }
+        if (seasonAired === 0 || seasonAiredWatched < seasonAired) return;
+      }
+
       let totalAired = 0;
       let airedWatched = 0;
       for (const s of seasons) {
@@ -262,6 +281,7 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
       console.error("Error checking aired-episode totals:", err);
     }
   };
+
 
   const handleConfirmMoveToWatched = async () => {
     setShowMoveToWatchedPrompt(false);
