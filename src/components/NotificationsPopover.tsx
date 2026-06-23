@@ -15,6 +15,16 @@ import { Content } from "@/lib/mockData";
 import { supabase } from "@/integrations/supabase/client";
 import { normalizeStoredContent } from "@/lib/contentNormalizer";
 import { ContentDetailDialog } from "./ContentDetailDialog";
+import { extractTmdbInfoFromId } from "@/lib/contentNormalizer";
+
+const CONTENT_NOTIFICATION_TYPES: Notification["type"][] = [
+  "streaming_change",
+  "new_season",
+  "new_episodes",
+  "upcoming_content",
+  "rental_arrival",
+  "purchase_arrival",
+];
 import { formatRelativeDate } from "@/lib/utils";
 
 const getNotificationIcon = (type: Notification["type"]) => {
@@ -118,6 +128,18 @@ export function NotificationsPopover() {
       setPopoverOpen(false);
       navigate("/friends");
       return;
+    }
+    if (
+      CONTENT_NOTIFICATION_TYPES.includes(notification.type) &&
+      notification.related_content_id
+    ) {
+      const parsed = extractTmdbInfoFromId(notification.related_content_id);
+      if (parsed) {
+        if (!notification.is_read) markAsRead.mutate(notification.id);
+        setPopoverOpen(false);
+        navigate(`/${parsed.mediaType === "movie" ? "m" : "s"}/${parsed.tmdbId}`);
+        return;
+      }
     }
     if (!notification.is_read) {
       markAsRead.mutate(notification.id);
