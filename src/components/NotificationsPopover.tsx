@@ -13,9 +13,9 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { Content } from "@/lib/mockData";
 import { supabase } from "@/integrations/supabase/client";
-import { normalizeStoredContent } from "@/lib/contentNormalizer";
+import { normalizeStoredContent, extractTmdbInfoFromId } from "@/lib/contentNormalizer";
 import { ContentDetailDialog } from "./ContentDetailDialog";
-import { extractTmdbInfoFromId } from "@/lib/contentNormalizer";
+import { getMovieDetails, getTVDetails, getTMDBImageUrl } from "@/lib/tmdb";
 
 const CONTENT_NOTIFICATION_TYPES: Notification["type"][] = [
   "streaming_change",
