@@ -216,7 +216,6 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
       }
     : content;
 
-  if (!content) return null;
 
   const handlePersonClick = async (person: PersonInfo | null, fallbackName?: string) => {
     if (person?.id) {
