@@ -751,7 +751,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                         );
                       }
 
-                      const link = content.watchProvidersLink;
+                      const link = viewContent.watchProvidersLink;
 
                       return (
                         <div className="space-y-2.5">
