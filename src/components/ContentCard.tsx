@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Star, Film, Tv, Check, Clock, Play, Bell, Clapperboard, Languages, Repeat } from "lucide-react";
 import { GavetaIcon } from "@/components/GavetaIcon";
 import { Badge } from "./ui/badge";
@@ -6,7 +7,7 @@ import { cn, formatRelativeDate } from "@/lib/utils";
 import type { Content } from "@/lib/mockData";
 import { DrawerPickerPopover } from "./DrawerPickerPopover";
 import { useDrawers } from "@/contexts/DrawerContext";
-import { getTMDBImageUrl } from "@/lib/tmdb";
+import { getTMDBImageUrl, getMovieWatchProviders, getTVWatchProviders, getMovieDetails, extractStreamingNames, extractStreamingLogos } from "@/lib/tmdb";
 import { useContentNotifications } from "@/hooks/useContentNotifications";
 import { useSeriesEpisodeProgress } from "@/hooks/useWatchedEpisodes";
 import { extractTmdbInfoFromId } from "@/lib/contentNormalizer";
@@ -81,9 +82,58 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
     })
     .filter((genre) => Boolean(genre));
 
-  const providerLogos = (content.watchProviderLogos || []).slice(0, 5);
+  // Refresh watch providers in the background so the mini icons stay current
+  const [freshProviders, setFreshProviders] = useState<{
+    availableOn?: string[];
+    watchProviderLogos?: Content['watchProviderLogos'];
+    isInTheaters?: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    const parsed = extractTmdbInfoFromId(content.id);
+    if (!parsed) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        if (parsed.mediaType === 'movie') {
+          const [providers, details] = await Promise.all([
+            getMovieWatchProviders(parsed.tmdbId),
+            getMovieDetails(parsed.tmdbId).catch(() => null),
+          ]);
+          if (cancelled) return;
+          setFreshProviders({
+            availableOn: extractStreamingNames(providers),
+            watchProviderLogos: extractStreamingLogos(providers),
+            isInTheaters: details?.isInTheaters,
+          });
+        } else {
+          const providers = await getTVWatchProviders(parsed.tmdbId);
+          if (cancelled) return;
+          setFreshProviders({
+            availableOn: extractStreamingNames(providers),
+            watchProviderLogos: extractStreamingLogos(providers),
+          });
+        }
+      } catch {
+        // silent — keep the stored snapshot
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [content.id]);
+
+  const displayContent: Content = freshProviders
+    ? {
+        ...content,
+        availableOn: freshProviders.availableOn ?? content.availableOn,
+        watchProviderLogos: freshProviders.watchProviderLogos ?? content.watchProviderLogos,
+        isInTheaters: freshProviders.isInTheaters ?? content.isInTheaters,
+      }
+    : content;
+
+  const providerLogos = (displayContent.watchProviderLogos || []).slice(0, 5);
   const hasLogos = providerLogos.length > 0;
-  const extraCount = (content.watchProviderLogos?.length || 0) - 5;
+  const extraCount = (displayContent.watchProviderLogos?.length || 0) - 5;
+
   
   return (
     <div
@@ -218,9 +268,9 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
         </p>
 
         {/* Plataformas de streaming com logos */}
-        {(hasLogos || content.isInTheaters || (content.availableOn && content.availableOn.length > 0)) && (
+        {(hasLogos || displayContent.isInTheaters || (displayContent.availableOn && displayContent.availableOn.length > 0)) && (
           <div className="flex items-center gap-1.5 mt-1.5">
-            {content.isInTheaters && (
+            {displayContent.isInTheaters && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -276,10 +326,10 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
                   <span className="text-[10px] text-muted-foreground ml-0.5">+{extraCount}</span>
                 )}
               </>
-            ) : content.availableOn && content.availableOn.length > 0 ? (
+            ) : displayContent.availableOn && displayContent.availableOn.length > 0 ? (
               <span className="text-xs text-muted-foreground line-clamp-1">
-                {content.availableOn.slice(0, 3).join(" • ")}
-                {content.availableOn.length > 3 && ` +${content.availableOn.length - 3}`}
+                {displayContent.availableOn.slice(0, 3).join(" • ")}
+                {displayContent.availableOn.length > 3 && ` +${displayContent.availableOn.length - 3}`}
               </span>
             ) : null}
           </div>
