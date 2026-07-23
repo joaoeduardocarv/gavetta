@@ -218,11 +218,22 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
           {StatusIcon && (
             <StatusIcon className={cn("h-3.5 w-3.5", content.status && statusColors[content.status])} />
           )}
-          {content.rating && (
+          {content.rating && content.rating > 0 ? (
             <div className="flex items-center gap-1 text-accent">
               <Star className="h-3 w-3 fill-accent" />
               <span className="text-xs font-semibold">{content.rating.toFixed(1)}</span>
             </div>
+          ) : (
+            (() => {
+              const release = content.releaseDate ? new Date(content.releaseDate) : null;
+              const isUpcoming = !release || isNaN(release.getTime()) || release.getTime() > Date.now();
+              return isUpcoming ? (
+                <Badge variant="outline" className="text-xs border-accent/40 text-accent gap-1">
+                  <Clock className="h-3 w-3" />
+                  Em breve
+                </Badge>
+              ) : null;
+            })()
           )}
           {isSeries && watchedEpCount > 0 && (() => {
             const isComplete = totalEpCount > 0 && watchedEpCount >= totalEpCount;
