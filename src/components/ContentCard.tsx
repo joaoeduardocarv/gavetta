@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Star, Film, Tv, Check, Clock, Play, Bell, Clapperboard, Languages, Repeat } from "lucide-react";
 import { GavetaIcon } from "@/components/GavetaIcon";
 import { Badge } from "./ui/badge";
@@ -6,7 +7,7 @@ import { cn, formatRelativeDate } from "@/lib/utils";
 import type { Content } from "@/lib/mockData";
 import { DrawerPickerPopover } from "./DrawerPickerPopover";
 import { useDrawers } from "@/contexts/DrawerContext";
-import { getTMDBImageUrl } from "@/lib/tmdb";
+import { getTMDBImageUrl, getMovieWatchProviders, getTVWatchProviders, getMovieDetails, extractStreamingNames, extractStreamingLogos } from "@/lib/tmdb";
 import { useContentNotifications } from "@/hooks/useContentNotifications";
 import { useSeriesEpisodeProgress } from "@/hooks/useWatchedEpisodes";
 import { extractTmdbInfoFromId } from "@/lib/contentNormalizer";
