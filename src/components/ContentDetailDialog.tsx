@@ -161,8 +161,60 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
       .catch(console.error);
   }, [content?.id, open]);
 
+  // Refresh watch providers on open (TMDB streaming availability changes often)
+  useEffect(() => {
+    if (!content || !open) {
+      setFreshProviders(null);
+      return;
+    }
+    const parsed = extractTmdbInfoFromId(content.id);
+    if (!parsed) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        if (parsed.mediaType === 'movie') {
+          const [providers, details] = await Promise.all([
+            getMovieWatchProviders(parsed.tmdbId),
+            getMovieDetails(parsed.tmdbId).catch(() => null),
+          ]);
+          if (cancelled) return;
+          setFreshProviders({
+            availableOn: extractStreamingNames(providers),
+            watchProviderLogos: extractStreamingLogos(providers),
+            watchProvidersLink: providers?.link || undefined,
+            isInTheaters: details?.isInTheaters,
+          });
+        } else {
+          const providers = await getTVWatchProviders(parsed.tmdbId);
+          if (cancelled) return;
+          setFreshProviders({
+            availableOn: extractStreamingNames(providers),
+            watchProviderLogos: extractStreamingLogos(providers),
+            watchProvidersLink: providers?.link || undefined,
+          });
+        }
+      } catch (err) {
+        console.warn('Failed to refresh watch providers:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [content?.id, open]);
+
   // Note: marking all episodes does NOT auto-move the series to "Assistido".
   // New seasons/episodes may be released later, so the user keeps full control.
+
+  if (!content) return null;
+
+  // Merge fresh provider data over the stored snapshot for display
+  const viewContent: Content = freshProviders
+    ? {
+        ...content,
+        availableOn: freshProviders.availableOn ?? content.availableOn,
+        watchProviderLogos: freshProviders.watchProviderLogos ?? content.watchProviderLogos,
+        watchProvidersLink: freshProviders.watchProvidersLink ?? content.watchProvidersLink,
+        isInTheaters: freshProviders.isInTheaters ?? content.isInTheaters,
+      }
+    : content;
 
   if (!content) return null;
 
