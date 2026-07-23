@@ -704,11 +704,11 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                       </Badge>
                     )}
                     {(() => {
-                      const logos = content.watchProviderLogos ?? [];
+                      const logos = viewContent.watchProviderLogos ?? [];
                       if (logos.length === 0) {
                         return (
                           <div className="flex flex-wrap gap-2">
-                            {content.availableOn?.map((platform) => (
+                            {viewContent.availableOn?.map((platform) => (
                               <Badge key={platform} variant="outline">{platform}</Badge>
                             ))}
                           </div>
