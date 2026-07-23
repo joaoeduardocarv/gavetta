@@ -21,7 +21,7 @@ import { Content } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 import { useDrawers, DEFAULT_DRAWER_IDS, DefaultDrawerId } from "@/contexts/DrawerContext";
 import { useToast } from "@/hooks/use-toast";
-import { searchPerson, getTMDBProfileUrl, TMDBPersonCredit, getMovieDetails, getTVDetails, getMovieCredits, getTVCredits, getMovieWatchProviders, getTVWatchProviders, extractStreamingNames, getTMDBImageUrl } from "@/lib/tmdb";
+import { searchPerson, getTMDBProfileUrl, TMDBPersonCredit, getMovieDetails, getTVDetails, getMovieCredits, getTVCredits, getMovieWatchProviders, getTVWatchProviders, extractStreamingNames, extractStreamingLogos, getTMDBImageUrl } from "@/lib/tmdb";
 import { extractTmdbInfoFromId } from "@/lib/contentNormalizer";
 
 interface ContentDetailDialogProps {
