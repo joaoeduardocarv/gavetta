@@ -124,9 +124,9 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
   const displayContent: Content = freshProviders
     ? {
         ...content,
-        availableOn: freshProviders.availableOn ?? content.availableOn,
+        availableOn: freshProviders.availableOn ?? displayContent.availableOn,
         watchProviderLogos: freshProviders.watchProviderLogos ?? content.watchProviderLogos,
-        isInTheaters: freshProviders.isInTheaters ?? content.isInTheaters,
+        isInTheaters: freshProviders.isInTheaters ?? displayContent.isInTheaters,
       }
     : content;
 
@@ -268,9 +268,9 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
         </p>
 
         {/* Plataformas de streaming com logos */}
-        {(hasLogos || content.isInTheaters || (content.availableOn && content.availableOn.length > 0)) && (
+        {(hasLogos || displayContent.isInTheaters || (displayContent.availableOn && displayContent.availableOn.length > 0)) && (
           <div className="flex items-center gap-1.5 mt-1.5">
-            {content.isInTheaters && (
+            {displayContent.isInTheaters && (
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -326,10 +326,10 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
                   <span className="text-[10px] text-muted-foreground ml-0.5">+{extraCount}</span>
                 )}
               </>
-            ) : content.availableOn && content.availableOn.length > 0 ? (
+            ) : displayContent.availableOn && displayContent.availableOn.length > 0 ? (
               <span className="text-xs text-muted-foreground line-clamp-1">
-                {content.availableOn.slice(0, 3).join(" • ")}
-                {content.availableOn.length > 3 && ` +${content.availableOn.length - 3}`}
+                {displayContent.availableOn.slice(0, 3).join(" • ")}
+                {displayContent.availableOn.length > 3 && ` +${displayContent.availableOn.length - 3}`}
               </span>
             ) : null}
           </div>
