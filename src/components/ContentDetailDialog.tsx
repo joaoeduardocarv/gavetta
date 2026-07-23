@@ -695,7 +695,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                 <div>
                   <Label className="text-sm font-semibold">Onde assistir</Label>
                   <div className="mt-2 space-y-2">
-                    {content.isInTheaters && (
+                    {viewContent.isInTheaters && (
                       <Badge
                         variant="default"
                         className="bg-accent/20 text-accent-foreground border border-accent/30 hover:bg-accent/30"
