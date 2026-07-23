@@ -96,6 +96,12 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
   const [directorInfo, setDirectorInfo] = useState<PersonInfo | null>(null);
   const [castInfo, setCastInfo] = useState<PersonInfo[]>([]);
   const [isLoadingCredit, setIsLoadingCredit] = useState(false);
+  const [freshProviders, setFreshProviders] = useState<{
+    availableOn?: string[];
+    watchProviderLogos?: Content['watchProviderLogos'];
+    watchProvidersLink?: string;
+    isInTheaters?: boolean;
+  } | null>(null);
   
   // Obter gavetas e rating atuais do conteúdo
   const contentDrawers = content ? getContentDrawers(content.id) : { defaultDrawer: null, customDrawers: [], rating: null, comment: null, rewatchCount: 0 };
