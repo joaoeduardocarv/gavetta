@@ -169,11 +169,12 @@ export function getTMDBProfileUrl(path: string | null): string {
 // =============== CLIENT-SIDE CACHE ===============
 
 const clientCache = new Map<string, { data: unknown; ts: number }>();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes default
+const PROVIDERS_CACHE_TTL = 60 * 1000; // 1 minute for watch providers (change often)
 
-async function cachedCall<T>(cacheKey: string, fetcher: () => Promise<T>): Promise<T> {
+async function cachedCall<T>(cacheKey: string, fetcher: () => Promise<T>, ttl: number = CACHE_TTL): Promise<T> {
   const cached = clientCache.get(cacheKey);
-  if (cached && Date.now() - cached.ts < CACHE_TTL) {
+  if (cached && Date.now() - cached.ts < ttl) {
     return cached.data as T;
   }
   const data = await fetcher();
@@ -185,6 +186,7 @@ async function cachedCall<T>(cacheKey: string, fetcher: () => Promise<T>): Promi
 
 async function callTMDBFunction<T>(action: string, params: Record<string, string> = {}): Promise<T> {
   const cacheKey = `${action}:${JSON.stringify(params)}`;
+  const ttl = action.includes('Providers') ? PROVIDERS_CACHE_TTL : CACHE_TTL;
   return cachedCall(cacheKey, async () => {
     const queryParams = new URLSearchParams({ action, ...params });
 
@@ -210,7 +212,7 @@ async function callTMDBFunction<T>(action: string, params: Record<string, string
     }
 
     return await response.json();
-  });
+  }, ttl);
 }
 
 // =============== ACTION 1 — BUSCAR FILMES ===============

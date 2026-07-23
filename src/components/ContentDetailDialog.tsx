@@ -21,7 +21,7 @@ import { Content } from "@/lib/mockData";
 import { cn } from "@/lib/utils";
 import { useDrawers, DEFAULT_DRAWER_IDS, DefaultDrawerId } from "@/contexts/DrawerContext";
 import { useToast } from "@/hooks/use-toast";
-import { searchPerson, getTMDBProfileUrl, TMDBPersonCredit, getMovieDetails, getTVDetails, getMovieCredits, getTVCredits, getMovieWatchProviders, getTVWatchProviders, extractStreamingNames, getTMDBImageUrl } from "@/lib/tmdb";
+import { searchPerson, getTMDBProfileUrl, TMDBPersonCredit, getMovieDetails, getTVDetails, getMovieCredits, getTVCredits, getMovieWatchProviders, getTVWatchProviders, extractStreamingNames, extractStreamingLogos, getTMDBImageUrl } from "@/lib/tmdb";
 import { extractTmdbInfoFromId } from "@/lib/contentNormalizer";
 
 interface ContentDetailDialogProps {
@@ -96,6 +96,12 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
   const [directorInfo, setDirectorInfo] = useState<PersonInfo | null>(null);
   const [castInfo, setCastInfo] = useState<PersonInfo[]>([]);
   const [isLoadingCredit, setIsLoadingCredit] = useState(false);
+  const [freshProviders, setFreshProviders] = useState<{
+    availableOn?: string[];
+    watchProviderLogos?: Content['watchProviderLogos'];
+    watchProvidersLink?: string;
+    isInTheaters?: boolean;
+  } | null>(null);
   
   // Obter gavetas e rating atuais do conteúdo
   const contentDrawers = content ? getContentDrawers(content.id) : { defaultDrawer: null, customDrawers: [], rating: null, comment: null, rewatchCount: 0 };
@@ -155,10 +161,61 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
       .catch(console.error);
   }, [content?.id, open]);
 
+  // Refresh watch providers on open (TMDB streaming availability changes often)
+  useEffect(() => {
+    if (!content || !open) {
+      setFreshProviders(null);
+      return;
+    }
+    const parsed = extractTmdbInfoFromId(content.id);
+    if (!parsed) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        if (parsed.mediaType === 'movie') {
+          const [providers, details] = await Promise.all([
+            getMovieWatchProviders(parsed.tmdbId),
+            getMovieDetails(parsed.tmdbId).catch(() => null),
+          ]);
+          if (cancelled) return;
+          setFreshProviders({
+            availableOn: extractStreamingNames(providers),
+            watchProviderLogos: extractStreamingLogos(providers),
+            watchProvidersLink: providers?.link || undefined,
+            isInTheaters: details?.isInTheaters,
+          });
+        } else {
+          const providers = await getTVWatchProviders(parsed.tmdbId);
+          if (cancelled) return;
+          setFreshProviders({
+            availableOn: extractStreamingNames(providers),
+            watchProviderLogos: extractStreamingLogos(providers),
+            watchProvidersLink: providers?.link || undefined,
+          });
+        }
+      } catch (err) {
+        console.warn('Failed to refresh watch providers:', err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [content?.id, open]);
+
   // Note: marking all episodes does NOT auto-move the series to "Assistido".
   // New seasons/episodes may be released later, so the user keeps full control.
 
   if (!content) return null;
+
+  // Merge fresh provider data over the stored snapshot for display
+  const viewContent: Content = freshProviders
+    ? {
+        ...content,
+        availableOn: freshProviders.availableOn ?? content.availableOn,
+        watchProviderLogos: freshProviders.watchProviderLogos ?? content.watchProviderLogos,
+        watchProvidersLink: freshProviders.watchProvidersLink ?? content.watchProvidersLink,
+        isInTheaters: freshProviders.isInTheaters ?? content.isInTheaters,
+      }
+    : content;
+
 
   const handlePersonClick = async (person: PersonInfo | null, fallbackName?: string) => {
     if (person?.id) {
@@ -634,11 +691,11 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                 </div>
               )}
 
-              {(content.isInTheaters || (content.watchProviderLogos && content.watchProviderLogos.length > 0) || (content.availableOn && content.availableOn.length > 0)) && (
+              {(viewContent.isInTheaters || (viewContent.watchProviderLogos && viewContent.watchProviderLogos.length > 0) || (viewContent.availableOn && viewContent.availableOn.length > 0)) && (
                 <div>
                   <Label className="text-sm font-semibold">Onde assistir</Label>
                   <div className="mt-2 space-y-2">
-                    {content.isInTheaters && (
+                    {viewContent.isInTheaters && (
                       <Badge
                         variant="default"
                         className="bg-accent/20 text-accent-foreground border border-accent/30 hover:bg-accent/30"
@@ -647,11 +704,11 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                       </Badge>
                     )}
                     {(() => {
-                      const logos = content.watchProviderLogos ?? [];
+                      const logos = viewContent.watchProviderLogos ?? [];
                       if (logos.length === 0) {
                         return (
                           <div className="flex flex-wrap gap-2">
-                            {content.availableOn?.map((platform) => (
+                            {viewContent.availableOn?.map((platform) => (
                               <Badge key={platform} variant="outline">{platform}</Badge>
                             ))}
                           </div>
@@ -694,7 +751,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                         );
                       }
 
-                      const link = content.watchProvidersLink;
+                      const link = viewContent.watchProvidersLink;
 
                       return (
                         <div className="space-y-2.5">
