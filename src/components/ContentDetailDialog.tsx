@@ -691,7 +691,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                 </div>
               )}
 
-              {(content.isInTheaters || (content.watchProviderLogos && content.watchProviderLogos.length > 0) || (content.availableOn && content.availableOn.length > 0)) && (
+              {(viewContent.isInTheaters || (viewContent.watchProviderLogos && viewContent.watchProviderLogos.length > 0) || (viewContent.availableOn && viewContent.availableOn.length > 0)) && (
                 <div>
                   <Label className="text-sm font-semibold">Onde assistir</Label>
                   <div className="mt-2 space-y-2">
