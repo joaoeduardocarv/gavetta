@@ -27,7 +27,7 @@ const CACHE_TTL = {
   search: 5 * 60 * 1000,        // 5 minutos para buscas
   details: 60 * 60 * 1000,      // 1 hora para detalhes (raramente mudam)
   credits: 24 * 60 * 60 * 1000, // 24 horas para elenco (quase nunca muda)
-  providers: 6 * 60 * 60 * 1000, // 6 horas para providers (mudam ocasionalmente)
+  providers: 30 * 60 * 1000, // 30 minutos para providers (mudam com frequência)
   discover: 30 * 60 * 1000,     // 30 minutos para discover
   person: 24 * 60 * 60 * 1000,  // 24 horas para dados de pessoa
   trending: 30 * 60 * 1000,     // 30 minutos para trending
