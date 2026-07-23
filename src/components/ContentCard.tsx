@@ -82,9 +82,58 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
     })
     .filter((genre) => Boolean(genre));
 
-  const providerLogos = (content.watchProviderLogos || []).slice(0, 5);
+  // Refresh watch providers in the background so the mini icons stay current
+  const [freshProviders, setFreshProviders] = useState<{
+    availableOn?: string[];
+    watchProviderLogos?: Content['watchProviderLogos'];
+    isInTheaters?: boolean;
+  } | null>(null);
+
+  useEffect(() => {
+    const parsed = extractTmdbInfoFromId(content.id);
+    if (!parsed) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        if (parsed.mediaType === 'movie') {
+          const [providers, details] = await Promise.all([
+            getMovieWatchProviders(parsed.tmdbId),
+            getMovieDetails(parsed.tmdbId).catch(() => null),
+          ]);
+          if (cancelled) return;
+          setFreshProviders({
+            availableOn: extractStreamingNames(providers),
+            watchProviderLogos: extractStreamingLogos(providers),
+            isInTheaters: details?.isInTheaters,
+          });
+        } else {
+          const providers = await getTVWatchProviders(parsed.tmdbId);
+          if (cancelled) return;
+          setFreshProviders({
+            availableOn: extractStreamingNames(providers),
+            watchProviderLogos: extractStreamingLogos(providers),
+          });
+        }
+      } catch {
+        // silent — keep the stored snapshot
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [content.id]);
+
+  const displayContent: Content = freshProviders
+    ? {
+        ...content,
+        availableOn: freshProviders.availableOn ?? content.availableOn,
+        watchProviderLogos: freshProviders.watchProviderLogos ?? content.watchProviderLogos,
+        isInTheaters: freshProviders.isInTheaters ?? content.isInTheaters,
+      }
+    : content;
+
+  const providerLogos = (displayContent.watchProviderLogos || []).slice(0, 5);
   const hasLogos = providerLogos.length > 0;
-  const extraCount = (content.watchProviderLogos?.length || 0) - 5;
+  const extraCount = (displayContent.watchProviderLogos?.length || 0) - 5;
+
   
   return (
     <div
