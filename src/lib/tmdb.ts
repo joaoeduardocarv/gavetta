@@ -186,6 +186,7 @@ async function cachedCall<T>(cacheKey: string, fetcher: () => Promise<T>, ttl: n
 
 async function callTMDBFunction<T>(action: string, params: Record<string, string> = {}): Promise<T> {
   const cacheKey = `${action}:${JSON.stringify(params)}`;
+  const ttl = action.includes('Providers') ? PROVIDERS_CACHE_TTL : CACHE_TTL;
   return cachedCall(cacheKey, async () => {
     const queryParams = new URLSearchParams({ action, ...params });
 
@@ -211,7 +212,7 @@ async function callTMDBFunction<T>(action: string, params: Record<string, string
     }
 
     return await response.json();
-  });
+  }, ttl);
 }
 
 // =============== ACTION 1 — BUSCAR FILMES ===============
