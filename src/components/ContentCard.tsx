@@ -124,9 +124,9 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
   const displayContent: Content = freshProviders
     ? {
         ...content,
-        availableOn: freshProviders.availableOn ?? displayContent.availableOn,
+        availableOn: freshProviders.availableOn ?? content.availableOn,
         watchProviderLogos: freshProviders.watchProviderLogos ?? content.watchProviderLogos,
-        isInTheaters: freshProviders.isInTheaters ?? displayContent.isInTheaters,
+        isInTheaters: freshProviders.isInTheaters ?? content.isInTheaters,
       }
     : content;
 
