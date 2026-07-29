@@ -509,7 +509,19 @@ export default function Welcome() {
             />
             <span>© {new Date().getFullYear()} Gavetta</span>
           </div>
-          <div className="text-xs">Feito com 🎬 no Brasil</div>
+          <div className="flex items-center gap-4">
+            <a
+              href="https://instagram.com/gavettaapp"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Siga o Gavetta no Instagram"
+              className="inline-flex items-center gap-1.5 text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <Instagram className="h-5 w-5" aria-hidden="true" />
+              <span className="hidden sm:inline">@gavettaapp</span>
+            </a>
+            <div className="text-xs">Feito com 🎬 no Brasil</div>
+          </div>
         </div>
       </footer>
     </div>
