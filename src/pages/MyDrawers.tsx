@@ -299,9 +299,11 @@ export default function MyDrawers() {
   const availableProviders = Array.from(
     new Set([...BASE_PROVIDERS, ...drawerProviders].filter((p) => !isOtherProvider(p)))
   ).sort();
-  const hasOtherProviders = rawDrawerContent.some((c) =>
-    (c.availableOn || []).some(isOtherProvider)
-  );
+  const hasOtherProviders = rawDrawerContent.some((c) => {
+    const providers = c.availableOn || [];
+    if (providers.length === 0) return true;
+    return !providers.some((p) => !isOtherProvider(p));
+  });
   const availableGenres = Array.from(
     new Set(rawDrawerContent.flatMap((c) => c.genres || []))
   ).sort();
