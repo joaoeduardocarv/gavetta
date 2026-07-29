@@ -299,9 +299,11 @@ export default function MyDrawers() {
   const availableProviders = Array.from(
     new Set([...BASE_PROVIDERS, ...drawerProviders].filter((p) => !isOtherProvider(p)))
   ).sort();
-  const hasOtherProviders = rawDrawerContent.some((c) =>
-    (c.availableOn || []).some(isOtherProvider)
-  );
+  const hasOtherProviders = rawDrawerContent.some((c) => {
+    const providers = c.availableOn || [];
+    if (providers.length === 0) return true;
+    return !providers.some((p) => !isOtherProvider(p));
+  });
   const availableGenres = Array.from(
     new Set(rawDrawerContent.flatMap((c) => c.genres || []))
   ).sort();
@@ -314,7 +316,10 @@ export default function MyDrawers() {
       } else if (filterProvider === "__coming_soon__") {
         if (!isComingSoon(c)) return false;
       } else if (filterProvider === "__others__") {
-        if (!(c.availableOn || []).some(isOtherProvider)) return false;
+        const providers = c.availableOn || [];
+        const hasKnown = providers.some((p) => !isOtherProvider(p));
+        if (hasKnown) return false;
+      
       } else if (!(c.availableOn || []).includes(filterProvider)) {
         return false;
       }
