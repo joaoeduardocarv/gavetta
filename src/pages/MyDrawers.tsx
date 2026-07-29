@@ -275,7 +275,17 @@ export default function MyDrawers() {
 
   const rawDrawerContent = getSelectedDrawerContent();
 
-  const BASE_PROVIDERS = ["Netflix", "Disney Plus", "HBO Max", "Prime Video", "Apple TV Plus", "Globoplay", "Paramount Plus"];
+  const BASE_PROVIDERS = ["Netflix", "Disney Plus", "HBO Max", "Prime Video", "Globoplay", "Paramount Plus"];
+  const OTHERS_PROVIDERS = new Set([
+    "filmicca",
+    "apple tv plus",
+    "apple tv store",
+    "apple tv amazon channel",
+    "claro video",
+    "google play movies",
+  ]);
+  const isOtherProvider = (name: string) =>
+    OTHERS_PROVIDERS.has(name.trim().toLowerCase());
 
   const isComingSoon = (c: Content) => {
     const hasRating = typeof c.rating === "number" && c.rating > 0;
@@ -286,7 +296,12 @@ export default function MyDrawers() {
   };
 
   const drawerProviders = rawDrawerContent.flatMap((c) => c.availableOn || []);
-  const availableProviders = Array.from(new Set([...BASE_PROVIDERS, ...drawerProviders])).sort();
+  const availableProviders = Array.from(
+    new Set([...BASE_PROVIDERS, ...drawerProviders].filter((p) => !isOtherProvider(p)))
+  ).sort();
+  const hasOtherProviders = rawDrawerContent.some((c) =>
+    (c.availableOn || []).some(isOtherProvider)
+  );
   const availableGenres = Array.from(
     new Set(rawDrawerContent.flatMap((c) => c.genres || []))
   ).sort();
@@ -298,6 +313,8 @@ export default function MyDrawers() {
         if (!c.isInTheaters) return false;
       } else if (filterProvider === "__coming_soon__") {
         if (!isComingSoon(c)) return false;
+      } else if (filterProvider === "__others__") {
+        if (!(c.availableOn || []).some(isOtherProvider)) return false;
       } else if (!(c.availableOn || []).includes(filterProvider)) {
         return false;
       }
@@ -515,6 +532,9 @@ export default function MyDrawers() {
                       {availableProviders.map((p) => (
                         <SelectItem key={p} value={p}>{p}</SelectItem>
                       ))}
+                      {hasOtherProviders && (
+                        <SelectItem value="__others__">Outros</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
 
