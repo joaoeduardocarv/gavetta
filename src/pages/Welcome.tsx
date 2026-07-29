@@ -22,6 +22,7 @@ import {
   ArrowRight,
   Shield,
   Zap,
+  Instagram,
 } from "lucide-react";
 import logo from "@/assets/gavettalogo.png";
 import heroBg from "@/assets/landing-hero-bg.jpg";
