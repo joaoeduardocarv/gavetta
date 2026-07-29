@@ -11,7 +11,8 @@ import { ManageMembersDialog } from "@/components/ManageMembersDialog";
 import { Content } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Play, Eye, CheckCircle, Star, Heart, Bookmark, Clock, Sparkles, Loader2, Users, Share2, Settings } from "lucide-react";
+import { Plus, Play, Eye, CheckCircle, Star, Heart, Bookmark, Clock, Sparkles, Loader2, Users, Share2, Settings, X } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useDrawers } from "@/contexts/DrawerContext";
 import { useSharedDrawers } from "@/hooks/useSharedDrawers";
@@ -82,6 +83,16 @@ export default function MyDrawers() {
   const [sharedDrawerContent, setSharedDrawerContent] = useState<Content[]>([]);
   const [manageMembersDrawerId, setManageMembersDrawerId] = useState<string | null>(null);
   const [manageMembersDrawerName, setManageMembersDrawerName] = useState("");
+  const [filterType, setFilterType] = useState<string>("all");
+  const [filterProvider, setFilterProvider] = useState<string>("all");
+  const [filterGenre, setFilterGenre] = useState<string>("all");
+
+  // Reset filters when changing drawers
+  useEffect(() => {
+    setFilterType("all");
+    setFilterProvider("all");
+    setFilterGenre("all");
+  }, [selectedDrawer]);
   const handleCardClick = async (content: Content) => {
     setIsLoadingDetails(true);
     
@@ -262,7 +273,23 @@ export default function MyDrawers() {
     }))
   ];
 
-  const drawerContent = getSelectedDrawerContent();
+  const rawDrawerContent = getSelectedDrawerContent();
+
+  const availableProviders = Array.from(
+    new Set(rawDrawerContent.flatMap((c) => c.availableOn || []))
+  ).sort();
+  const availableGenres = Array.from(
+    new Set(rawDrawerContent.flatMap((c) => c.genres || []))
+  ).sort();
+
+  const drawerContent = rawDrawerContent.filter((c) => {
+    if (filterType !== "all" && c.type !== filterType) return false;
+    if (filterProvider !== "all" && !(c.availableOn || []).includes(filterProvider)) return false;
+    if (filterGenre !== "all" && !(c.genres || []).includes(filterGenre)) return false;
+    return true;
+  });
+
+  const hasActiveFilters = filterType !== "all" || filterProvider !== "all" || filterGenre !== "all";
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -445,6 +472,69 @@ export default function MyDrawers() {
                 </span>
               )}
             </h3>
+
+            {rawDrawerContent.length > 0 && (
+              <div className="space-y-2">
+                <div className="grid grid-cols-3 gap-2">
+                  <Select value={filterType} onValueChange={setFilterType}>
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue placeholder="Tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os tipos</SelectItem>
+                      <SelectItem value="movie">Filmes</SelectItem>
+                      <SelectItem value="series">Séries</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={filterProvider} onValueChange={setFilterProvider}>
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue placeholder="Streaming" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos streamings</SelectItem>
+                      {availableProviders.map((p) => (
+                        <SelectItem key={p} value={p}>{p}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={filterGenre} onValueChange={setFilterGenre}>
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue placeholder="Gênero" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos gêneros</SelectItem>
+                      {availableGenres.map((g) => (
+                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {hasActiveFilters && (
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">
+                      {drawerContent.length} de {rawDrawerContent.length}
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => {
+                        setFilterType("all");
+                        setFilterProvider("all");
+                        setFilterGenre("all");
+                      }}
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Limpar
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
 
             <div className="space-y-3">
               {isLoadingDetails && (
