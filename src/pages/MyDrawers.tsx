@@ -314,7 +314,10 @@ export default function MyDrawers() {
       } else if (filterProvider === "__coming_soon__") {
         if (!isComingSoon(c)) return false;
       } else if (filterProvider === "__others__") {
-        if (!(c.availableOn || []).some(isOtherProvider)) return false;
+        const providers = c.availableOn || [];
+        const hasKnown = providers.some((p) => !isOtherProvider(p));
+        if (hasKnown) return false;
+      
       } else if (!(c.availableOn || []).includes(filterProvider)) {
         return false;
       }
