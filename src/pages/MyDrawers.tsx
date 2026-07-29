@@ -532,6 +532,9 @@ export default function MyDrawers() {
                       {availableProviders.map((p) => (
                         <SelectItem key={p} value={p}>{p}</SelectItem>
                       ))}
+                      {hasOtherProviders && (
+                        <SelectItem value="__others__">Outros</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
 
