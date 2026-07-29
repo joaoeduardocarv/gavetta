@@ -83,6 +83,16 @@ export default function MyDrawers() {
   const [sharedDrawerContent, setSharedDrawerContent] = useState<Content[]>([]);
   const [manageMembersDrawerId, setManageMembersDrawerId] = useState<string | null>(null);
   const [manageMembersDrawerName, setManageMembersDrawerName] = useState("");
+  const [filterType, setFilterType] = useState<string>("all");
+  const [filterProvider, setFilterProvider] = useState<string>("all");
+  const [filterGenre, setFilterGenre] = useState<string>("all");
+
+  // Reset filters when changing drawers
+  useEffect(() => {
+    setFilterType("all");
+    setFilterProvider("all");
+    setFilterGenre("all");
+  }, [selectedDrawer]);
   const handleCardClick = async (content: Content) => {
     setIsLoadingDetails(true);
     
