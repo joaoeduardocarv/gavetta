@@ -506,10 +506,12 @@ export default function MyDrawers() {
 
                   <Select value={filterProvider} onValueChange={setFilterProvider}>
                     <SelectTrigger className="h-9 text-xs">
-                      <SelectValue placeholder="Streaming" />
+                      <SelectValue placeholder="Disponível em" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">Todos streamings</SelectItem>
+                      <SelectItem value="all">Disponível em</SelectItem>
+                      <SelectItem value="__theaters__">Nos cinemas</SelectItem>
+                      <SelectItem value="__coming_soon__">Em breve</SelectItem>
                       {availableProviders.map((p) => (
                         <SelectItem key={p} value={p}>{p}</SelectItem>
                       ))}
