@@ -275,16 +275,33 @@ export default function MyDrawers() {
 
   const rawDrawerContent = getSelectedDrawerContent();
 
-  const availableProviders = Array.from(
-    new Set(rawDrawerContent.flatMap((c) => c.availableOn || []))
-  ).sort();
+  const BASE_PROVIDERS = ["Netflix", "Disney Plus", "HBO Max", "Prime Video", "Apple TV Plus", "Globoplay", "Paramount Plus"];
+
+  const isComingSoon = (c: Content) => {
+    const hasRating = typeof c.rating === "number" && c.rating > 0;
+    if (hasRating) return false;
+    if (!c.releaseDate) return true;
+    const releaseTs = new Date(c.releaseDate).getTime();
+    return !Number.isNaN(releaseTs) && releaseTs > Date.now();
+  };
+
+  const drawerProviders = rawDrawerContent.flatMap((c) => c.availableOn || []);
+  const availableProviders = Array.from(new Set([...BASE_PROVIDERS, ...drawerProviders])).sort();
   const availableGenres = Array.from(
     new Set(rawDrawerContent.flatMap((c) => c.genres || []))
   ).sort();
 
   const drawerContent = rawDrawerContent.filter((c) => {
     if (filterType !== "all" && c.type !== filterType) return false;
-    if (filterProvider !== "all" && !(c.availableOn || []).includes(filterProvider)) return false;
+    if (filterProvider !== "all") {
+      if (filterProvider === "__theaters__") {
+        if (!c.isInTheaters) return false;
+      } else if (filterProvider === "__coming_soon__") {
+        if (!isComingSoon(c)) return false;
+      } else if (!(c.availableOn || []).includes(filterProvider)) {
+        return false;
+      }
+    }
     if (filterGenre !== "all" && !(c.genres || []).includes(filterGenre)) return false;
     return true;
   });
