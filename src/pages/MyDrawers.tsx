@@ -273,7 +273,23 @@ export default function MyDrawers() {
     }))
   ];
 
-  const drawerContent = getSelectedDrawerContent();
+  const rawDrawerContent = getSelectedDrawerContent();
+
+  const availableProviders = Array.from(
+    new Set(rawDrawerContent.flatMap((c) => c.availableOn || []))
+  ).sort();
+  const availableGenres = Array.from(
+    new Set(rawDrawerContent.flatMap((c) => c.genres || []))
+  ).sort();
+
+  const drawerContent = rawDrawerContent.filter((c) => {
+    if (filterType !== "all" && c.type !== filterType) return false;
+    if (filterProvider !== "all" && !(c.availableOn || []).includes(filterProvider)) return false;
+    if (filterGenre !== "all" && !(c.genres || []).includes(filterGenre)) return false;
+    return true;
+  });
+
+  const hasActiveFilters = filterType !== "all" || filterProvider !== "all" || filterGenre !== "all";
 
   return (
     <div className="min-h-screen bg-background pb-20">
