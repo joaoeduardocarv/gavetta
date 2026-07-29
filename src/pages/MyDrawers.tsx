@@ -473,6 +473,69 @@ export default function MyDrawers() {
               )}
             </h3>
 
+            {rawDrawerContent.length > 0 && (
+              <div className="space-y-2">
+                <div className="grid grid-cols-3 gap-2">
+                  <Select value={filterType} onValueChange={setFilterType}>
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue placeholder="Tipo" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os tipos</SelectItem>
+                      <SelectItem value="movie">Filmes</SelectItem>
+                      <SelectItem value="series">Séries</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={filterProvider} onValueChange={setFilterProvider}>
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue placeholder="Streaming" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos streamings</SelectItem>
+                      {availableProviders.map((p) => (
+                        <SelectItem key={p} value={p}>{p}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={filterGenre} onValueChange={setFilterGenre}>
+                    <SelectTrigger className="h-9 text-xs">
+                      <SelectValue placeholder="Gênero" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos gêneros</SelectItem>
+                      {availableGenres.map((g) => (
+                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {hasActiveFilters && (
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-muted-foreground">
+                      {drawerContent.length} de {rawDrawerContent.length}
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => {
+                        setFilterType("all");
+                        setFilterProvider("all");
+                        setFilterGenre("all");
+                      }}
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Limpar
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
+
             <div className="space-y-3">
               {isLoadingDetails && (
                 <div className="fixed inset-0 bg-background/50 flex items-center justify-center z-50">
