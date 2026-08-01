@@ -13,6 +13,7 @@ import { useMigrateIncompleteContent } from "@/hooks/useMigrateIncompleteContent
 import { GlobalRatingDialog } from "@/components/GlobalRatingDialog";
 import { OnboardingDialog } from "@/components/OnboardingDialog";
 import { QuickStartLibrary } from "@/components/QuickStartLibrary";
+import { AnalyticsTracker } from "@/hooks/useAnalytics";
 
 // Eager: landing/auth (first paint critical)
 import Welcome from "./pages/Welcome";
@@ -76,6 +77,7 @@ const App = () => (
               <OnboardingDialog />
               <QuickStartLibrary />
               <BrowserRouter>
+                <AnalyticsTracker />
                 <Suspense fallback={<RouteFallback />}>
                   <Routes>
                     <Route path="/welcome" element={<Welcome />} />
