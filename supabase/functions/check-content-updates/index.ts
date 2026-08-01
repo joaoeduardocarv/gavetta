@@ -37,12 +37,6 @@ interface WatchProviders {
   buy?: ProviderEntry[];
 }
 
-function getProviderNames(providers: WatchProviders | null): string[] {
-  if (!providers) return [];
-  const names = new Set<string>();
-  for (const entry of providers.flatrate || []) names.add(entry.provider_name);
-  return [...names].sort();
-}
 
 function getRentProviderNames(providers: WatchProviders | null): string[] {
   if (!providers) return [];
