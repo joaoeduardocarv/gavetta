@@ -215,11 +215,11 @@ serve(async (req) => {
             const title = (details.title || details.name || 'Conteúdo') as string;
             const notifications: { user_id: string; type: string; title: string; message: string; related_content_id: string }[] = [];
 
-            // 1. "Filme ou série no streaming" — mudança/adição em streaming
+            // 1. Mudança em "Disponível em" (streaming, aluguel ou compra)
             const { added, removed } = providersDiffer(oldProviders, newProviders);
             if (added.length > 0 || removed.length > 0) {
               let message = '';
-              if (added.length > 0) message += `${title} agora está em: ${added.join(', ')}. `;
+              if (added.length > 0) message += `${title} agora está disponível em: ${added.join(', ')}. `;
               if (removed.length > 0) message += `Saiu de: ${removed.join(', ')}.`;
 
               for (const userId of prod.userIds) {
@@ -227,7 +227,7 @@ serve(async (req) => {
                 notifications.push({
                   user_id: userId,
                   type: 'streaming_change',
-                  title: `📺 ${mediaType === 'movie' ? 'Filme' : 'Série'} no streaming`,
+                  title: `📺 Mudança em "Disponível em"`,
                   message: message.trim(),
                   related_content_id: prod.productionId,
                 });
