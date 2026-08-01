@@ -352,26 +352,6 @@ serve(async (req) => {
                 }
               }
 
-              // 5c. "Nova temporada confirmada" — temporada anunciada (ainda sem estreia)
-              const announcedSeason = seasons.find((s) => {
-                const n = s.season_number as number;
-                const air = s.air_date as string | undefined;
-                if (!(n > 0) || knownSeasonNumbers.includes(n)) return false;
-                if (knownSeasonNumbers.length === 0) return false; // primeira checagem: só registra
-                return !air || daysUntil(air) > 7;
-              });
-              if (announcedSeason) {
-                for (const userId of prod.userIds) {
-                  if (!userWants(userId, 'new_season')) continue;
-                  notifications.push({
-                    user_id: userId,
-                    type: 'new_season',
-                    title: `✅ Nova temporada confirmada`,
-                    message: `${title} foi renovada: temporada ${announcedSeason.season_number} confirmada.`,
-                    related_content_id: prod.productionId,
-                  });
-                }
-              }
 
               // 5d. "Novo episódio hoje"
               if (lastEpisode) {
