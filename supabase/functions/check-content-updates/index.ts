@@ -66,6 +66,39 @@ function providersDiffer(oldProviders: WatchProviders | null, newProviders: Watc
   return { added, removed };
 }
 
+/** Data "hoje" no fuso do Brasil (UTC-3), formato YYYY-MM-DD */
+function brToday(): string {
+  const now = new Date(Date.now() - 3 * 60 * 60 * 1000);
+  return now.toISOString().slice(0, 10);
+}
+
+/** Dias inteiros entre hoje (BR) e uma data YYYY-MM-DD. 0 = hoje, 7 = daqui a 7 dias */
+function daysUntil(dateStr: string): number {
+  const target = Date.parse(`${dateStr.slice(0, 10)}T00:00:00Z`);
+  const today = Date.parse(`${brToday()}T00:00:00Z`);
+  if (Number.isNaN(target)) return Number.NaN;
+  return Math.round((target - today) / (1000 * 60 * 60 * 24));
+}
+
+/** Data de estreia nos cinemas no Brasil (tipos 2/3 do TMDB) */
+async function getBrTheatricalDate(movieId: string): Promise<string | null> {
+  try {
+    const res = await fetchTMDB(`/movie/${movieId}/release_dates`) as {
+      results?: Array<{ iso_3166_1: string; release_dates: Array<{ type: number; release_date: string }> }>;
+    };
+    const br = res.results?.find((r) => r.iso_3166_1 === 'BR');
+    if (!br) return null;
+    const theatrical = br.release_dates
+      .filter((r) => r.type === 2 || r.type === 3)
+      .map((r) => r.release_date)
+      .sort()[0];
+    return theatrical ? theatrical.slice(0, 10) : null;
+  } catch {
+    return null;
+  }
+}
+
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
