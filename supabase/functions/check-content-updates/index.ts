@@ -423,6 +423,8 @@ serve(async (req) => {
                 .select('id')
                 .eq('user_id', notif.user_id)
                 .eq('type', notif.type)
+                .eq('title', notif.title)
+
                 .eq('related_content_id', notif.related_content_id)
                 .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
                 .limit(1);
