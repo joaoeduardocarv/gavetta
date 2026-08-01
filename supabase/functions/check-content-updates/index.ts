@@ -58,9 +58,19 @@ function getBuyProviderNames(providers: WatchProviders | null): string[] {
   return [...names].sort();
 }
 
+/** Todos os provedores de "disponível em" (streaming + aluguel + compra) */
+function getAllProviderNames(providers: WatchProviders | null): string[] {
+  if (!providers) return [];
+  const names = new Set<string>();
+  for (const entry of providers.flatrate || []) names.add(entry.provider_name);
+  for (const entry of providers.rent || []) names.add(entry.provider_name);
+  for (const entry of providers.buy || []) names.add(entry.provider_name);
+  return [...names].sort();
+}
+
 function providersDiffer(oldProviders: WatchProviders | null, newProviders: WatchProviders | null): { added: string[]; removed: string[] } {
-  const oldNames = getProviderNames(oldProviders);
-  const newNames = getProviderNames(newProviders);
+  const oldNames = getAllProviderNames(oldProviders);
+  const newNames = getAllProviderNames(newProviders);
   const added = newNames.filter(n => !oldNames.includes(n));
   const removed = oldNames.filter(n => !newNames.includes(n));
   return { added, removed };
