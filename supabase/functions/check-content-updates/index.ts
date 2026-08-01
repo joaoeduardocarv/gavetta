@@ -308,7 +308,7 @@ serve(async (req) => {
               const oldLastEpisode = prod.oldData.last_episode_to_air as Record<string, unknown> | null;
 
               const seasons = (details.seasons as Array<Record<string, unknown>>) || [];
-              const knownSeasonNumbers = (prod.oldData._known_seasons as number[]) || [];
+              
               const currentSeasonNumbers = seasons
                 .map((s) => s.season_number as number)
                 .filter((n) => typeof n === 'number' && n > 0);
