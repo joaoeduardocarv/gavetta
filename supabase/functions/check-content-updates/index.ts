@@ -117,11 +117,10 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Fetch assignments in "want_to_watch" and "watching" drawers
+    // Fetch assignments from ALL user drawers (default + custom/shared)
     const { data: assignments, error: fetchError } = await supabase
       .from('user_drawer_assignments')
       .select('id, user_id, production_id, production_type, production_data, drawer_id')
-      .in('drawer_id', ['want_to_watch', 'watching'])
       .limit(1000);
 
     if (fetchError) throw new Error(`Failed to fetch assignments: ${fetchError.message}`);
