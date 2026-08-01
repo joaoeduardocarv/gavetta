@@ -37,12 +37,6 @@ interface WatchProviders {
   buy?: ProviderEntry[];
 }
 
-function getProviderNames(providers: WatchProviders | null): string[] {
-  if (!providers) return [];
-  const names = new Set<string>();
-  for (const entry of providers.flatrate || []) names.add(entry.provider_name);
-  return [...names].sort();
-}
 
 function getRentProviderNames(providers: WatchProviders | null): string[] {
   if (!providers) return [];
@@ -58,9 +52,19 @@ function getBuyProviderNames(providers: WatchProviders | null): string[] {
   return [...names].sort();
 }
 
+/** Todos os provedores de "disponível em" (streaming + aluguel + compra) */
+function getAllProviderNames(providers: WatchProviders | null): string[] {
+  if (!providers) return [];
+  const names = new Set<string>();
+  for (const entry of providers.flatrate || []) names.add(entry.provider_name);
+  for (const entry of providers.rent || []) names.add(entry.provider_name);
+  for (const entry of providers.buy || []) names.add(entry.provider_name);
+  return [...names].sort();
+}
+
 function providersDiffer(oldProviders: WatchProviders | null, newProviders: WatchProviders | null): { added: string[]; removed: string[] } {
-  const oldNames = getProviderNames(oldProviders);
-  const newNames = getProviderNames(newProviders);
+  const oldNames = getAllProviderNames(oldProviders);
+  const newNames = getAllProviderNames(newProviders);
   const added = newNames.filter(n => !oldNames.includes(n));
   const removed = oldNames.filter(n => !newNames.includes(n));
   return { added, removed };
@@ -205,11 +209,11 @@ serve(async (req) => {
             const title = (details.title || details.name || 'Conteúdo') as string;
             const notifications: { user_id: string; type: string; title: string; message: string; related_content_id: string }[] = [];
 
-            // 1. "Filme ou série no streaming" — mudança/adição em streaming
+            // 1. Mudança em "Disponível em" (streaming, aluguel ou compra)
             const { added, removed } = providersDiffer(oldProviders, newProviders);
             if (added.length > 0 || removed.length > 0) {
               let message = '';
-              if (added.length > 0) message += `${title} agora está em: ${added.join(', ')}. `;
+              if (added.length > 0) message += `${title} agora está disponível em: ${added.join(', ')}. `;
               if (removed.length > 0) message += `Saiu de: ${removed.join(', ')}.`;
 
               for (const userId of prod.userIds) {
@@ -217,7 +221,7 @@ serve(async (req) => {
                 notifications.push({
                   user_id: userId,
                   type: 'streaming_change',
-                  title: `📺 ${mediaType === 'movie' ? 'Filme' : 'Série'} no streaming`,
+                  title: `📺 Mudança em "Disponível em"`,
                   message: message.trim(),
                   related_content_id: prod.productionId,
                 });
@@ -298,7 +302,7 @@ serve(async (req) => {
               const oldLastEpisode = prod.oldData.last_episode_to_air as Record<string, unknown> | null;
 
               const seasons = (details.seasons as Array<Record<string, unknown>>) || [];
-              const knownSeasonNumbers = (prod.oldData._known_seasons as number[]) || [];
+              
               const currentSeasonNumbers = seasons
                 .map((s) => s.season_number as number)
                 .filter((n) => typeof n === 'number' && n > 0);
@@ -342,26 +346,6 @@ serve(async (req) => {
                 }
               }
 
-              // 5c. "Nova temporada confirmada" — temporada anunciada (ainda sem estreia)
-              const announcedSeason = seasons.find((s) => {
-                const n = s.season_number as number;
-                const air = s.air_date as string | undefined;
-                if (!(n > 0) || knownSeasonNumbers.includes(n)) return false;
-                if (knownSeasonNumbers.length === 0) return false; // primeira checagem: só registra
-                return !air || daysUntil(air) > 7;
-              });
-              if (announcedSeason) {
-                for (const userId of prod.userIds) {
-                  if (!userWants(userId, 'new_season')) continue;
-                  notifications.push({
-                    user_id: userId,
-                    type: 'new_season',
-                    title: `✅ Nova temporada confirmada`,
-                    message: `${title} foi renovada: temporada ${announcedSeason.season_number} confirmada.`,
-                    related_content_id: prod.productionId,
-                  });
-                }
-              }
 
               // 5d. "Novo episódio hoje"
               if (lastEpisode) {
