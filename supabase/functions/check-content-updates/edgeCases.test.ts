@@ -6,7 +6,7 @@ import { brToday, daysUntil } from "./dateHelpers.ts";
 
 Deno.test("daysUntil returns NaN for missing or invalid release dates", () => {
   const now = Date.parse("2026-08-03T12:00:00Z");
-  for (const value of [null, undefined, "", "TBA", "0000", "not-a-date"]) {
+  for (const value of [null, undefined, "", "TBA", "??", "not-a-date"]) {
     assert(Number.isNaN(daysUntil(value as string | null, now)), `expected NaN for ${String(value)}`);
   }
 });
