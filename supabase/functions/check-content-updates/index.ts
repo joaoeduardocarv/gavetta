@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { shouldNotify } from './notificationFilters.ts';
+import { brToday, daysUntil } from './dateHelpers.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -71,19 +72,8 @@ function providersDiffer(oldProviders: WatchProviders | null, newProviders: Watc
   return { added, removed };
 }
 
-/** Data "hoje" no fuso do Brasil (UTC-3), formato YYYY-MM-DD */
-function brToday(): string {
-  const now = new Date(Date.now() - 3 * 60 * 60 * 1000);
-  return now.toISOString().slice(0, 10);
-}
+// brToday/daysUntil vivem em ./dateHelpers.ts e são testados unitariamente
 
-/** Dias inteiros entre hoje (BR) e uma data YYYY-MM-DD. 0 = hoje, 7 = daqui a 7 dias */
-function daysUntil(dateStr: string): number {
-  const target = Date.parse(`${dateStr.slice(0, 10)}T00:00:00Z`);
-  const today = Date.parse(`${brToday()}T00:00:00Z`);
-  if (Number.isNaN(target)) return Number.NaN;
-  return Math.round((target - today) / (1000 * 60 * 60 * 24));
-}
 
 /** Data de estreia nos cinemas no Brasil (tipos 2/3 do TMDB) */
 async function getBrTheatricalDate(movieId: string): Promise<string | null> {
