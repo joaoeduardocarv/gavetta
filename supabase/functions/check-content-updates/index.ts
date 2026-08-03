@@ -136,6 +136,8 @@ serve(async (req) => {
       productionType: string;
       userIds: Set<string>;
       oldData: Record<string, unknown>;
+      // userId -> true if ALL assignments of this production for this user are in "watched"
+      userDrawers: Map<string, Set<string>>;
     }>();
 
     for (const a of assignments) {
@@ -146,11 +148,17 @@ serve(async (req) => {
           productionType: a.production_type,
           userIds: new Set([a.user_id]),
           oldData: (a.production_data as Record<string, unknown>) || {},
+          userDrawers: new Map([[a.user_id, new Set([a.drawer_id as string])]]),
         });
       } else {
-        productionMap.get(key)!.userIds.add(a.user_id);
+        const p = productionMap.get(key)!;
+        p.userIds.add(a.user_id);
+        const set = p.userDrawers.get(a.user_id) ?? new Set<string>();
+        set.add(a.drawer_id as string);
+        p.userDrawers.set(a.user_id, set);
       }
     }
+
 
     console.log(`Checking ${productionMap.size} unique productions for updates...`);
 
