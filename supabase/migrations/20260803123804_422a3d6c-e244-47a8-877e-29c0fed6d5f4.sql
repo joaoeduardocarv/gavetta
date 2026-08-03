@@ -1,0 +1,1 @@
+ALTER TABLE public.notification_preferences ADD COLUMN IF NOT EXISTS watched_availability boolean NOT NULL DEFAULT false;

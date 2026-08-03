@@ -86,6 +86,7 @@ export type Database = {
           upcoming_content: boolean
           updated_at: string
           user_id: string
+          watched_availability: boolean
         }
         Insert: {
           created_at?: string
@@ -98,6 +99,7 @@ export type Database = {
           upcoming_content?: boolean
           updated_at?: string
           user_id: string
+          watched_availability?: boolean
         }
         Update: {
           created_at?: string
@@ -110,6 +112,7 @@ export type Database = {
           upcoming_content?: boolean
           updated_at?: string
           user_id?: string
+          watched_availability?: boolean
         }
         Relationships: []
       }
