@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { shouldNotify } from './notificationFilters.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -178,35 +179,14 @@ serve(async (req) => {
       userPrefs.set(p.user_id, p);
     }
 
-    // Availability-related notification types ("Disponível em")
-    const AVAILABILITY_TYPES = new Set(['streaming_change', 'rental_arrival', 'purchase_arrival']);
-
     // Helper: check if user wants this notification type
+    // (availability rules live in ./notificationFilters.ts and are unit-tested)
     const userWants = (
       userId: string,
       type: string,
       drawerIds?: Set<string>
-    ): boolean => {
-      const p = userPrefs.get(userId);
+    ): boolean => shouldNotify(userPrefs.get(userId), type, drawerIds);
 
-      // By default, no availability notifications for titles only in "Assistidos"
-      if (AVAILABILITY_TYPES.has(type) && drawerIds && drawerIds.size > 0) {
-        const onlyWatched = [...drawerIds].every((d) => d === 'watched');
-        if (onlyWatched && p?.watched_availability !== true) return false;
-      }
-
-      if (!p) return true; // default: all enabled
-      const map: Record<string, string> = {
-        streaming_change: 'streaming_changes',
-        new_season: 'new_seasons',
-        new_episodes: 'new_episodes',
-        upcoming_content: 'upcoming_content',
-        rental_arrival: 'rental_arrival',
-        purchase_arrival: 'purchase_arrival',
-      };
-      const col = map[type];
-      return col ? (p[col] !== false) : true;
-    };
 
 
     let notificationsCreated = 0;
