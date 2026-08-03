@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Tv, RefreshCw, Calendar, Film, DollarSign, ShoppingBag } from "lucide-react";
+import { Tv, RefreshCw, Calendar, Film, DollarSign, ShoppingBag, CheckCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -19,6 +19,7 @@ interface Preferences {
   upcoming_content: boolean;
   rental_arrival: boolean;
   purchase_arrival: boolean;
+  watched_availability: boolean;
 }
 
 const defaultPrefs: Preferences = {
@@ -28,6 +29,7 @@ const defaultPrefs: Preferences = {
   upcoming_content: true,
   rental_arrival: true,
   purchase_arrival: true,
+  watched_availability: false,
 };
 
 export function NotificationSettingsDialog({ open, onOpenChange }: NotificationSettingsDialogProps) {
@@ -43,7 +45,7 @@ export function NotificationSettingsDialog({ open, onOpenChange }: NotificationS
     (async () => {
       const { data, error } = await supabase
         .from("notification_preferences")
-        .select("streaming_changes, new_seasons, new_episodes, upcoming_content, rental_arrival, purchase_arrival")
+        .select("streaming_changes, new_seasons, new_episodes, upcoming_content, rental_arrival, purchase_arrival, watched_availability")
         .eq("user_id", user.id)
         .maybeSingle();
 
@@ -108,6 +110,12 @@ export function NotificationSettingsDialog({ open, onOpenChange }: NotificationS
       icon: ShoppingBag,
       label: "Disponível para comprar",
       description: "Quando um filme das suas gavetas chega para compra digital",
+    },
+    {
+      key: "watched_availability" as const,
+      icon: CheckCheck,
+      label: "Disponibilidade de assistidos",
+      description: "Receber avisos de 'Disponível em' também para títulos que estão só na gavetta Assistidos",
     },
   ];
 

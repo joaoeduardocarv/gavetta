@@ -136,6 +136,8 @@ serve(async (req) => {
       productionType: string;
       userIds: Set<string>;
       oldData: Record<string, unknown>;
+      // userId -> true if ALL assignments of this production for this user are in "watched"
+      userDrawers: Map<string, Set<string>>;
     }>();
 
     for (const a of assignments) {
@@ -146,11 +148,17 @@ serve(async (req) => {
           productionType: a.production_type,
           userIds: new Set([a.user_id]),
           oldData: (a.production_data as Record<string, unknown>) || {},
+          userDrawers: new Map([[a.user_id, new Set([a.drawer_id as string])]]),
         });
       } else {
-        productionMap.get(key)!.userIds.add(a.user_id);
+        const p = productionMap.get(key)!;
+        p.userIds.add(a.user_id);
+        const set = p.userDrawers.get(a.user_id) ?? new Set<string>();
+        set.add(a.drawer_id as string);
+        p.userDrawers.set(a.user_id, set);
       }
     }
+
 
     console.log(`Checking ${productionMap.size} unique productions for updates...`);
 
@@ -162,7 +170,7 @@ serve(async (req) => {
 
     const { data: prefsData } = await supabase
       .from('notification_preferences')
-      .select('user_id, streaming_changes, new_seasons, new_episodes, upcoming_content, rental_arrival, purchase_arrival')
+      .select('user_id, streaming_changes, new_seasons, new_episodes, upcoming_content, rental_arrival, purchase_arrival, watched_availability')
       .in('user_id', [...allUserIds]);
 
     const userPrefs = new Map<string, Record<string, boolean>>();
@@ -170,9 +178,23 @@ serve(async (req) => {
       userPrefs.set(p.user_id, p);
     }
 
+    // Availability-related notification types ("Disponível em")
+    const AVAILABILITY_TYPES = new Set(['streaming_change', 'rental_arrival', 'purchase_arrival']);
+
     // Helper: check if user wants this notification type
-    const userWants = (userId: string, type: string): boolean => {
+    const userWants = (
+      userId: string,
+      type: string,
+      drawerIds?: Set<string>
+    ): boolean => {
       const p = userPrefs.get(userId);
+
+      // By default, no availability notifications for titles only in "Assistidos"
+      if (AVAILABILITY_TYPES.has(type) && drawerIds && drawerIds.size > 0) {
+        const onlyWatched = [...drawerIds].every((d) => d === 'watched');
+        if (onlyWatched && p?.watched_availability !== true) return false;
+      }
+
       if (!p) return true; // default: all enabled
       const map: Record<string, string> = {
         streaming_change: 'streaming_changes',
@@ -185,6 +207,7 @@ serve(async (req) => {
       const col = map[type];
       return col ? (p[col] !== false) : true;
     };
+
 
     let notificationsCreated = 0;
     const entries = [...productionMap.entries()];
@@ -216,7 +239,7 @@ serve(async (req) => {
               if (removed.length > 0) message += `Saiu de: ${removed.join(', ')}.`;
 
               for (const userId of prod.userIds) {
-                if (!userWants(userId, 'streaming_change')) continue;
+                if (!userWants(userId, 'streaming_change', prod.userDrawers.get(userId))) continue;
                 notifications.push({
                   user_id: userId,
                   type: 'streaming_change',
@@ -233,7 +256,7 @@ serve(async (req) => {
               const newRent = getRentProviderNames(newProviders);
               if (oldRent.length === 0 && newRent.length > 0) {
                 for (const userId of prod.userIds) {
-                  if (!userWants(userId, 'rental_arrival')) continue;
+                  if (!userWants(userId, 'rental_arrival', prod.userDrawers.get(userId))) continue;
                   notifications.push({
                     user_id: userId,
                     type: 'rental_arrival',
@@ -249,7 +272,7 @@ serve(async (req) => {
               const newBuy = getBuyProviderNames(newProviders);
               if (oldBuy.length === 0 && newBuy.length > 0) {
                 for (const userId of prod.userIds) {
-                  if (!userWants(userId, 'purchase_arrival')) continue;
+                  if (!userWants(userId, 'purchase_arrival', prod.userDrawers.get(userId))) continue;
                   notifications.push({
                     user_id: userId,
                     type: 'purchase_arrival',
