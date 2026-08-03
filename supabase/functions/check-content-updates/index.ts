@@ -239,7 +239,7 @@ serve(async (req) => {
               if (removed.length > 0) message += `Saiu de: ${removed.join(', ')}.`;
 
               for (const userId of prod.userIds) {
-                if (!userWants(userId, 'streaming_change')) continue;
+                if (!userWants(userId, 'streaming_change', prod.userDrawers.get(userId))) continue;
                 notifications.push({
                   user_id: userId,
                   type: 'streaming_change',
@@ -256,7 +256,7 @@ serve(async (req) => {
               const newRent = getRentProviderNames(newProviders);
               if (oldRent.length === 0 && newRent.length > 0) {
                 for (const userId of prod.userIds) {
-                  if (!userWants(userId, 'rental_arrival')) continue;
+                  if (!userWants(userId, 'rental_arrival', prod.userDrawers.get(userId))) continue;
                   notifications.push({
                     user_id: userId,
                     type: 'rental_arrival',
@@ -272,7 +272,7 @@ serve(async (req) => {
               const newBuy = getBuyProviderNames(newProviders);
               if (oldBuy.length === 0 && newBuy.length > 0) {
                 for (const userId of prod.userIds) {
-                  if (!userWants(userId, 'purchase_arrival')) continue;
+                  if (!userWants(userId, 'purchase_arrival', prod.userDrawers.get(userId))) continue;
                   notifications.push({
                     user_id: userId,
                     type: 'purchase_arrival',
