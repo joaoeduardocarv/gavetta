@@ -170,7 +170,7 @@ serve(async (req) => {
 
     const { data: prefsData } = await supabase
       .from('notification_preferences')
-      .select('user_id, streaming_changes, new_seasons, new_episodes, upcoming_content, rental_arrival, purchase_arrival')
+      .select('user_id, streaming_changes, new_seasons, new_episodes, upcoming_content, rental_arrival, purchase_arrival, watched_availability')
       .in('user_id', [...allUserIds]);
 
     const userPrefs = new Map<string, Record<string, boolean>>();
@@ -178,9 +178,23 @@ serve(async (req) => {
       userPrefs.set(p.user_id, p);
     }
 
+    // Availability-related notification types ("Disponível em")
+    const AVAILABILITY_TYPES = new Set(['streaming_change', 'rental_arrival', 'purchase_arrival']);
+
     // Helper: check if user wants this notification type
-    const userWants = (userId: string, type: string): boolean => {
+    const userWants = (
+      userId: string,
+      type: string,
+      drawerIds?: Set<string>
+    ): boolean => {
       const p = userPrefs.get(userId);
+
+      // By default, no availability notifications for titles only in "Assistidos"
+      if (AVAILABILITY_TYPES.has(type) && drawerIds && drawerIds.size > 0) {
+        const onlyWatched = [...drawerIds].every((d) => d === 'watched');
+        if (onlyWatched && p?.watched_availability !== true) return false;
+      }
+
       if (!p) return true; // default: all enabled
       const map: Record<string, string> = {
         streaming_change: 'streaming_changes',
@@ -193,6 +207,7 @@ serve(async (req) => {
       const col = map[type];
       return col ? (p[col] !== false) : true;
     };
+
 
     let notificationsCreated = 0;
     const entries = [...productionMap.entries()];
