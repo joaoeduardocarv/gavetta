@@ -15,6 +15,7 @@ import gavetaLogo from "@/assets/gavettalogo.png";
 import { z } from "zod";
 import { allAvatars } from "@/components/AvatarPickerDialog";
 import { cn } from "@/lib/utils";
+import { checkEmailPolicy } from "@/lib/emailPolicy";
 
 const loginSchema = z.object({
   identifier: z
