@@ -34,6 +34,14 @@ function diagnoseEmail(email: string): FieldDiagnosis {
       hint: "Use o formato nome@dominio.com (ex.: maria@gmail.com).",
     };
   }
+  const policy = checkEmailPolicy(v);
+  if (!policy.ok) {
+    return {
+      status: "error",
+      message: policy.reason ?? "Email inválido.",
+      hint: "Use um email pessoal real (Gmail, Outlook, corporativo etc.).",
+    };
+  }
   return { status: "ok", message: "Formato válido." };
 }
 
