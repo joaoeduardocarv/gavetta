@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, AtSign, User, Lock, ArrowLeft, Loader2, CheckCircle2, AlertCircle, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { checkEmailPolicy } from "@/lib/emailPolicy";
 import gavetaLogo from "@/assets/gavettalogo.png";
 
 type CheckStatus = "idle" | "checking" | "ok" | "error";
