@@ -51,7 +51,7 @@ const BLOCKED_LOCAL_PARTS = new Set([
   "asdf", "aaaa", "qwerty",
 ]);
 
-export type EmailPolicyResult = { ok: true } | { ok: false; reason: string };
+export type EmailPolicyResult = { ok: boolean; reason?: string };
 
 export function checkEmailPolicy(rawEmail: string): EmailPolicyResult {
   const email = rawEmail.trim().toLowerCase();
