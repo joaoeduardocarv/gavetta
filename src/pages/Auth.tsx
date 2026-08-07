@@ -61,7 +61,7 @@ const signupSchema = z.object({
     .superRefine((v, ctx) => {
       const result = checkEmailPolicy(v);
       if (!result.ok) {
-        ctx.addIssue({ code: z.ZodIssueCode.custom, message: result.reason });
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: result.reason ?? "Email inválido" });
       }
     }),
   password: z.string().min(6, { message: "Senha deve ter pelo menos 6 caracteres" }),
