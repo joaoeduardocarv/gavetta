@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Mail, AtSign, User, Lock, ArrowLeft, Loader2, CheckCircle2, AlertCircle, HelpCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { checkEmailPolicy } from "@/lib/emailPolicy";
 import gavetaLogo from "@/assets/gavettalogo.png";
 
 type CheckStatus = "idle" | "checking" | "ok" | "error";
@@ -32,6 +33,14 @@ function diagnoseEmail(email: string): FieldDiagnosis {
       status: "error",
       message: "Formato de email inválido.",
       hint: "Use o formato nome@dominio.com (ex.: maria@gmail.com).",
+    };
+  }
+  const policy = checkEmailPolicy(v);
+  if (!policy.ok) {
+    return {
+      status: "error",
+      message: policy.reason ?? "Email inválido.",
+      hint: "Use um email pessoal real (Gmail, Outlook, corporativo etc.).",
     };
   }
   return { status: "ok", message: "Formato válido." };

@@ -15,6 +15,7 @@ import gavetaLogo from "@/assets/gavettalogo.png";
 import { z } from "zod";
 import { allAvatars } from "@/components/AvatarPickerDialog";
 import { cn } from "@/lib/utils";
+import { checkEmailPolicy } from "@/lib/emailPolicy";
 
 const loginSchema = z.object({
   identifier: z
@@ -52,7 +53,17 @@ const signupSchema = z.object({
       message: "@ só pode conter letras minúsculas, números e _",
     })
     .transform((v) => v.toLowerCase()),
-  email: z.string().trim().min(1, { message: "Informe seu email" }).email({ message: "Email inválido" }),
+  email: z
+    .string()
+    .trim()
+    .min(1, { message: "Informe seu email" })
+    .email({ message: "Email inválido" })
+    .superRefine((v, ctx) => {
+      const result = checkEmailPolicy(v);
+      if (!result.ok) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: result.reason ?? "Email inválido" });
+      }
+    }),
   password: z.string().min(6, { message: "Senha deve ter pelo menos 6 caracteres" }),
 });
 
