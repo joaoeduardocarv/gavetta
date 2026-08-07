@@ -52,7 +52,17 @@ const signupSchema = z.object({
       message: "@ só pode conter letras minúsculas, números e _",
     })
     .transform((v) => v.toLowerCase()),
-  email: z.string().trim().min(1, { message: "Informe seu email" }).email({ message: "Email inválido" }),
+  email: z
+    .string()
+    .trim()
+    .min(1, { message: "Informe seu email" })
+    .email({ message: "Email inválido" })
+    .superRefine((v, ctx) => {
+      const result = checkEmailPolicy(v);
+      if (!result.ok) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: result.reason });
+      }
+    }),
   password: z.string().min(6, { message: "Senha deve ter pelo menos 6 caracteres" }),
 });
 
