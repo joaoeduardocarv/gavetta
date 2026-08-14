@@ -47,6 +47,36 @@ export type Database = {
         }
         Relationships: []
       }
+      episode_transcripts: {
+        Row: {
+          audio_url: string
+          created_at: string
+          id: string
+          partial: boolean
+          source_title: string | null
+          transcript: string
+          updated_at: string
+        }
+        Insert: {
+          audio_url: string
+          created_at?: string
+          id?: string
+          partial?: boolean
+          source_title?: string | null
+          transcript: string
+          updated_at?: string
+        }
+        Update: {
+          audio_url?: string
+          created_at?: string
+          id?: string
+          partial?: boolean
+          source_title?: string | null
+          transcript?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       friendships: {
         Row: {
           addressee_id: string
@@ -71,6 +101,54 @@ export type Database = {
           requester_id?: string
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      import_jobs: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          progress: number
+          result: Json | null
+          source_provider: string | null
+          source_title: string | null
+          source_url: string | null
+          stage: string | null
+          status: string
+          total: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          progress?: number
+          result?: Json | null
+          source_provider?: string | null
+          source_title?: string | null
+          source_url?: string | null
+          stage?: string | null
+          status?: string
+          total?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          progress?: number
+          result?: Json | null
+          source_provider?: string | null
+          source_title?: string | null
+          source_url?: string | null
+          stage?: string | null
+          status?: string
+          total?: number | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

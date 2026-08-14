@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useSearchParams } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -7,16 +7,23 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { ContentCard } from "@/components/ContentCard";
 import { ImportQueueDialog } from "@/components/ImportQueueDialog";
-import { Link2, Sparkles, ListChecks, AlertCircle } from "lucide-react";
+import { Link2, Sparkles, ListChecks, AlertCircle, Headphones } from "lucide-react";
 import { toast } from "sonner";
 import {
   ExtractedItem,
+  ImportJob,
   extractTitlesFromSource,
+  fetchImportJob,
+  fetchRunningImportJob,
   firstUrlFrom,
   matchToContent,
+  resumeImportJob,
 } from "@/lib/importFromLink";
+
+const STALL_MS = 60_000;
 
 export default function ImportPage() {
   const [params] = useSearchParams();
@@ -28,40 +35,105 @@ export default function ImportPage() {
   const [sourceTitle, setSourceTitle] = useState("");
   const [queueOpen, setQueueOpen] = useState(false);
   const [queueStart, setQueueStart] = useState(0);
+  const [job, setJob] = useState<ImportJob | null>(null);
+  const jobIdRef = useRef<string | null>(null);
 
   const contents = useMemo(
     () => (items ?? []).map((i) => matchToContent(i.match)),
     [items],
   );
+  const contexts = useMemo(() => (items ?? []).map((i) => i.context), [items]);
 
-  const run = useCallback(async (raw: string) => {
-    const value = raw.trim();
-    if (!value) return;
-    setLoading(true);
-    setItems(null);
-    setUnmatched([]);
-    setNeedsText(false);
-    try {
-      const url = firstUrlFrom(value);
-      const isOnlyUrl = url && value.replace(url, "").trim().length < 8;
-      const res = await extractTitlesFromSource(
-        isOnlyUrl ? { url } : { url: url ?? undefined, text: value },
-      );
-      setSourceTitle(res.sourceTitle || "");
-      setNeedsText(res.needsText);
-      setUnmatched(res.unmatched ?? []);
-      setItems(res.items);
-      if (res.needsText) {
-        toast.info(res.message ?? "Cole a legenda ou descrição do conteúdo.");
-      } else if (res.items.length === 0) {
-        toast.info("Não encontrei filmes ou séries citados nesse conteúdo.");
-      }
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Erro ao processar.");
-    } finally {
+  const applyJob = useCallback((current: ImportJob) => {
+    setJob(current);
+    if (current.status === "done") {
+      jobIdRef.current = null;
       setLoading(false);
+      const found = current.result?.items ?? [];
+      setItems(found);
+      setUnmatched(current.result?.unmatched ?? []);
+      setSourceTitle(current.source_title ?? "");
+      if (found.length === 0) {
+        toast.info("Ouvi o episódio, mas não identifiquei filmes ou séries citados.");
+      } else if (current.result?.partial) {
+        toast.info("Só consegui ouvir parte do episódio — pode faltar algum título.");
+      }
+    } else if (current.status === "error") {
+      jobIdRef.current = null;
+      setLoading(false);
+      toast.error(current.error ?? "Não consegui processar esse episódio.");
     }
   }, []);
+
+  // Acompanha o job de áudio em andamento (e retoma se ele travar).
+  useEffect(() => {
+    if (!job || job.status === "done" || job.status === "error") return;
+    const id = job.id;
+    let cancelled = false;
+
+    const tick = async () => {
+      try {
+        const current = await fetchImportJob(id);
+        if (cancelled || !current) return;
+        applyJob(current);
+        const stalled =
+          Date.now() - new Date(current.updated_at).getTime() > STALL_MS &&
+          current.status !== "done" &&
+          current.status !== "error";
+        if (stalled) void resumeImportJob(id);
+      } catch {
+        /* silencioso: o polling tenta de novo */
+      }
+    };
+
+    const interval = setInterval(tick, 4000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [job, applyJob]);
+
+  const run = useCallback(
+    async (raw: string) => {
+      const value = raw.trim();
+      if (!value) return;
+      setLoading(true);
+      setItems(null);
+      setUnmatched([]);
+      setNeedsText(false);
+      setJob(null);
+      try {
+        const url = firstUrlFrom(value);
+        const isOnlyUrl = url && value.replace(url, "").trim().length < 8;
+        const res = await extractTitlesFromSource(
+          isOnlyUrl ? { url } : { url: url ?? undefined, text: value },
+        );
+        setSourceTitle(res.sourceTitle || "");
+
+        if (res.mode === "audio" && res.jobId) {
+          jobIdRef.current = res.jobId;
+          const current = await fetchImportJob(res.jobId);
+          if (current) applyJob(current);
+          toast.info("Episódio encontrado! A IA vai ouvir o áudio — isso leva alguns minutos.");
+          return;
+        }
+
+        setNeedsText(res.needsText);
+        setUnmatched(res.unmatched ?? []);
+        setItems(res.items);
+        if (res.needsText) {
+          toast.info(res.message ?? "Cole a legenda ou descrição do conteúdo.");
+        } else if (res.items.length === 0) {
+          toast.info("Não encontrei filmes ou séries citados nesse conteúdo.");
+        }
+        setLoading(false);
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : "Erro ao processar.");
+        setLoading(false);
+      }
+    },
+    [applyJob],
+  );
 
   // Web Share Target (Android): /import?url=...&text=...&title=...
   useEffect(() => {
@@ -72,7 +144,17 @@ export default function ImportPage() {
     if (shared) {
       setInput(shared);
       void run(shared);
+      return;
     }
+    // Retoma um episódio que ficou processando em segundo plano
+    void (async () => {
+      const running = await fetchRunningImportJob().catch(() => null);
+      if (running) {
+        setLoading(true);
+        applyJob(running);
+        void resumeImportJob(running.id);
+      }
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -81,13 +163,19 @@ export default function ImportPage() {
     setQueueOpen(true);
   };
 
+  const listening = job && (job.status === "queued" || job.status === "listening" || job.status === "extracting");
+  const progressPct =
+    job && job.total && job.total > 0
+      ? Math.min(100, Math.round((job.progress / job.total) * 100))
+      : 5;
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <Helmet>
         <title>Importar filmes e séries de um link · Gavetta</title>
         <meta
           name="description"
-          content="Cole o link de um Reels, TikTok, vídeo do YouTube ou episódio de podcast e adicione todos os filmes e séries citados nas suas gavettas."
+          content="Cole o link de um Reels, TikTok, vídeo do YouTube ou episódio de podcast: a IA ouve o conteúdo e adiciona todos os filmes e séries citados nas suas gavettas."
         />
         <link rel="canonical" href="https://gavetta.com.br/import" />
       </Helmet>
@@ -99,7 +187,8 @@ export default function ImportPage() {
         </h1>
         <p className="mb-5 text-sm text-muted-foreground">
           Viu um Reels, TikTok, vídeo ou podcast citando filmes e séries? Cole o link
-          (ou a legenda) e a IA do Gavetta identifica todos os títulos citados.
+          (ou a legenda). Em podcasts e vídeos, a IA ouve o conteúdo inteiro e identifica
+          todos os títulos citados.
         </p>
 
         <Textarea
@@ -119,7 +208,7 @@ export default function ImportPage() {
           {loading ? (
             <>
               <Sparkles className="mr-2 h-4 w-4 animate-pulse" />
-              Lendo o conteúdo...
+              {listening ? "Ouvindo o episódio..." : "Lendo o conteúdo..."}
             </>
           ) : (
             <>
@@ -129,7 +218,36 @@ export default function ImportPage() {
           )}
         </Button>
 
-        {loading && (
+        <p className="mt-2 text-xs text-muted-foreground">
+          Episódios longos podem levar alguns minutos — você pode sair da tela que o
+          Gavetta continua ouvindo.
+        </p>
+
+        {listening && (
+          <div className="mt-5 rounded-lg border border-border bg-card p-4">
+            <div className="mb-2 flex items-center gap-2">
+              <Headphones className="h-4 w-4 animate-pulse text-primary" />
+              <span className="text-sm font-medium text-foreground">
+                {job?.stage ?? "Ouvindo o episódio"}
+              </span>
+            </div>
+            {job?.source_title && (
+              <p className="mb-2 line-clamp-1 text-xs text-muted-foreground">
+                {job.source_title}
+              </p>
+            )}
+            <Progress value={progressPct} className="h-2" />
+            <p className="mt-2 text-xs text-muted-foreground">
+              {job?.status === "extracting"
+                ? "Procurando os filmes e séries citados na transcrição..."
+                : job?.total
+                ? `Trecho ${Math.min(job.progress + 1, job.total)} de ${job.total}`
+                : "Preparando o áudio..."}
+            </p>
+          </div>
+        )}
+
+        {loading && !listening && (
           <div className="mt-6 grid grid-cols-2 gap-3">
             {Array.from({ length: 4 }).map((_, i) => (
               <Skeleton key={i} className="aspect-[2/3] w-full rounded-lg" />
@@ -141,8 +259,9 @@ export default function ImportPage() {
           <div className="mt-5 flex gap-3 rounded-lg border border-border bg-card p-4">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
-              Não consegui ler esse link (pode ser um post privado ou sem legenda).
-              Copie a legenda/descrição do conteúdo e cole no campo acima.
+              Não consegui ler esse link (pode ser um post privado, sem legenda ou com
+              áudio protegido). Copie a legenda/descrição do conteúdo e cole no campo
+              acima.
             </p>
           </div>
         )}
@@ -195,7 +314,7 @@ export default function ImportPage() {
 
         {items && items.length === 0 && !needsText && !loading && (
           <p className="mt-6 text-sm text-muted-foreground">
-            Nenhum filme ou série foi citado no texto que consegui ler. Tente colar a
+            Nenhum filme ou série foi citado no conteúdo que consegui ler. Tente colar a
             legenda completa do post.
           </p>
         )}
@@ -203,6 +322,7 @@ export default function ImportPage() {
 
       <ImportQueueDialog
         queue={contents}
+        contexts={contexts}
         startIndex={queueStart}
         open={queueOpen}
         onOpenChange={setQueueOpen}
