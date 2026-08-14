@@ -208,7 +208,7 @@ async function extractTitles(sourceText: string): Promise<{
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: "google/gemini-3-flash",
+      model: "google/gemini-3.6-flash",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: sourceText },
