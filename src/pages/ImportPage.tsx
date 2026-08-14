@@ -11,7 +11,6 @@ import { ContentCard } from "@/components/ContentCard";
 import { ImportQueueDialog } from "@/components/ImportQueueDialog";
 import { Link2, Sparkles, ListChecks, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { Content } from "@/lib/mockData";
 import {
   ExtractedItem,
   extractTitlesFromSource,
@@ -29,7 +28,6 @@ export default function ImportPage() {
   const [sourceTitle, setSourceTitle] = useState("");
   const [queueOpen, setQueueOpen] = useState(false);
   const [queueStart, setQueueStart] = useState(0);
-  const [singleContent, setSingleContent] = useState<Content | null>(null);
 
   const contents = useMemo(
     () => (items ?? []).map((i) => matchToContent(i.match)),
