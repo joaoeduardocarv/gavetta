@@ -20,17 +20,44 @@ export interface ExtractedItem {
   query: string;
   year?: number;
   type?: "movie" | "tv";
+  context?: string;
   match: TmdbMatch;
   alternatives: TmdbMatch[];
 }
 
 export interface ExtractResponse {
+  mode?: "text" | "audio";
+  jobId?: string;
   needsText: boolean;
   sourceTitle: string;
   sourceProvider: string;
   items: ExtractedItem[];
   unmatched?: string[];
   message?: string;
+}
+
+export type ImportJobStatus =
+  | "queued"
+  | "listening"
+  | "extracting"
+  | "done"
+  | "error";
+
+export interface ImportJob {
+  id: string;
+  status: ImportJobStatus;
+  stage: string | null;
+  progress: number;
+  total: number | null;
+  source_title: string | null;
+  source_provider: string | null;
+  error: string | null;
+  updated_at: string;
+  result: {
+    items?: ExtractedItem[];
+    unmatched?: string[];
+    partial?: boolean;
+  } | null;
 }
 
 export function matchToContent(match: TmdbMatch): Content {
@@ -69,6 +96,37 @@ export async function extractTitlesFromSource(input: {
   }
   if (!data) throw new Error("Resposta vazia do servidor.");
   return data;
+}
+
+export async function fetchImportJob(jobId: string): Promise<ImportJob | null> {
+  const { data, error } = await supabase
+    .from("import_jobs")
+    .select(
+      "id, status, stage, progress, total, source_title, source_provider, error, updated_at, result",
+    )
+    .eq("id", jobId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return (data as unknown as ImportJob) ?? null;
+}
+
+/** Retoma (ou inicia) o processamento do áudio em segundo plano. */
+export async function resumeImportJob(jobId: string): Promise<void> {
+  await supabase.functions.invoke("transcribe-episode", { body: { jobId } });
+}
+
+/** Último job de importação por áudio ainda em andamento, para retomar ao voltar na tela. */
+export async function fetchRunningImportJob(): Promise<ImportJob | null> {
+  const { data } = await supabase
+    .from("import_jobs")
+    .select(
+      "id, status, stage, progress, total, source_title, source_provider, error, updated_at, result",
+    )
+    .in("status", ["queued", "listening", "extracting"])
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return (data as unknown as ImportJob) ?? null;
 }
 
 /** Extrai a primeira URL de um texto colado (share sheets costumam mandar texto + link). */

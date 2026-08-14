@@ -4,6 +4,8 @@ import { Content } from "@/lib/mockData";
 
 interface ImportQueueDialogProps {
   queue: Content[];
+  /** Trecho onde cada título foi citado (mesma ordem da fila). */
+  contexts?: (string | undefined)[];
   startIndex?: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -16,6 +18,7 @@ interface ImportQueueDialogProps {
  */
 export function ImportQueueDialog({
   queue,
+  contexts,
   startIndex = 0,
   open,
   onOpenChange,
@@ -52,10 +55,17 @@ export function ImportQueueDialog({
     }
   };
 
+  const context = contexts?.[index];
+
   return (
     <>
-      <div className="fixed left-1/2 top-3 z-[70] -translate-x-1/2 rounded-full border border-border bg-background/95 px-3 py-1 text-xs font-medium text-foreground shadow-lg backdrop-blur">
-        {index + 1} de {queue.length} · feche o card para ir ao próximo
+      <div className="fixed left-1/2 top-3 z-[70] flex max-w-[92vw] -translate-x-1/2 flex-col items-center gap-1 rounded-2xl border border-border bg-background/95 px-3 py-1.5 text-xs font-medium text-foreground shadow-lg backdrop-blur">
+        <span>{index + 1} de {queue.length} · feche o card para ir ao próximo</span>
+        {context && (
+          <span className="line-clamp-2 max-w-full text-center font-normal italic text-muted-foreground">
+            {context}
+          </span>
+        )}
       </div>
       <ContentDetailDialog
         content={current}
