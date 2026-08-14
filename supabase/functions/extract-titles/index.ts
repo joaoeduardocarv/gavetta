@@ -281,6 +281,15 @@ async function extractTitles(sourceText: string): Promise<{
   }
 }
 
+function normalizeForMatch(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
 // ---------------- TMDB matching ----------------
 
 interface TmdbMatch {
@@ -406,7 +415,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { titles, error } = await extractTitles(sourceText);
+    const { titles: rawTitles, error } = await extractTitles(sourceText);
+
+    // Guarda contra alucinação: o título precisa realmente aparecer no texto lido.
+    const haystack = normalizeForMatch(sourceText);
+    const titles = rawTitles.filter((t) => haystack.includes(normalizeForMatch(t.title)));
 
     if (error === "rate_limit") {
       return json({ error: "Muitas requisições. Tente de novo em instantes." }, 429);
