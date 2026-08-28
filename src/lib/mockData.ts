@@ -22,6 +22,8 @@ export interface Content {
   watchedDate?: string;
   isInDrawer?: boolean;
   drawerComment?: string;
+  /** Runtime in minutes (movies) or average episode runtime (series). */
+  runtime?: number;
 }
 
 export const mockContent: Content[] = [

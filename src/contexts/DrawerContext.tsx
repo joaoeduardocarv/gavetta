@@ -227,6 +227,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
           watchProviderLogos: extractStreamingLogos(providers),
           watchProvidersLink: providers?.link || undefined,
           isInTheaters: details.isInTheaters,
+          runtime: details.runtime || content.runtime,
         };
       } else {
         const [details, credits, providers] = await Promise.all([
@@ -245,6 +246,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
           availableOn: extractStreamingNames(providers),
           watchProviderLogos: extractStreamingLogos(providers),
           watchProvidersLink: providers?.link || undefined,
+          runtime: extractTvRuntime(details) || content.runtime,
         };
       }
     } catch (error) {
