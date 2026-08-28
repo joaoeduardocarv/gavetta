@@ -15,6 +15,8 @@ import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import { ProfileStats } from "@/components/ProfileStats";
 import { NotificationSettingsDialog } from "@/components/NotificationSettingsDialog";
 import { useAuth } from "@/hooks/useAuth";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -28,6 +30,8 @@ export default function Profile() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isPublicProfile, setIsPublicProfile] = useState(false);
   const { user, signOut } = useAuth();
+  const { isAdmin } = useIsAdmin();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -266,6 +270,16 @@ export default function Profile() {
           </div>
 
           <Separator />
+
+          {isAdmin && (
+            <div className="bg-card rounded-lg p-6">
+              <Button variant="outline" className="w-full" onClick={() => navigate("/admin")}>
+                Painel de administração
+              </Button>
+            </div>
+          )}
+
+
 
           {/* Sair */}
           <div className="bg-card rounded-lg p-6">

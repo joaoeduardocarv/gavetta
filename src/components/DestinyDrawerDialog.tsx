@@ -14,6 +14,7 @@ import { pickDestinyContent, buildDestinyMessage, DestinyPick, DestinyFilters, l
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { MOVIE_GENRES, TV_GENRES, BR_STREAMING_PROVIDERS } from "@/lib/tmdb";
 import type { Content } from "@/lib/mockData";
+import { trackFeature } from "@/lib/trackEvent";
 
 interface DestinyDrawerDialogProps {
   open: boolean;
@@ -59,6 +60,7 @@ export function DestinyDrawerDialog({ open, onOpenChange }: DestinyDrawerDialogP
   const reveal = useCallback(async (excludeCurrent: boolean) => {
     setLoading(true);
     setNoMore(false);
+    void trackFeature("magic_drawer");
     const startedAt = Date.now();
     try {
       const nextShown = new Set(shownIds);
