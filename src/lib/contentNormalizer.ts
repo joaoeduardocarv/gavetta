@@ -218,5 +218,22 @@ export function normalizeStoredContent(
     rating: ratingValue,
     status,
     isInTheaters: typeof data.isInTheaters === "boolean" ? data.isInTheaters : undefined,
+    runtime: extractRuntime(data, mediaType),
   };
+}
+
+function extractRuntime(
+  data: Record<string, unknown>,
+  mediaType: MediaType,
+): number | undefined {
+  if (typeof data.runtime === "number" && data.runtime > 0) return data.runtime;
+  if (mediaType === "tv" && Array.isArray(data.episode_run_time)) {
+    const runtimes = data.episode_run_time
+      .map((v) => typeof v === "number" ? v : NaN)
+      .filter((v) => !isNaN(v) && v > 0);
+    if (runtimes.length > 0) {
+      return Math.round(runtimes.reduce((a, b) => a + b, 0) / runtimes.length);
+    }
+  }
+  return undefined;
 }

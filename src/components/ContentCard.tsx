@@ -3,11 +3,11 @@ import { Star, Film, Tv, Check, Clock, Play, Bell, Clapperboard, Languages, Repe
 import { GavetaIcon } from "@/components/GavetaIcon";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { cn, formatRelativeDate } from "@/lib/utils";
+import { cn, formatRelativeDate, formatRuntime } from "@/lib/utils";
 import type { Content } from "@/lib/mockData";
 import { DrawerPickerPopover } from "./DrawerPickerPopover";
 import { useDrawers } from "@/contexts/DrawerContext";
-import { getTMDBImageUrl, getMovieWatchProviders, getTVWatchProviders, getMovieDetails, extractStreamingNames, extractStreamingLogos } from "@/lib/tmdb";
+import { getTMDBImageUrl, getMovieWatchProviders, getTVWatchProviders, getMovieDetails, getTVDetails, extractStreamingNames, extractStreamingLogos } from "@/lib/tmdb";
 import { useContentNotifications } from "@/hooks/useContentNotifications";
 import { useSeriesEpisodeProgress } from "@/hooks/useWatchedEpisodes";
 import { extractTmdbInfoFromId } from "@/lib/contentNormalizer";
@@ -87,6 +87,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
     availableOn?: string[];
     watchProviderLogos?: Content['watchProviderLogos'];
     isInTheaters?: boolean;
+    runtime?: number;
   } | null>(null);
 
   useEffect(() => {
@@ -105,13 +106,21 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
             availableOn: extractStreamingNames(providers),
             watchProviderLogos: extractStreamingLogos(providers),
             isInTheaters: details?.isInTheaters,
+            runtime: details?.runtime,
           });
         } else {
-          const providers = await getTVWatchProviders(parsed.tmdbId);
+          const [providers, details] = await Promise.all([
+            getTVWatchProviders(parsed.tmdbId),
+            getTVDetails(parsed.tmdbId).catch(() => null),
+          ]);
           if (cancelled) return;
+          const runtimes = (details?.episode_run_time || []).filter((t: number) => t > 0);
           setFreshProviders({
             availableOn: extractStreamingNames(providers),
             watchProviderLogos: extractStreamingLogos(providers),
+            runtime: runtimes.length > 0
+              ? Math.round(runtimes.reduce((a: number, b: number) => a + b, 0) / runtimes.length)
+              : undefined,
           });
         }
       } catch {
@@ -127,6 +136,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
         availableOn: freshProviders.availableOn ?? content.availableOn,
         watchProviderLogos: freshProviders.watchProviderLogos ?? content.watchProviderLogos,
         isInTheaters: freshProviders.isInTheaters ?? content.isInTheaters,
+        runtime: freshProviders.runtime ?? content.runtime,
       }
     : content;
 
@@ -275,7 +285,11 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
 
         
         <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-          {safeGenres.join(" • ")}
+          {[
+            content.releaseDate ? new Date(content.releaseDate).getFullYear() : undefined,
+            formatRuntime(displayContent.runtime),
+            ...safeGenres,
+          ].filter(Boolean).join(" • ")}
         </p>
 
         {/* Plataformas de streaming com logos */}
