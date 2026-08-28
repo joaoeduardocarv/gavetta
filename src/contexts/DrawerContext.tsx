@@ -255,6 +255,12 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  function extractTvRuntime(details: { episode_run_time?: number[] }): number | undefined {
+    const runtimes = (details.episode_run_time || []).filter((t) => t > 0);
+    if (runtimes.length === 0) return undefined;
+    return Math.round(runtimes.reduce((a, b) => a + b, 0) / runtimes.length);
+  }
+
   const getCanonicalContentKey = (content: Content) => {
     const parsed = extractTmdbInfoFromId(content.id);
     if (parsed) {
