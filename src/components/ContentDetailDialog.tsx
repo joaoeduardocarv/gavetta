@@ -101,6 +101,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
     watchProviderLogos?: Content['watchProviderLogos'];
     watchProvidersLink?: string;
     isInTheaters?: boolean;
+    runtime?: number;
   } | null>(null);
   
   // Obter gavetas e rating atuais do conteúdo
@@ -183,6 +184,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
             watchProviderLogos: extractStreamingLogos(providers),
             watchProvidersLink: providers?.link || undefined,
             isInTheaters: details?.isInTheaters,
+            runtime: details?.runtime,
           });
         } else {
           const providers = await getTVWatchProviders(parsed.tmdbId);
@@ -213,6 +215,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
         watchProviderLogos: freshProviders.watchProviderLogos ?? content.watchProviderLogos,
         watchProvidersLink: freshProviders.watchProvidersLink ?? content.watchProvidersLink,
         isInTheaters: freshProviders.isInTheaters ?? content.isInTheaters,
+        runtime: freshProviders.runtime ?? content.runtime,
       }
     : content;
 
