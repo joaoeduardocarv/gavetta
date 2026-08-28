@@ -7,7 +7,7 @@ import { cn, formatRelativeDate, formatRuntime } from "@/lib/utils";
 import type { Content } from "@/lib/mockData";
 import { DrawerPickerPopover } from "./DrawerPickerPopover";
 import { useDrawers } from "@/contexts/DrawerContext";
-import { getTMDBImageUrl, getMovieWatchProviders, getTVWatchProviders, getMovieDetails, extractStreamingNames, extractStreamingLogos } from "@/lib/tmdb";
+import { getTMDBImageUrl, getMovieWatchProviders, getTVWatchProviders, getMovieDetails, getTVDetails, extractStreamingNames, extractStreamingLogos } from "@/lib/tmdb";
 import { useContentNotifications } from "@/hooks/useContentNotifications";
 import { useSeriesEpisodeProgress } from "@/hooks/useWatchedEpisodes";
 import { extractTmdbInfoFromId } from "@/lib/contentNormalizer";
@@ -87,6 +87,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
     availableOn?: string[];
     watchProviderLogos?: Content['watchProviderLogos'];
     isInTheaters?: boolean;
+    runtime?: number;
   } | null>(null);
 
   useEffect(() => {
@@ -105,13 +106,21 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
             availableOn: extractStreamingNames(providers),
             watchProviderLogos: extractStreamingLogos(providers),
             isInTheaters: details?.isInTheaters,
+            runtime: details?.runtime,
           });
         } else {
-          const providers = await getTVWatchProviders(parsed.tmdbId);
+          const [providers, details] = await Promise.all([
+            getTVWatchProviders(parsed.tmdbId),
+            getTVDetails(parsed.tmdbId).catch(() => null),
+          ]);
           if (cancelled) return;
+          const runtimes = (details?.episode_run_time || []).filter((t: number) => t > 0);
           setFreshProviders({
             availableOn: extractStreamingNames(providers),
             watchProviderLogos: extractStreamingLogos(providers),
+            runtime: runtimes.length > 0
+              ? Math.round(runtimes.reduce((a: number, b: number) => a + b, 0) / runtimes.length)
+              : undefined,
           });
         }
       } catch {
@@ -127,6 +136,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
         availableOn: freshProviders.availableOn ?? content.availableOn,
         watchProviderLogos: freshProviders.watchProviderLogos ?? content.watchProviderLogos,
         isInTheaters: freshProviders.isInTheaters ?? content.isInTheaters,
+        runtime: freshProviders.runtime ?? content.runtime,
       }
     : content;
 
