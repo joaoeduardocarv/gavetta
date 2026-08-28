@@ -9,6 +9,7 @@ import { Loader2 } from "lucide-react";
 import { DrawerProvider } from "@/contexts/DrawerContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AdminRoute } from "@/components/AdminRoute";
 import { useMigrateIncompleteContent } from "@/hooks/useMigrateIncompleteContent";
 import { GlobalRatingDialog } from "@/components/GlobalRatingDialog";
 import { OnboardingDialog } from "@/components/OnboardingDialog";
@@ -29,6 +30,7 @@ const SignupHelp = lazy(() => import("./pages/SignupHelp"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const PublicProfile = lazy(() => import("./pages/PublicProfile"));
 const AdminSignupDebug = lazy(() => import("./pages/AdminSignupDebug"));
+const Admin = lazy(() => import("./pages/Admin"));
 const SharePage = lazy(() => import("./pages/SharePage"));
 const ImportPage = lazy(() => import("./pages/ImportPage"));
 
@@ -95,6 +97,7 @@ const App = () => (
                     <Route path="/m/:tmdbId" element={<SharePage forcedType="movie" />} />
                     <Route path="/s/:tmdbId" element={<SharePage forcedType="tv" />} />
                     <Route path="/share/:type/:tmdbId" element={<LegacyShareRedirect />} />
+                    <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
                     <Route path="/admin/signup-debug" element={<ProtectedRoute><AdminSignupDebug /></ProtectedRoute>} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
