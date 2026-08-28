@@ -3,7 +3,7 @@ import { Star, Film, Tv, Check, Clock, Play, Bell, Clapperboard, Languages, Repe
 import { GavetaIcon } from "@/components/GavetaIcon";
 import { Badge } from "./ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { cn, formatRelativeDate } from "@/lib/utils";
+import { cn, formatRelativeDate, formatRuntime } from "@/lib/utils";
 import type { Content } from "@/lib/mockData";
 import { DrawerPickerPopover } from "./DrawerPickerPopover";
 import { useDrawers } from "@/contexts/DrawerContext";
@@ -275,7 +275,11 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
 
         
         <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-          {safeGenres.join(" • ")}
+          {[
+            content.releaseDate ? new Date(content.releaseDate).getFullYear() : undefined,
+            formatRuntime(displayContent.runtime),
+            ...safeGenres,
+          ].filter(Boolean).join(" • ")}
         </p>
 
         {/* Plataformas de streaming com logos */}
