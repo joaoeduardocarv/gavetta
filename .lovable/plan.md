@@ -27,17 +27,21 @@ Para cada funcionalidade, quantos usuários distintos a usaram e o volume total,
 - Notificações: enviadas e taxa de leitura.
 - Perfis públicos ativados.
 
-**4. Adoção e retenção rápida**
+**4. Atividade por usuário, dia a dia**
+- Lista de usuários (busca por handle/e-mail) com: data de cadastro, nº de títulos em gavettas, nº de notas, episódios marcados, importações e **última atividade**.
+- Ao clicar em um usuário: linha do tempo diária dos últimos 30/90 dias mostrando, por dia, se ele adicionou algo em alguma gavetta, avaliou, marcou episódio, importou de link ou interagiu com amigos — com o total de ações por dia (formato de "heatmap"/barras).
+- Detalhe do dia: quais títulos foram adicionados e em qual gavetta.
+- Indicador de "ativo hoje / últimos 7 dias / inativo há X dias" por usuário.
 - Tabela "funcionalidade x % de usuários que já usaram", para ver o que ninguém está usando.
-- Lista dos últimos 50 usuários com: handle, data de cadastro, nº de títulos, nº de notas, última atividade — para inspeção pontual.
 
 **5. Gavetta Mágica**
 Essa é hoje 100% no cliente, então o banco não sabe quantas vezes foi usada. Será adicionado um registro leve de evento (usuário + funcionalidade + data) gravado quando a Gavetta Mágica é aberta/revelada, para aparecer no painel como as demais.
+
 
 ## Detalhes técnicos
 
 - Migração: `app_role` enum, tabela `public.user_roles` (com GRANTs), função `has_role(uuid, app_role)` security definer, RLS.
 - Tabela `public.feature_events` (user_id, feature, created_at) com insert só para o próprio usuário e leitura só para admin; usada pela Gavetta Mágica e facilmente extensível a outras ações.
-- Todas as métricas vêm de uma função security definer `admin_usage_metrics()` que agrega `profiles`, `user_drawer_assignments`, `episode_ratings`, `watched_episodes`, `user_custom_drawers`, `shared_drawer_members`, `friendships`, `recommendations`, `notifications`, `import_jobs` e `feature_events`, e retorna JSON. A função valida `has_role(auth.uid(), 'admin')` e falha para não-admins — nenhum dado bruto de outros usuários é exposto ao cliente.
+- Todas as métricas vêm de funções security definer: `admin_usage_metrics()` (agregados globais) e `admin_user_activity(_user_id, _days)` (série diária e detalhe por usuário), agregando `profiles`, `user_drawer_assignments`, `episode_ratings`, `watched_episodes`, `user_custom_drawers`, `shared_drawer_members`, `friendships`, `recommendations`, `notifications`, `import_jobs` e `feature_events`. A atividade diária usa as datas de criação dessas tabelas convertidas para UTC−3. Ambas validam `has_role(auth.uid(), 'admin')` e falham para não-admins.
 - Frontend: `src/pages/Admin.tsx` + `src/components/admin/*` usando cards e a lib de gráficos já presente (recharts), rota lazy em `App.tsx`, guarda `AdminRoute`.
 - Nenhum dado pessoal sensível é listado além de handle/username e contadores.
