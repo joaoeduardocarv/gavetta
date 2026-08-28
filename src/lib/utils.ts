@@ -23,3 +23,16 @@ export function formatRelativeDate(message: string): string {
     return new Date(dateStr).toLocaleDateString('pt-BR');
   });
 }
+
+/**
+ * Formats a duration in minutes into a readable string.
+ * Examples: 125 -> "2h 5min", 45 -> "45min"
+ */
+export function formatRuntime(minutes: number | undefined | null): string | undefined {
+  if (minutes === undefined || minutes === null || isNaN(minutes) || minutes <= 0) return undefined;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h > 0 && m > 0) return `${h}h ${m}min`;
+  if (h > 0) return `${h}h`;
+  return `${m}min`;
+}
