@@ -77,6 +77,30 @@ export type Database = {
         }
         Relationships: []
       }
+      feature_events: {
+        Row: {
+          created_at: string
+          feature: string
+          id: string
+          metadata: Json | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          feature: string
+          id?: string
+          metadata?: Json | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          feature?: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       friendships: {
         Row: {
           addressee_id: string
@@ -400,6 +424,27 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       watched_episodes: {
         Row: {
           episode_number: number
@@ -432,11 +477,39 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_usage_metrics: { Args: never; Returns: Json }
+      admin_user_activity: {
+        Args: { _days?: number; _user_id: string }
+        Returns: Json
+      }
+      admin_user_list: {
+        Args: { _limit?: number; _query?: string }
+        Returns: {
+          avatar_url: string
+          created_at: string
+          episodes: number
+          handle: string
+          id: string
+          imports: number
+          last_activity: string
+          onboarded: boolean
+          ratings: number
+          titles: number
+          username: string
+        }[]
+      }
       check_signup_availability: {
         Args: { _email?: string; _handle?: string; _username?: string }
         Returns: Json
       }
       get_email_by_handle: { Args: { _handle: string }; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_email_allowed: { Args: { _email: string }; Returns: boolean }
       is_profile_visible_to_viewer: {
         Args: { _profile_id: string }
@@ -457,7 +530,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -584,6 +657,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "moderator", "user"],
+    },
   },
 } as const
