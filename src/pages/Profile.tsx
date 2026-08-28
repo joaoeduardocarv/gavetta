@@ -30,6 +30,8 @@ export default function Profile() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isPublicProfile, setIsPublicProfile] = useState(false);
   const { user, signOut } = useAuth();
+  const { isAdmin } = useIsAdmin();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
