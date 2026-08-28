@@ -27,12 +27,16 @@ Para cada funcionalidade, quantos usuários distintos a usaram e o volume total,
 - Notificações: enviadas e taxa de leitura.
 - Perfis públicos ativados.
 
-**4. Adoção e retenção rápida**
+**4. Atividade por usuário, dia a dia**
+- Lista de usuários (busca por handle/e-mail) com: data de cadastro, nº de títulos em gavettas, nº de notas, episódios marcados, importações e **última atividade**.
+- Ao clicar em um usuário: linha do tempo diária dos últimos 30/90 dias mostrando, por dia, se ele adicionou algo em alguma gavetta, avaliou, marcou episódio, importou de link ou interagiu com amigos — com o total de ações por dia (formato de "heatmap"/barras).
+- Detalhe do dia: quais títulos foram adicionados e em qual gavetta.
+- Indicador de "ativo hoje / últimos 7 dias / inativo há X dias" por usuário.
 - Tabela "funcionalidade x % de usuários que já usaram", para ver o que ninguém está usando.
-- Lista dos últimos 50 usuários com: handle, data de cadastro, nº de títulos, nº de notas, última atividade — para inspeção pontual.
 
 **5. Gavetta Mágica**
 Essa é hoje 100% no cliente, então o banco não sabe quantas vezes foi usada. Será adicionado um registro leve de evento (usuário + funcionalidade + data) gravado quando a Gavetta Mágica é aberta/revelada, para aparecer no painel como as demais.
+
 
 ## Detalhes técnicos
 
