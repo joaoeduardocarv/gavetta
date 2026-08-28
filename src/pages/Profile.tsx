@@ -267,6 +267,16 @@ export default function Profile() {
 
           <Separator />
 
+          {isAdmin && (
+            <div className="bg-card rounded-lg p-6">
+              <Button variant="outline" className="w-full" onClick={() => navigate("/admin")}>
+                Painel de administração
+              </Button>
+            </div>
+          )}
+
+
+
           {/* Sair */}
           <div className="bg-card rounded-lg p-6">
             <Button variant="destructive" className="w-full" onClick={handleSignOut}>
