@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Film, Tv, Calendar, Star, Share2, MessageCircle, Check, Play, Eye, CheckCircle, Loader2, Link2, Languages, Repeat, Plus, Minus } from "lucide-react";
+import { Film, Tv, Calendar, Star, Share2, MessageCircle, Check, Play, Eye, CheckCircle, Loader2, Link2, Languages, Repeat, Plus, Minus, Clock } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { useTitleLanguage, hasAlternateTitle } from "@/hooks/useTitleLanguage";
 import { GavetaIcon } from "@/components/GavetaIcon";
@@ -601,6 +601,17 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                     <Calendar className="h-3 w-3" />
                     {new Date(content.releaseDate).getFullYear()}
                   </Badge>
+                  {viewContent.runtime && (
+                    <Badge variant="outline" className="gap-1">
+                      <Clock className="h-3 w-3" />
+                      {(() => {
+                        const runtime = viewContent.runtime!;
+                        const h = Math.floor(runtime / 60);
+                        const m = runtime % 60;
+                        return h > 0 && m > 0 ? `${h}h ${m}min` : h > 0 ? `${h}h` : `${m}min`;
+                      })()}
+                    </Badge>
+                  )}
                   {content.rating && (
                     <Badge variant="outline" className="gap-1">
                       <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
