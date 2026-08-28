@@ -7,7 +7,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { FEATURE_LABELS } from "@/components/admin/featureLabels";
+import { FEATURE_LABELS, DRAWER_LABELS } from "@/components/admin/featureLabels";
 
 interface DayEntry {
   day: string;
@@ -149,7 +149,7 @@ export function UserActivityDialog({
                         <p className="text-sm truncate">{item.label ?? "—"}</p>
                         <p className="text-xs text-muted-foreground">
                           {FEATURE_LABELS[item.feature] ?? item.feature}
-                          {item.detail ? ` · ${item.detail}` : ""}
+                          {item.detail ? ` · ${DRAWER_LABELS[item.detail] ?? item.detail}` : ""}
                         </p>
                       </div>
                       <span className="text-xs text-muted-foreground shrink-0">
