@@ -254,8 +254,15 @@ serve(async (req) => {
       // Allowlist de domínios: se definida, SÓ esses sites aparecem.
       // Pode ser sobrescrita por requisição via ?domains=site1.com,site2.com
       const DEFAULT_ALLOWED_DOMAINS: string[] = [
-        // vazio = sem restrição de domínio (comportamento atual)
+        'cinematorio.com.br',
+        'adorocinema.com',
+        'cinepop.com.br',
+        'rollingstone.com.br',
+        'omelete.com.br',
+        'jovemnerd.com.br',
+        'cinemacomrapadura.com.br',
       ];
+
       const domainsParam = url.searchParams.get('domains') || '';
       const allowedDomains = (domainsParam
         ? domainsParam.split(',')
