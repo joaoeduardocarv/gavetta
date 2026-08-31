@@ -387,7 +387,7 @@ export const BR_STREAMING_PROVIDERS = [
   { id: 8, name: 'Netflix' },
   { id: 119, name: 'Prime Video' },
   { id: 337, name: 'Disney+' },
-  { id: 1899, name: 'Max' },
+  { id: 1899, name: 'HBO Max' },
   { id: 350, name: 'Apple TV+' },
   { id: 531, name: 'Paramount+' },
   { id: 307, name: 'Globoplay' },

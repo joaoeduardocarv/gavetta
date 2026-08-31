@@ -377,7 +377,7 @@ export function DestinyDrawerDialog({ open, onOpenChange }: DestinyDrawerDialogP
                     <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
                     Revelar outro
                   </Button>
-                  <DrawerPickerPopover content={pick.content}>
+                  <DrawerPickerPopover content={pick.content} modal contentClassName="z-[80]">
                     <Button
                       size="sm"
                       className="flex-1 bg-gradient-destiny text-white border-0 hover:opacity-90 shadow-destiny"

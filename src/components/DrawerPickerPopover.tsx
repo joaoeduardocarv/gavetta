@@ -13,6 +13,9 @@ import { useState } from "react";
 interface DrawerPickerPopoverProps {
   content: Content;
   children: React.ReactNode;
+  /** Use quando o popover estiver dentro de um Dialog modal */
+  modal?: boolean;
+  contentClassName?: string;
 }
 
 const defaultDrawerConfig: Record<DefaultDrawerId, { label: string; icon: typeof Clock; color: string }> = {
@@ -21,7 +24,7 @@ const defaultDrawerConfig: Record<DefaultDrawerId, { label: string; icon: typeof
   'watched': { label: 'Assistido', icon: Check, color: 'text-green-500' },
 };
 
-export function DrawerPickerPopover({ content, children }: DrawerPickerPopoverProps) {
+export function DrawerPickerPopover({ content, children, modal = false, contentClassName }: DrawerPickerPopoverProps) {
   const [open, setOpen] = useState(false);
   const { 
     customDrawers, 
@@ -51,12 +54,13 @@ export function DrawerPickerPopover({ content, children }: DrawerPickerPopoverPr
   };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal={modal}>
       <PopoverTrigger asChild onClick={(e) => e.stopPropagation()}>
         {children}
       </PopoverTrigger>
       <PopoverContent 
-        className="w-56 p-2 z-50 bg-popover border border-border shadow-lg" 
+        className={cn("w-56 p-2 z-50 bg-popover border border-border shadow-lg", contentClassName)}
+        
         align="end"
         onClick={(e) => e.stopPropagation()}
       >
