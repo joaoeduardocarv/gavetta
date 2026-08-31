@@ -384,8 +384,10 @@ serve(async (req) => {
       // Junta RSS (fontes aprovadas) com GNews já restrito ao allowlist
       const rssFiltered = rssArticles.filter((a) => {
         const haystack = `${a.title ?? ''} ${a.description ?? ''}`;
+        if (!isAllowedDomain(a)) return false;
         return !isSportsy(haystack);
       });
+
 
       const seen = new Set<string>();
       const merged = [...rssFiltered, ...filteredArticles].filter((a: any) => {
