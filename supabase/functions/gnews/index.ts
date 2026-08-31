@@ -251,15 +251,43 @@ serve(async (req) => {
       ];
       const SPORTS_URL_PATHS = /\/(esporte|esportes|futebol|sports?|nba|nfl|f1|formula-?1|olimpiadas?)(\/|$|\?)/i;
 
+      // Allowlist de domínios: se definida, SÓ esses sites aparecem.
+      // Pode ser sobrescrita por requisição via ?domains=site1.com,site2.com
+      const DEFAULT_ALLOWED_DOMAINS: string[] = [
+        // vazio = sem restrição de domínio (comportamento atual)
+      ];
+      const domainsParam = url.searchParams.get('domains') || '';
+      const allowedDomains = (domainsParam
+        ? domainsParam.split(',')
+        : DEFAULT_ALLOWED_DOMAINS)
+        .map((d) => d.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/.*$/, ''))
+        .filter(Boolean);
+
+      const hostOf = (link: string) => {
+        try {
+          return new URL(link).hostname.toLowerCase().replace(/^www\./, '');
+        } catch {
+          return '';
+        }
+      };
+      const isAllowedDomain = (article: any) => {
+        if (allowedDomains.length === 0) return true;
+        const host = hostOf(article.url ?? '') || hostOf(article.source?.url ?? '');
+        if (!host) return false;
+        return allowedDomains.some((d) => host === d || host.endsWith(`.${d}`));
+      };
+
       const filteredArticles = (data.articles || []).filter((article: any) => {
         const haystack = `${article.title ?? ''} ${article.description ?? ''}`;
         const src = `${article.source?.name ?? ''} ${article.source?.url ?? ''}`;
+        if (!isAllowedDomain(article)) return false;
         if (isSportsy(haystack)) return false;
         if (SPORTS_SOURCES.some((re) => re.test(src))) return false;
         if (typeof article.url === 'string' && SPORTS_URL_PATHS.test(article.url)) return false;
         if (!looksLikeCinema(haystack)) return false;
         return true;
       });
+
 
       console.log(
         `Filtered ${data.articles?.length || 0} → ${filteredArticles.length} cinema-relevant articles`
