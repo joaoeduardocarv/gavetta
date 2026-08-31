@@ -84,7 +84,7 @@ serve(async (req) => {
         'filme', 'série', 'temporada', 'cinema', 'trailer', 'estreia',
         'Netflix', 'HBO', '"Disney+"', 'Globoplay', 'Marvel', 'Oscar',
       ].join(' OR ');
-      searchQuery = `(${include}) AND NOT futebol AND NOT esporte AND NOT economia`;
+      searchQuery = `(${include}) AND NOT futebol AND NOT esporte AND NOT jogador AND NOT campeonato AND NOT gol`;
     }
     if (searchQuery.length > 200) {
       searchQuery = searchQuery.slice(0, 200);
