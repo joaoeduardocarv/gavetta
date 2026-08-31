@@ -317,16 +317,23 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
     }
   };
 
-  /** If the series is in "Quero Ver" and the user just marked an episode, prompt to move to "Assistindo". */
+  /**
+   * Prompts (once) to move the series to "Assistindo" when the user marks an episode
+   * and there are still other episodes to watch. Skipped if it's already in
+   * "Assistindo" (or "Assistido").
+   */
   const maybePromptMoveToWatching = (): boolean => {
     if (!content) return false;
     if (watchingPromptShownRef.current) return false;
     const current = getContentDrawers(content.id).defaultDrawer;
-    if (current !== "to-watch") return false;
+    if (current === "watching" || current === "watched") return false;
+    // Only prompt while episodes remain unwatched (totalWatched is pre-toggle state).
+    if (totalEpisodes > 0 && totalWatched + 1 >= totalEpisodes) return false;
     watchingPromptShownRef.current = true;
     setShowMoveToWatchingPrompt(true);
     return true;
   };
+
 
   const handleConfirmMoveToWatching = async () => {
     setShowMoveToWatchingPrompt(false);
@@ -694,8 +701,9 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
           <AlertDialogHeader>
             <AlertDialogTitle>Começou a assistir!</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta série está na sua gaveta <strong>Quero Ver</strong>. Quer movê-la para <strong>Assistindo</strong>?
+              Você marcou um episódio e ainda há outros para ver. Quer mover esta série para a gavetta <strong>Assistindo</strong>?
             </AlertDialogDescription>
+
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Agora não</AlertDialogCancel>
