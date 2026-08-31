@@ -118,6 +118,10 @@ serve(async (req) => {
         .replace(/&#0?39;|&apos;/g, "'")
         .replace(/&lt;/g, '<')
         .replace(/&gt;/g, '>')
+        .replace(/&#(\d+);/g, (_m, d) => String.fromCodePoint(Number(d)))
+        .replace(/&#x([0-9a-f]+);/gi, (_m, h) => String.fromCodePoint(parseInt(h, 16)))
+        .replace(/&[a-z]+;/gi, ' ')
+
         .replace(/\s+/g, ' ')
         .trim();
 
