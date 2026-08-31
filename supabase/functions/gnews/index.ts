@@ -399,6 +399,29 @@ serve(async (req) => {
         (a: any, b: any) => Date.parse(b.publishedAt || '') - Date.parse(a.publishedAt || '')
       );
 
+      // Diversidade: intercala fontes (round-robin) para não dominar com um só site
+      const bySource = new Map<string, any[]>();
+      for (const a of merged as any[]) {
+        const key = a.source?.name || 'outros';
+        if (!bySource.has(key)) bySource.set(key, []);
+        bySource.get(key)!.push(a);
+      }
+      const interleaved: any[] = [];
+      let added = true;
+      while (added) {
+        added = false;
+        for (const list of bySource.values()) {
+          const next = list.shift();
+          if (next) {
+            interleaved.push(next);
+            added = true;
+          }
+        }
+      }
+      merged.length = 0;
+      merged.push(...interleaved);
+
+
       console.log(
         `GNews ${data.articles?.length || 0} → ${filteredArticles.length}; RSS ${rssFiltered.length}; total ${merged.length}`
       );
