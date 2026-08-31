@@ -5,7 +5,7 @@ import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search as SearchIcon, Film, Tv, Loader2, X, User, Link2 } from "lucide-react";
+import { Search as SearchIcon, Film, Tv, Loader2, X, User } from "lucide-react";
 import { ContentCard } from "@/components/ContentCard";
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { DestinyDrawerCard } from "@/components/DestinyDrawerCard";
