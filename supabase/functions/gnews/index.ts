@@ -100,6 +100,72 @@ serve(async (req) => {
     params.append('q', searchQuery);
 
 
+    // ---- Fontes próprias (RSS) — apenas sites aprovados ----
+    const RSS_FEEDS = [
+      'https://cinepop.com.br/feed/',
+      'https://cinemacomrapadura.com.br/feed/',
+      'https://www.cinematorio.com.br/feed',
+      'https://rollingstone.com.br/canal/cinema/feed/',
+    ];
+
+    const decodeEntities = (s: string) =>
+      s
+        .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .replace(/&#0?39;|&apos;/g, "'")
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const pick = (block: string, tag: string) => {
+      const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`, 'i'));
+      return m ? decodeEntities(m[1]) : '';
+    };
+
+    const fetchFeed = async (feedUrl: string) => {
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 8000);
+        const res = await fetch(feedUrl, {
+          signal: ctrl.signal,
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; GavettaBot/1.0)' },
+        });
+        clearTimeout(t);
+        if (!res.ok) return [];
+        const xml = await res.text();
+        const items = xml.match(/<item[\s\S]*?<\/item>/gi) || [];
+        return items.slice(0, 12).map((block) => {
+          const imgMatch =
+            block.match(/<media:content[^>]+url="([^"]+)"/i) ||
+            block.match(/<enclosure[^>]+url="([^"]+)"/i) ||
+            block.match(/<img[^>]+src="([^"]+)"/i);
+          const link = pick(block, 'link');
+          let host = '';
+          try {
+            host = new URL(link).hostname.replace(/^www\./, '');
+          } catch { /* ignore */ }
+          return {
+            title: pick(block, 'title'),
+            description: pick(block, 'description').slice(0, 240),
+            publishedAt: pick(block, 'pubDate'),
+            url: link,
+            image: imgMatch ? imgMatch[1] : null,
+            source: { name: host, url: link },
+          };
+        });
+      } catch (e) {
+        console.error('RSS feed error', feedUrl, (e as Error).message);
+        return [];
+      }
+    };
+
+    const rssArticles = (await Promise.all(RSS_FEEDS.map(fetchFeed))).flat();
+    console.log(`RSS: ${rssArticles.length} artigos de fontes aprovadas`);
+
     console.log(`Fetching news from GNews API: ${endpoint} with query: ${searchQuery}`);
 
     // Add timeout controller
@@ -112,6 +178,7 @@ serve(async (req) => {
       });
 
       clearTimeout(timeoutId);
+
 
       if (!response.ok) {
         const errorText = await response.text();
