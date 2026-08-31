@@ -78,18 +78,27 @@ serve(async (req) => {
     // GNews limits `q` to 200 characters, so keep includes/excludes compact.
     let searchQuery = query;
     if (!query || action === 'movies') {
-      // Keep API query short (200-char limit). Heavy filtering happens client-side
+      // Keep API query short (200-char limit). Heavy filtering happens server-side
       // via SPORT_DENYLIST + CINEMA_ALLOWLIST below.
       const include = [
         'filme', 'série', 'temporada', 'cinema', 'trailer', 'estreia',
         'Netflix', 'HBO', '"Disney+"', 'Globoplay', 'Marvel', 'Oscar',
       ].join(' OR ');
-      searchQuery = `(${include}) AND NOT futebol AND NOT esporte AND NOT jogador AND NOT campeonato AND NOT gol`;
+      const excludes = ['futebol', 'esporte', 'jogador', 'campeonato', 'gol'];
+      searchQuery = `(${include})`;
+      // Append exclusions one by one, never truncating mid-operator (GNews 400s on that).
+      for (const term of excludes) {
+        const next = `${searchQuery} AND NOT ${term}`;
+        if (next.length > 200) break;
+        searchQuery = next;
+      }
     }
     if (searchQuery.length > 200) {
-      searchQuery = searchQuery.slice(0, 200);
+      // Only user-supplied queries can reach here; trim at a word boundary.
+      searchQuery = searchQuery.slice(0, 200).replace(/\s+\S*$/, '');
     }
     params.append('q', searchQuery);
+
 
     console.log(`Fetching news from GNews API: ${endpoint} with query: ${searchQuery}`);
 
