@@ -183,15 +183,29 @@ serve(async (req) => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('GNews API error:', response.status, errorText);
-        // Gracefully degrade on upstream errors (e.g. 429 rate limit) so the UI doesn't break
+        // Gracefully degrade on upstream errors (e.g. 429 rate limit): serve RSS only
+        const fallback = rssArticles
+          .sort((a, b) => Date.parse(b.publishedAt || '') - Date.parse(a.publishedAt || ''))
+          .slice(0, Number(max) || 10)
+          .map((a, index) => ({
+            id: `rss-${index}-${Date.now()}`,
+            title: a.title,
+            description: a.description,
+            published: a.publishedAt,
+            url: a.url,
+            image: a.image,
+            author: a.source?.name || 'Unknown',
+            source: a.source?.name,
+          }));
         return new Response(
           JSON.stringify({
-            news: [],
-            totalArticles: 0,
+            news: fallback,
+            totalArticles: fallback.length,
             warning: response.status === 429 ? 'rate_limited' : 'upstream_error',
           }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
+
       }
 
       const data = await response.json();
