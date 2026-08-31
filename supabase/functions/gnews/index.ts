@@ -84,7 +84,7 @@ serve(async (req) => {
         'filme', 'série', 'temporada', 'cinema', 'trailer', 'estreia',
         'Netflix', 'HBO', '"Disney+"', 'Globoplay', 'Marvel', 'Oscar',
       ].join(' OR ');
-      searchQuery = `(${include}) AND NOT futebol AND NOT esporte AND NOT economia`;
+      searchQuery = `(${include}) AND NOT futebol AND NOT esporte AND NOT jogador AND NOT campeonato AND NOT gol`;
     }
     if (searchQuery.length > 200) {
       searchQuery = searchQuery.slice(0, 200);
@@ -124,14 +124,31 @@ serve(async (req) => {
       // Post-filter: drop sports, economy, health, politics, and other off-topic news.
       const SPORT_DENYLIST = [
         // Sports
-        /\bfutebol\b/i, /\bjogador(a)?\b/i, /\bgol(s)?\b/i, /\bcampeonato\b/i,
-        /\bbrasileir(ã|a)o\b/i, /\blibertadores\b/i, /\bchampions\s+league\b/i,
-        /\bcopa\s+(do|da)\b/i, /\bseleção\b/i, /\btécnico\b.*\b(time|clube)\b/i,
-        /\bnba\b/i, /\bnfl\b/i, /\bufc\b/i, /\bmma\b/i, /\bboxe\b/i,
+        /\bfutebol\b/i, /\bfutsal\b/i, /\bjogador(a|es|as)?\b/i, /\bgol(s|eiro|aço)?\b/i,
+        /\bcampeonato\b/i, /\bcampe[ãa]o(ato)?\b/i, /\bt[íi]tulo\s+(brasileiro|estadual|mundial)\b/i,
+        /\bbrasileir(ã|a)o\b/i, /\blibertadores\b/i, /\bsul[\-\s]?americana\b/i,
+        /\bchampions\s+league\b/i, /\bpremier\s+league\b/i, /\blaliga\b/i, /\bla\s+liga\b/i,
+        /\bserie\s+a\s+(italiana|it[áa]lia)\b/i, /\bbundesliga\b/i, /\bligue\s*1\b/i,
+        /\bcopa\s+(do|da|libertadores|am[ée]rica)\b/i, /\bmundial\s+de\s+clubes\b/i,
+        /\bsele[çc][ãa]o\b/i, /\bt[ée]cnico\b/i, /\bescala[çc][ãa]o\b/i, /\bconvocad[oa]s?\b/i,
+        /\bcontrata[çc][ãa]o\b/i, /\btransfer[êe]ncia\s+(de|do)\s+jogador\b/i,
+        /\bflamengo\b/i, /\bcorinthians\b/i, /\bpalmeiras\b/i, /\bs[ãa]o\s+paulo\s+fc\b/i,
+        /\bvasco\b/i, /\bfluminense\b/i, /\bbotafogo\b/i, /\bgr[êe]mio\b/i,
+        /\binternacional\s+(x|vs)\b/i, /\bcruzeiro\b/i, /\batl[ée]tico[\-\s]?(mg|mineiro)\b/i,
+        /\bsantos\s+fc\b/i, /\breal\s+madrid\b/i, /\bbarcelona\s+(fc|x|vs)\b/i,
+        /\bneymar\b/i, /\bmessi\b/i, /\bcristiano\s+ronaldo\b/i, /\bvin[íi]cius\s+j[úu]nior\b/i,
+        /\bnba\b/i, /\bnfl\b/i, /\bmlb\b/i, /\bnhl\b/i, /\bufc\b/i, /\bmma\b/i, /\bboxe\b/i,
+        /\bv[ôo]lei\b/i, /\bbasquete\b/i, /\bt[êe]nis\b/i, /\batletismo\b/i, /\bnata[çc][ãa]o\b/i,
+        /\bsurf(e|ista)?\b/i, /\bskate\b/i, /\bgin[áa]stica\b/i, /\bhandebol\b/i,
         /\bf[óo]rmula\s*1\b/i, /\bf1\b/i, /\bgp\s+(do|de|da)\b/i, /\bgrand\s*prix\b/i,
-        /\besport(e|es|iv[oa])\b/i, /\bvit[óo]ria\b.*\b(time|jogo)\b/i,
+        /\bpole\s+position\b/i, /\bp[óo]dio\b/i, /\bmotogp\b/i, /\bstock\s+car\b/i,
+        /\besport(e|es|iv[oa]|ivas)\b/i, /\bplacar\b/i, /\brodada\b/i, /\bartilheiro\b/i,
+        /\bp[êe]nalti\b/i, /\bcart[ãa]o\s+(amarelo|vermelho)\b/i, /\best[áa]dio\b/i,
+        /\btorcida\b/i, /\btorcedor(es|a)?\b/i, /\barbitr(o|agem)\b/i, /\bvar\b\s+/i,
         /\be[\-\s]?sports?\b/i, /\bvalorant\b/i, /\bcs\s*2\b/i, /\bleague\s+of\s+legends\b/i,
-        /\batleta\b/i, /\btreinador(a)?\b/i, /\bolimp[íi]ad/i,
+        /\batleta\b/i, /\btreinador(a)?\b/i, /\bolimp[íi]ad/i, /\bparalimp/i,
+        /\bmedalha\s+(de\s+)?(ouro|prata|bronze)\b/i, /\bamistoso\b/i, /\bcl[áa]ssico\s+(regional|paulista|carioca)\b/i,
+
         // Economy / finance
         /\beconomia\b/i, /\beconômic[oa]\b/i, /\bmercado\s+financeiro\b/i,
         /\bbolsa\s+de\s+valores\b/i, /\bibovespa\b/i, /\bd[óo]lar\b/i, /\beuro\b/i,
@@ -216,9 +233,21 @@ serve(async (req) => {
         return weakHits >= 2;
       };
 
+      // Sports outlets / URL paths — block regardless of wording.
+      const SPORTS_SOURCES = [
+        /\bge\.globo\b/i, /\bespn\b/i, /\blance\b/i, /\bgazeta\s*esportiva\b/i,
+        /\bsportbuzz\b/i, /\bitatiaia\s*esporte\b/i, /\bplacar\b/i, /\bfut/i,
+        /\bgoal\.com\b/i, /\bmeu\s*time(fc)?\b/i, /\bsofascore\b/i, /\btrivela\b/i,
+        /\bnetflancers\b/i, /\bolimpiada\b/i,
+      ];
+      const SPORTS_URL_PATHS = /\/(esporte|esportes|futebol|sports?|nba|nfl|f1|formula-?1|olimpiadas?)(\/|$|\?)/i;
+
       const filteredArticles = (data.articles || []).filter((article: any) => {
         const haystack = `${article.title ?? ''} ${article.description ?? ''}`;
+        const src = `${article.source?.name ?? ''} ${article.source?.url ?? ''}`;
         if (isSportsy(haystack)) return false;
+        if (SPORTS_SOURCES.some((re) => re.test(src))) return false;
+        if (typeof article.url === 'string' && SPORTS_URL_PATHS.test(article.url)) return false;
         if (!looksLikeCinema(haystack)) return false;
         return true;
       });
