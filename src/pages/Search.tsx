@@ -404,19 +404,7 @@ export default function Search() {
           />
         </div>
 
-        {/* Importar de link (Reels, TikTok, YouTube, podcast) */}
-        <Link
-          to="/import"
-          className="mb-3 flex w-full items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-left transition-colors hover:bg-accent/10"
-        >
-          <Link2 className="h-4 w-4 shrink-0 text-accent" />
-          <span className="flex-1 text-sm font-medium text-foreground">
-            Importar de um link
-            <span className="block text-xs font-normal text-muted-foreground">
-              Reels, TikTok, YouTube ou podcast citando filmes? A IA acha todos.
-            </span>
-          </span>
-        </Link>
+        {/* Importar de link: em backlog — oculto para usuários finais (acesso apenas admin via /import) */}
 
         {/* Gavetta Mágica */}
         <DestinyDrawerCard onClick={() => setDestinyOpen(true)} />

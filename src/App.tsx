@@ -90,7 +90,7 @@ const App = () => (
                     <Route path="/my-drawers" element={<ProtectedRoute><MyDrawers /></ProtectedRoute>} />
                     <Route path="/friends" element={<ProtectedRoute><Friends /></ProtectedRoute>} />
                     <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
-                    <Route path="/import" element={<ProtectedRoute><ImportPage /></ProtectedRoute>} />
+                    <Route path="/import" element={<AdminRoute><ImportPage /></AdminRoute>} />
                     <Route path="/trending" element={<ProtectedRoute><Trending /></ProtectedRoute>} />
                     <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                     <Route path="/u/:username" element={<PublicProfile />} />
