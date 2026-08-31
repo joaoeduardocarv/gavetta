@@ -701,8 +701,9 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
           <AlertDialogHeader>
             <AlertDialogTitle>Começou a assistir!</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta série está na sua gaveta <strong>Quero Ver</strong>. Quer movê-la para <strong>Assistindo</strong>?
+              Você marcou um episódio e ainda há outros para ver. Quer mover esta série para a gavetta <strong>Assistindo</strong>?
             </AlertDialogDescription>
+
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Agora não</AlertDialogCancel>
