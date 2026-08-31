@@ -233,9 +233,21 @@ serve(async (req) => {
         return weakHits >= 2;
       };
 
+      // Sports outlets / URL paths — block regardless of wording.
+      const SPORTS_SOURCES = [
+        /\bge\.globo\b/i, /\bespn\b/i, /\blance\b/i, /\bgazeta\s*esportiva\b/i,
+        /\bsportbuzz\b/i, /\bitatiaia\s*esporte\b/i, /\bplacar\b/i, /\bfut/i,
+        /\bgoal\.com\b/i, /\bmeu\s*time(fc)?\b/i, /\bsofascore\b/i, /\btrivela\b/i,
+        /\bnetflancers\b/i, /\bolimpiada\b/i,
+      ];
+      const SPORTS_URL_PATHS = /\/(esporte|esportes|futebol|sports?|nba|nfl|f1|formula-?1|olimpiadas?)(\/|$|\?)/i;
+
       const filteredArticles = (data.articles || []).filter((article: any) => {
         const haystack = `${article.title ?? ''} ${article.description ?? ''}`;
+        const src = `${article.source?.name ?? ''} ${article.source?.url ?? ''}`;
         if (isSportsy(haystack)) return false;
+        if (SPORTS_SOURCES.some((re) => re.test(src))) return false;
+        if (typeof article.url === 'string' && SPORTS_URL_PATHS.test(article.url)) return false;
         if (!looksLikeCinema(haystack)) return false;
         return true;
       });
