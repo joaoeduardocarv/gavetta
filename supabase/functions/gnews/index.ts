@@ -377,13 +377,31 @@ serve(async (req) => {
       });
 
 
-      console.log(
-        `Filtered ${data.articles?.length || 0} → ${filteredArticles.length} cinema-relevant articles`
+      // Junta RSS (fontes aprovadas) com GNews já restrito ao allowlist
+      const rssFiltered = rssArticles.filter((a) => {
+        const haystack = `${a.title ?? ''} ${a.description ?? ''}`;
+        return !isSportsy(haystack);
+      });
+
+      const seen = new Set<string>();
+      const merged = [...rssFiltered, ...filteredArticles].filter((a: any) => {
+        const key = (a.url || a.title || '').split('?')[0];
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      merged.sort(
+        (a: any, b: any) => Date.parse(b.publishedAt || '') - Date.parse(a.publishedAt || '')
       );
 
-      // Transform GNews response to match our expected format
-      const transformedNews = filteredArticles.map((article: any, index: number) => ({
-        id: `gnews-${index}-${Date.now()}`,
+      console.log(
+        `GNews ${data.articles?.length || 0} → ${filteredArticles.length}; RSS ${rssFiltered.length}; total ${merged.length}`
+      );
+
+      // Transform response to match our expected format
+      const transformedNews = merged.slice(0, Number(max) || 10).map((article: any, index: number) => ({
+        id: `news-${index}-${Date.now()}`,
         title: article.title,
         description: article.description,
         published: article.publishedAt,
@@ -395,8 +413,9 @@ serve(async (req) => {
 
       return new Response(JSON.stringify({ 
         news: transformedNews,
-        totalArticles: data.totalArticles || transformedNews.length 
+        totalArticles: transformedNews.length 
       }), {
+
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     } catch (fetchError) {
