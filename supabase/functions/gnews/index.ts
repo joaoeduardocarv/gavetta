@@ -100,6 +100,76 @@ serve(async (req) => {
     params.append('q', searchQuery);
 
 
+    // ---- Fontes próprias (RSS) — apenas sites aprovados ----
+    const RSS_FEEDS = [
+      'https://cinepop.com.br/feed/',
+      'https://cinemacomrapadura.com.br/feed/',
+      'https://www.cinematorio.com.br/feed',
+      'https://rollingstone.com.br/canal/cinema/feed/',
+    ];
+
+    const decodeEntities = (s: string) =>
+      s
+        .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .replace(/&#0?39;|&apos;/g, "'")
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&#(\d+);/g, (_m, d) => String.fromCodePoint(Number(d)))
+        .replace(/&#x([0-9a-f]+);/gi, (_m, h) => String.fromCodePoint(parseInt(h, 16)))
+        .replace(/&[a-z]+;/gi, ' ')
+
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    const pick = (block: string, tag: string) => {
+      const m = block.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`, 'i'));
+      return m ? decodeEntities(m[1]) : '';
+    };
+
+    const fetchFeed = async (feedUrl: string) => {
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 8000);
+        const res = await fetch(feedUrl, {
+          signal: ctrl.signal,
+          headers: { 'User-Agent': 'Mozilla/5.0 (compatible; GavettaBot/1.0)' },
+        });
+        clearTimeout(t);
+        if (!res.ok) return [];
+        const xml = await res.text();
+        const items = xml.match(/<item[\s\S]*?<\/item>/gi) || [];
+        return items.slice(0, 12).map((block) => {
+          const imgMatch =
+            block.match(/<media:content[^>]+url="([^"]+)"/i) ||
+            block.match(/<enclosure[^>]+url="([^"]+)"/i) ||
+            block.match(/<img[^>]+src="([^"]+)"/i);
+          const link = pick(block, 'link');
+          let host = '';
+          try {
+            host = new URL(link).hostname.replace(/^www\./, '');
+          } catch { /* ignore */ }
+          return {
+            title: pick(block, 'title'),
+            description: pick(block, 'description').slice(0, 240),
+            publishedAt: pick(block, 'pubDate'),
+            url: link,
+            image: imgMatch ? imgMatch[1] : null,
+            source: { name: host, url: link },
+          };
+        });
+      } catch (e) {
+        console.error('RSS feed error', feedUrl, (e as Error).message);
+        return [];
+      }
+    };
+
+    const rssArticles = (await Promise.all(RSS_FEEDS.map(fetchFeed))).flat();
+    console.log(`RSS: ${rssArticles.length} artigos de fontes aprovadas`);
+
     console.log(`Fetching news from GNews API: ${endpoint} with query: ${searchQuery}`);
 
     // Add timeout controller
@@ -113,18 +183,33 @@ serve(async (req) => {
 
       clearTimeout(timeoutId);
 
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('GNews API error:', response.status, errorText);
-        // Gracefully degrade on upstream errors (e.g. 429 rate limit) so the UI doesn't break
+        // Gracefully degrade on upstream errors (e.g. 429 rate limit): serve RSS only
+        const fallback = rssArticles
+          .sort((a, b) => Date.parse(b.publishedAt || '') - Date.parse(a.publishedAt || ''))
+          .slice(0, Number(max) || 10)
+          .map((a, index) => ({
+            id: `rss-${index}-${Date.now()}`,
+            title: a.title,
+            description: a.description,
+            published: a.publishedAt,
+            url: a.url,
+            image: a.image,
+            author: a.source?.name || 'Unknown',
+            source: a.source?.name,
+          }));
         return new Response(
           JSON.stringify({
-            news: [],
-            totalArticles: 0,
+            news: fallback,
+            totalArticles: fallback.length,
             warning: response.status === 429 ? 'rate_limited' : 'upstream_error',
           }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
+
       }
 
       const data = await response.json();
@@ -254,8 +339,15 @@ serve(async (req) => {
       // Allowlist de domínios: se definida, SÓ esses sites aparecem.
       // Pode ser sobrescrita por requisição via ?domains=site1.com,site2.com
       const DEFAULT_ALLOWED_DOMAINS: string[] = [
-        // vazio = sem restrição de domínio (comportamento atual)
+        'cinematorio.com.br',
+        'adorocinema.com',
+        'cinepop.com.br',
+        'rollingstone.com.br',
+        'omelete.com.br',
+        'jovemnerd.com.br',
+        'cinemacomrapadura.com.br',
       ];
+
       const domainsParam = url.searchParams.get('domains') || '';
       const allowedDomains = (domainsParam
         ? domainsParam.split(',')
@@ -289,13 +381,56 @@ serve(async (req) => {
       });
 
 
-      console.log(
-        `Filtered ${data.articles?.length || 0} → ${filteredArticles.length} cinema-relevant articles`
+      // Junta RSS (fontes aprovadas) com GNews já restrito ao allowlist
+      const rssFiltered = rssArticles.filter((a) => {
+        const haystack = `${a.title ?? ''} ${a.description ?? ''}`;
+        if (!isAllowedDomain(a)) return false;
+        return !isSportsy(haystack);
+      });
+
+
+      const seen = new Set<string>();
+      const merged = [...rssFiltered, ...filteredArticles].filter((a: any) => {
+        const key = (a.url || a.title || '').split('?')[0];
+        if (!key || seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      merged.sort(
+        (a: any, b: any) => Date.parse(b.publishedAt || '') - Date.parse(a.publishedAt || '')
       );
 
-      // Transform GNews response to match our expected format
-      const transformedNews = filteredArticles.map((article: any, index: number) => ({
-        id: `gnews-${index}-${Date.now()}`,
+      // Diversidade: intercala fontes (round-robin) para não dominar com um só site
+      const bySource = new Map<string, any[]>();
+      for (const a of merged as any[]) {
+        const key = a.source?.name || 'outros';
+        if (!bySource.has(key)) bySource.set(key, []);
+        bySource.get(key)!.push(a);
+      }
+      const interleaved: any[] = [];
+      let added = true;
+      while (added) {
+        added = false;
+        for (const list of bySource.values()) {
+          const next = list.shift();
+          if (next) {
+            interleaved.push(next);
+            added = true;
+          }
+        }
+      }
+      merged.length = 0;
+      merged.push(...interleaved);
+
+
+      console.log(
+        `GNews ${data.articles?.length || 0} → ${filteredArticles.length}; RSS ${rssFiltered.length}; total ${merged.length}`
+      );
+
+      // Transform response to match our expected format
+      const transformedNews = merged.slice(0, Number(max) || 10).map((article: any, index: number) => ({
+        id: `news-${index}-${Date.now()}`,
         title: article.title,
         description: article.description,
         published: article.publishedAt,
@@ -307,8 +442,9 @@ serve(async (req) => {
 
       return new Response(JSON.stringify({ 
         news: transformedNews,
-        totalArticles: data.totalArticles || transformedNews.length 
+        totalArticles: transformedNews.length 
       }), {
+
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     } catch (fetchError) {
