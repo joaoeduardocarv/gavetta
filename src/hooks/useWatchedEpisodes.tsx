@@ -2,6 +2,16 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
+const WATCHED_EPISODES_EVENT = "watched-episodes-changed";
+
+/** Notifies other components (mini cards, badges) that episode data changed. */
+function emitWatchedEpisodesChange(tmdbTvId: number | null) {
+  if (typeof window === "undefined" || tmdbTvId == null) return;
+  window.dispatchEvent(
+    new CustomEvent(WATCHED_EPISODES_EVENT, { detail: { tmdbTvId } })
+  );
+}
+
 interface WatchedEpisodeRow {
   season_number: number;
   episode_number: number;
@@ -82,6 +92,7 @@ export function useWatchedEpisodes(tmdbTvId: number | null) {
         else next.add(key);
         return next;
       });
+      emitWatchedEpisodesChange(tmdbTvId);
 
       try {
         if (wasWatched) {
@@ -93,6 +104,7 @@ export function useWatchedEpisodes(tmdbTvId: number | null) {
             .eq("season_number", season)
             .eq("episode_number", episode);
           if (error) throw error;
+          emitWatchedEpisodesChange(tmdbTvId);
         } else {
           const { error } = await supabase.from("watched_episodes").insert({
             user_id: user.id,
@@ -101,6 +113,7 @@ export function useWatchedEpisodes(tmdbTvId: number | null) {
             episode_number: episode,
           });
           if (error) throw error;
+          emitWatchedEpisodesChange(tmdbTvId);
         }
       } catch (err) {
         console.error("Error toggling episode:", err);
@@ -130,6 +143,7 @@ export function useWatchedEpisodes(tmdbTvId: number | null) {
         toAdd.forEach((ep) => next.add(makeKey(season, ep)));
         return next;
       });
+      emitWatchedEpisodesChange(tmdbTvId);
 
       try {
         const rows = toAdd.map((ep) => ({
@@ -142,6 +156,7 @@ export function useWatchedEpisodes(tmdbTvId: number | null) {
           .from("watched_episodes")
           .insert(rows);
         if (error) throw error;
+        emitWatchedEpisodesChange(tmdbTvId);
       } catch (err) {
         console.error("Error marking season:", err);
         await refetch();
@@ -163,6 +178,7 @@ export function useWatchedEpisodes(tmdbTvId: number | null) {
         });
         return next;
       });
+      emitWatchedEpisodesChange(tmdbTvId);
 
       try {
         const { error } = await supabase
@@ -172,6 +188,7 @@ export function useWatchedEpisodes(tmdbTvId: number | null) {
           .eq("tmdb_tv_id", tmdbTvId)
           .eq("season_number", season);
         if (error) throw error;
+        emitWatchedEpisodesChange(tmdbTvId);
       } catch (err) {
         console.error("Error unmarking season:", err);
         setWatched(previous);
@@ -204,6 +221,7 @@ export function useWatchedEpisodes(tmdbTvId: number | null) {
         toAdd.forEach(({ season, episode }) => next.add(makeKey(season, episode)));
         return next;
       });
+      emitWatchedEpisodesChange(tmdbTvId);
 
       try {
         const rows = toAdd.map(({ season, episode }) => ({
@@ -214,6 +232,7 @@ export function useWatchedEpisodes(tmdbTvId: number | null) {
         }));
         const { error } = await supabase.from("watched_episodes").insert(rows);
         if (error) throw error;
+        emitWatchedEpisodesChange(tmdbTvId);
       } catch (err) {
         console.error("Error marking all seasons:", err);
         await refetch();
@@ -243,24 +262,33 @@ export function useWatchedEpisodeCount(tmdbTvId: number | null) {
   const { user } = useAuth();
   const [count, setCount] = useState<number>(0);
 
-  useEffect(() => {
-    let cancelled = false;
+  const fetchCount = useCallback(async () => {
     if (!user || tmdbTvId == null) {
       setCount(0);
       return;
     }
-    supabase
+    const { count: c } = await supabase
       .from("watched_episodes")
       .select("episode_number", { count: "exact", head: true })
       .eq("user_id", user.id)
-      .eq("tmdb_tv_id", tmdbTvId)
-      .then(({ count: c }) => {
-        if (!cancelled) setCount(c ?? 0);
-      });
-    return () => {
-      cancelled = true;
-    };
+      .eq("tmdb_tv_id", tmdbTvId);
+    setCount(c ?? 0);
   }, [user?.id, tmdbTvId]);
+
+  useEffect(() => {
+    fetchCount();
+  }, [fetchCount]);
+
+  // Keeps the mini-card badge in sync when episodes are toggled elsewhere
+  useEffect(() => {
+    if (tmdbTvId == null) return;
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ tmdbTvId: number }>).detail;
+      if (detail?.tmdbTvId === tmdbTvId) fetchCount();
+    };
+    window.addEventListener(WATCHED_EPISODES_EVENT, handler);
+    return () => window.removeEventListener(WATCHED_EPISODES_EVENT, handler);
+  }, [tmdbTvId, fetchCount]);
 
   return count;
 }
