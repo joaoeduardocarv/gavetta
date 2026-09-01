@@ -104,6 +104,7 @@ export function useWatchedEpisodes(tmdbTvId: number | null) {
             .eq("season_number", season)
             .eq("episode_number", episode);
           if (error) throw error;
+          emitWatchedEpisodesChange(tmdbTvId);
         } else {
           const { error } = await supabase.from("watched_episodes").insert({
             user_id: user.id,
@@ -112,6 +113,7 @@ export function useWatchedEpisodes(tmdbTvId: number | null) {
             episode_number: episode,
           });
           if (error) throw error;
+          emitWatchedEpisodesChange(tmdbTvId);
         }
       } catch (err) {
         console.error("Error toggling episode:", err);
@@ -154,6 +156,7 @@ export function useWatchedEpisodes(tmdbTvId: number | null) {
           .from("watched_episodes")
           .insert(rows);
         if (error) throw error;
+        emitWatchedEpisodesChange(tmdbTvId);
       } catch (err) {
         console.error("Error marking season:", err);
         await refetch();
@@ -185,6 +188,7 @@ export function useWatchedEpisodes(tmdbTvId: number | null) {
           .eq("tmdb_tv_id", tmdbTvId)
           .eq("season_number", season);
         if (error) throw error;
+        emitWatchedEpisodesChange(tmdbTvId);
       } catch (err) {
         console.error("Error unmarking season:", err);
         setWatched(previous);
@@ -228,6 +232,7 @@ export function useWatchedEpisodes(tmdbTvId: number | null) {
         }));
         const { error } = await supabase.from("watched_episodes").insert(rows);
         if (error) throw error;
+        emitWatchedEpisodesChange(tmdbTvId);
       } catch (err) {
         console.error("Error marking all seasons:", err);
         await refetch();
