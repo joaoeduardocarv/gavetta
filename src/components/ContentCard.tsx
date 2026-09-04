@@ -147,6 +147,21 @@ export function ContentCard({ content, onClick, skipProviderRefresh }: ContentCa
   const hasLogos = providerLogos.length > 0;
   const extraCount = (displayContent.watchProviderLogos?.length || 0) - 5;
 
+  // Só mostramos "sem opções" depois que os dados de disponibilidade chegaram
+  const providersLoaded = freshProviders !== null
+    || (skipProviderRefresh && (content.availableOn !== undefined || content.watchProviderLogos !== undefined));
+  const releaseDateObj = content.releaseDate ? new Date(content.releaseDate) : null;
+  const isUpcomingRelease = !releaseDateObj || isNaN(releaseDateObj.getTime())
+    || releaseDateObj.getTime() > Date.now();
+  const showUnavailable = Boolean(
+    providersLoaded
+    && !hasLogos
+    && !(displayContent.availableOn && displayContent.availableOn.length > 0)
+    && !displayContent.isInTheaters
+    && !isUpcomingRelease
+  );
+
+
   
   return (
     <div
@@ -296,7 +311,7 @@ export function ContentCard({ content, onClick, skipProviderRefresh }: ContentCa
         </p>
 
         {/* Plataformas de streaming com logos */}
-        {(hasLogos || displayContent.isInTheaters || (displayContent.availableOn && displayContent.availableOn.length > 0)) && (
+        {(hasLogos || displayContent.isInTheaters || (displayContent.availableOn && displayContent.availableOn.length > 0) || showUnavailable) && (
           <div className="flex items-center gap-1.5 mt-1.5">
             {displayContent.isInTheaters && (
               <TooltipProvider>
@@ -359,7 +374,12 @@ export function ContentCard({ content, onClick, skipProviderRefresh }: ContentCa
                 {displayContent.availableOn.slice(0, 3).join(" • ")}
                 {displayContent.availableOn.length > 3 && ` +${displayContent.availableOn.length - 3}`}
               </span>
+            ) : showUnavailable ? (
+              <span className="text-[11px] text-muted-foreground/70 line-clamp-1">
+                Sem opções no Brasil
+              </span>
             ) : null}
+
           </div>
         )}
       </div>
