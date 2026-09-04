@@ -45,7 +45,7 @@ const typeIcons: Record<string, typeof Film> = {
 };
 
 
-export function ContentCard({ content, onClick }: ContentCardProps) {
+export function ContentCard({ content, onClick, skipProviderRefresh }: ContentCardProps) {
   const Icon = typeIcons[content.type] || Film;
   const StatusIcon = content.status ? statusIcons[content.status] : null;
   const { getContentDrawers } = useDrawers();
