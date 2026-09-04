@@ -21,6 +21,7 @@ import {
   getMovieWatchProviders,
   getTVWatchProviders,
   extractStreamingNames,
+  extractStreamingLogos,
   getMovieDetails,
   getTVDetails,
   getMovieCredits,
