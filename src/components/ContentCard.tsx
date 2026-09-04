@@ -311,7 +311,7 @@ export function ContentCard({ content, onClick, skipProviderRefresh }: ContentCa
         </p>
 
         {/* Plataformas de streaming com logos */}
-        {(hasLogos || displayContent.isInTheaters || (displayContent.availableOn && displayContent.availableOn.length > 0)) && (
+        {(hasLogos || displayContent.isInTheaters || (displayContent.availableOn && displayContent.availableOn.length > 0) || showUnavailable) && (
           <div className="flex items-center gap-1.5 mt-1.5">
             {displayContent.isInTheaters && (
               <TooltipProvider>
