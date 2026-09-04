@@ -283,6 +283,8 @@ export default function Auth() {
         description = "Essa senha é muito comum e já apareceu em vazamentos. Escolha uma senha mais forte (use letras, números e símbolos).";
       } else if (msg.includes("Password should be at least")) {
         description = "A senha deve ter pelo menos 6 caracteres.";
+      } else if (msg.includes("Email address not allowed")) {
+        description = "Não aceitamos emails temporários/descartáveis. Use seu email pessoal (Gmail, Outlook, iCloud, etc.).";
       } else if (msg.includes("Unable to validate email") || msg.toLowerCase().includes("invalid email")) {
         description = "Email inválido. Verifique e tente novamente.";
       } else if (msg.includes("duplicate key")) {
