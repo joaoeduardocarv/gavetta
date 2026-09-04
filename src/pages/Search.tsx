@@ -262,7 +262,7 @@ export default function Search() {
 
     const batchId = ++enrichmentRef.current;
     const enrichResults = async () => {
-      const batchSize = 5;
+      const batchSize = 10;
 
       for (let i = 0; i < toEnrich.length; i += batchSize) {
         if (enrichmentRef.current !== batchId) return;
