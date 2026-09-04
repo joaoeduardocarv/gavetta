@@ -31,7 +31,7 @@ export default function Friends() {
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const { friends, friendsLoading, removeFriend, sentRequests, sendRequest } = useFriendships();
+  const { friends, friendsLoading, removeFriend, sentRequests, sendRequest, pendingRequests } = useFriendships();
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -160,13 +160,22 @@ export default function Friends() {
               <Gift className="h-4 w-4 mr-1 hidden sm:inline" />
               Indicações
             </TabsTrigger>
-            <TabsTrigger value="friends" className="text-xs sm:text-sm">
+            <TabsTrigger value="friends" className="text-xs sm:text-sm relative">
               <Users className="h-4 w-4 mr-1 hidden sm:inline" />
               Amigos
+              {pendingRequests.length > 0 && (
+                <span
+                  className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground animate-pulse"
+                  aria-label={`${pendingRequests.length} pedido(s) de amizade pendente(s)`}
+                >
+                  {pendingRequests.length}
+                </span>
+              )}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="activities" className="space-y-4">
+            {pendingRequests.length > 0 && <FriendRequestsCard />}
             <ActivityFeed />
           </TabsContent>
 
