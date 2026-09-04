@@ -86,10 +86,9 @@ export function useFriendships() {
       const requesterIds = friendships.map((f) => f.requester_id);
       if (requesterIds.length === 0) return [];
 
-      const { data: profiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("*")
-        .in("id", requesterIds);
+      const { data: profiles, error: profilesError } = await supabase.rpc(
+        "get_pending_friend_profiles"
+      );
 
       if (profilesError) throw profilesError;
 
