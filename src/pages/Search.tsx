@@ -565,6 +565,7 @@ export default function Search() {
                   key={content.id}
                   content={content}
                   onClick={() => handleCardClick(content)}
+                  skipProviderRefresh
                 />
               ))}
             </div>
