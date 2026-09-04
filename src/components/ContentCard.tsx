@@ -94,6 +94,8 @@ export function ContentCard({ content, onClick, skipProviderRefresh }: ContentCa
   useEffect(() => {
     const parsed = extractTmdbInfoFromId(content.id);
     if (!parsed) return;
+    // Skip background refresh when the parent already enriched the data (e.g. search results)
+    if (skipProviderRefresh) return;
     let cancelled = false;
     (async () => {
       try {
@@ -129,7 +131,7 @@ export function ContentCard({ content, onClick, skipProviderRefresh }: ContentCa
       }
     })();
     return () => { cancelled = true; };
-  }, [content.id]);
+  }, [content.id, skipProviderRefresh]);
 
   const displayContent: Content = freshProviders
     ? {
