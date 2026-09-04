@@ -17,6 +17,7 @@ import { useTitleLanguage, hasAlternateTitle } from "@/hooks/useTitleLanguage";
 interface ContentCardProps {
   content: Content;
   onClick?: () => void;
+  skipProviderRefresh?: boolean;
 }
 
 const typeLabels: Record<string, string> = {
