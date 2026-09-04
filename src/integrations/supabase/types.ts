@@ -503,6 +503,15 @@ export type Database = {
         Returns: Json
       }
       get_email_by_handle: { Args: { _handle: string }; Returns: string }
+      get_pending_friend_profiles: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          handle: string
+          id: string
+          username: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
