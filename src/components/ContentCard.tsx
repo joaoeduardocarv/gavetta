@@ -374,7 +374,12 @@ export function ContentCard({ content, onClick, skipProviderRefresh }: ContentCa
                 {displayContent.availableOn.slice(0, 3).join(" • ")}
                 {displayContent.availableOn.length > 3 && ` +${displayContent.availableOn.length - 3}`}
               </span>
+            ) : showUnavailable ? (
+              <span className="text-[11px] text-muted-foreground/70 line-clamp-1">
+                Sem opções no Brasil
+              </span>
             ) : null}
+
           </div>
         )}
       </div>
