@@ -17,6 +17,7 @@ import { useTitleLanguage, hasAlternateTitle } from "@/hooks/useTitleLanguage";
 interface ContentCardProps {
   content: Content;
   onClick?: () => void;
+  skipProviderRefresh?: boolean;
 }
 
 const typeLabels: Record<string, string> = {
@@ -44,7 +45,7 @@ const typeIcons: Record<string, typeof Film> = {
 };
 
 
-export function ContentCard({ content, onClick }: ContentCardProps) {
+export function ContentCard({ content, onClick, skipProviderRefresh }: ContentCardProps) {
   const Icon = typeIcons[content.type] || Film;
   const StatusIcon = content.status ? statusIcons[content.status] : null;
   const { getContentDrawers } = useDrawers();
@@ -93,6 +94,8 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
   useEffect(() => {
     const parsed = extractTmdbInfoFromId(content.id);
     if (!parsed) return;
+    // Skip background refresh when the parent already enriched the data (e.g. search results)
+    if (skipProviderRefresh) return;
     let cancelled = false;
     (async () => {
       try {
@@ -128,7 +131,7 @@ export function ContentCard({ content, onClick }: ContentCardProps) {
       }
     })();
     return () => { cancelled = true; };
-  }, [content.id]);
+  }, [content.id, skipProviderRefresh]);
 
   const displayContent: Content = freshProviders
     ? {

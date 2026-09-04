@@ -21,6 +21,7 @@ import {
   getMovieWatchProviders,
   getTVWatchProviders,
   extractStreamingNames,
+  extractStreamingLogos,
   getMovieDetails,
   getTVDetails,
   getMovieCredits,
@@ -246,38 +247,57 @@ export default function Search() {
     loadFilteredContent();
   }, [activeFilter, searchQuery, selectedPerson]);
 
-  // Enriquecer resultados com streaming providers em lotes
+  // Enriquecer resultados com streaming providers, logos e duração em lotes
   const enrichmentRef = useRef(0);
-  const lastEnrichedKey = useRef('');
+  const enrichedIds = useRef(new Set<string>());
   useEffect(() => {
-    if (searchResults.length === 0) return;
-    const key = searchResults.map(r => r.id).join(',');
-    if (searchResults.every(r => r.availableOn !== undefined)) return;
-    if (lastEnrichedKey.current === key) return;
-    lastEnrichedKey.current = key;
+    if (searchResults.length === 0) {
+      enrichedIds.current.clear();
+      return;
+    }
+
+    const toEnrich = searchResults.filter(r => !enrichedIds.current.has(r.id));
+    if (toEnrich.length === 0) return;
+    toEnrich.forEach(r => enrichedIds.current.add(r.id));
 
     const batchId = ++enrichmentRef.current;
     const enrichResults = async () => {
-      const batchSize = 5;
-      const updated = [...searchResults];
-      
-      for (let i = 0; i < updated.length; i += batchSize) {
+      const batchSize = 10;
+
+      for (let i = 0; i < toEnrich.length; i += batchSize) {
         if (enrichmentRef.current !== batchId) return;
-        const batch = updated.slice(i, i + batchSize);
-        
-        await Promise.all(batch.map(async (item, idx) => {
-          if (item.availableOn !== undefined) return;
+        const batch = toEnrich.slice(i, i + batchSize);
+
+        await Promise.all(batch.map(async (item) => {
           try {
             const tmdbId = parseInt(item.id.split('-')[1]);
-            const providers = item.type === 'movie'
-              ? await getMovieWatchProviders(tmdbId)
-              : await getTVWatchProviders(tmdbId);
-            updated[i + idx] = { ...updated[i + idx], availableOn: extractStreamingNames(providers) };
+            const isMovie = item.type === 'movie';
+            const [providers, details] = await Promise.all([
+              isMovie ? getMovieWatchProviders(tmdbId) : getTVWatchProviders(tmdbId),
+              isMovie ? getMovieDetails(tmdbId).catch(() => null) : getTVDetails(tmdbId).catch(() => null),
+            ]);
+
+            const runtime = isMovie
+              ? details?.runtime
+              : details?.episode_run_time?.length
+                ? Math.round(details.episode_run_time.reduce((a, b) => a + b, 0) / details.episode_run_time.length)
+                : undefined;
+
+            setSearchResults(prev => {
+              const idx = prev.findIndex(r => r.id === item.id);
+              if (idx === -1) return prev;
+              const next = [...prev];
+              next[idx] = {
+                ...next[idx],
+                availableOn: extractStreamingNames(providers),
+                watchProviderLogos: extractStreamingLogos(providers),
+                runtime,
+                isInTheaters: isMovie ? details?.isInTheaters : undefined,
+              };
+              return next;
+            });
           } catch { /* skip */ }
         }));
-        
-        if (enrichmentRef.current !== batchId) return;
-        setSearchResults([...updated]);
       }
     };
 
@@ -545,6 +565,7 @@ export default function Search() {
                   key={content.id}
                   content={content}
                   onClick={() => handleCardClick(content)}
+                  skipProviderRefresh
                 />
               ))}
             </div>
