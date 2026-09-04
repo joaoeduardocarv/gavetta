@@ -123,10 +123,9 @@ export function useFriendships() {
       const addresseeIds = friendships.map((f) => f.addressee_id);
       if (addresseeIds.length === 0) return [];
 
-      const { data: profiles, error: profilesError } = await supabase
-        .from("profiles")
-        .select("*")
-        .in("id", addresseeIds);
+      const { data: profiles, error: profilesError } = await supabase.rpc(
+        "get_pending_friend_profiles"
+      );
 
       if (profilesError) throw profilesError;
 
