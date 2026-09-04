@@ -147,6 +147,21 @@ export function ContentCard({ content, onClick, skipProviderRefresh }: ContentCa
   const hasLogos = providerLogos.length > 0;
   const extraCount = (displayContent.watchProviderLogos?.length || 0) - 5;
 
+  // Só mostramos "sem opções" depois que os dados de disponibilidade chegaram
+  const providersLoaded = freshProviders !== null
+    || (skipProviderRefresh && (content.availableOn !== undefined || content.watchProviderLogos !== undefined));
+  const releaseDateObj = content.releaseDate ? new Date(content.releaseDate) : null;
+  const isUpcomingRelease = !releaseDateObj || isNaN(releaseDateObj.getTime())
+    || releaseDateObj.getTime() > Date.now();
+  const showUnavailable = Boolean(
+    providersLoaded
+    && !hasLogos
+    && !(displayContent.availableOn && displayContent.availableOn.length > 0)
+    && !displayContent.isInTheaters
+    && !isUpcomingRelease
+  );
+
+
   
   return (
     <div
