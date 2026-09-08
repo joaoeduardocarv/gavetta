@@ -157,7 +157,13 @@ serve(async (req) => {
       'getMovieWatchProviders',
       'getTVWatchProviders',
       'getSeasonEpisodes',
+      // Read-only discovery used by the public landing page ("experimente agora")
+      'searchMovies',
+      'searchTVShows',
+      'getTrendingMovies',
+      'getTrendingTV',
     ]);
+
 
     const authHeader = req.headers.get('Authorization');
     const isPublicAction = action ? PUBLIC_ACTIONS.has(action) : false;

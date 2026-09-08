@@ -11,6 +11,18 @@ function pageview(path: string) {
   });
 }
 
+/**
+ * Envia um evento de conversão (clique em CTA, cadastro concluído, etc.)
+ * para o GA4. Silencioso quando o gtag ainda não carregou.
+ */
+export function trackEvent(
+  name: string,
+  params: Record<string, string | number | boolean> = {}
+) {
+  if (typeof window === "undefined" || !window.gtag) return;
+  window.gtag("event", name, { ...params, send_to: MEASUREMENT_ID });
+}
+
 export function AnalyticsTracker() {
   const location = useLocation();
 
