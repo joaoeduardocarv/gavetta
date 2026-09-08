@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Search, Loader2, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { searchAll, getTMDBImageUrl, getTrendingMovies } from "@/lib/tmdb";
+import { searchAll, getTMDBImageUrl, getTrendingMovies, getMovieDetails, getTVDetails } from "@/lib/tmdb";
 import { trackEvent } from "@/hooks/useAnalytics";
+import { formatRuntime } from "@/lib/utils";
 
 interface Item {
   id: number;
@@ -13,6 +14,31 @@ interface Item {
   poster: string | null;
   year: string;
   rating: number;
+  runtime?: number;
+}
+
+/** Preenche a duração em segundo plano (filme = runtime; série = média por episódio). */
+async function enrichRuntimes(list: Item[]): Promise<Item[]> {
+  return Promise.all(
+    list.map(async (item) => {
+      try {
+        if (item.type === "movie") {
+          const d = await getMovieDetails(item.id);
+          return { ...item, runtime: d?.runtime };
+        }
+        const d = await getTVDetails(item.id);
+        const runtimes = (d?.episode_run_time || []).filter((t: number) => t > 0);
+        return {
+          ...item,
+          runtime: runtimes.length
+            ? Math.round(runtimes.reduce((a: number, b: number) => a + b, 0) / runtimes.length)
+            : undefined,
+        };
+      } catch {
+        return item;
+      }
+    })
+  );
 }
 
 /**
