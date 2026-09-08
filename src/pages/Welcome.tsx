@@ -2,6 +2,9 @@ import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { LandingTryIt } from "@/components/landing/LandingTryIt";
+import { trackEvent } from "@/hooks/useAnalytics";
+
 import {
   Accordion,
   AccordionContent,
@@ -190,14 +193,14 @@ export default function Welcome() {
       {/* Hero */}
       <section className="relative overflow-hidden">
         <div
-          className="absolute inset-0 -z-10 bg-cover bg-center opacity-40"
+          className="absolute inset-0 -z-10 hidden bg-cover bg-center opacity-40 md:block"
           style={{ backgroundImage: `url(${heroBg})` }}
           aria-hidden="true"
         />
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-background/60 via-background/80 to-background" aria-hidden="true" />
         <div className="absolute -top-40 left-1/2 -z-10 h-[500px] w-[800px] -translate-x-1/2 rounded-full bg-primary/20 blur-[120px]" aria-hidden="true" />
 
-        <div className="container mx-auto max-w-6xl px-4 pb-16 pt-20 md:pb-24 md:pt-28">
+        <div className="container mx-auto max-w-6xl px-4 pb-16 pt-12 md:pb-24 md:pt-28">
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div className="text-center lg:text-left">
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-xs font-medium text-accent">
@@ -205,17 +208,21 @@ export default function Welcome() {
                 Feito no Brasil para cinéfilos brasileiros
               </div>
               <h1 className="bg-gradient-to-br from-foreground via-foreground to-muted-foreground bg-clip-text text-4xl font-bold leading-tight tracking-tight text-transparent md:text-6xl">
-                Sua coleção de filmes e séries, organizada como você sempre quis.
+                Organize tudo que você assiste — filmes e séries, episódio por episódio.
               </h1>
               <p className="mt-6 text-lg text-muted-foreground md:text-xl">
-                O Gavetta é onde você gerencia tudo o que quer ver, está vendo e já viu.
-                Avalie episódio por episódio, descubra o melhor do cinema brasileiro e
-                compartilhe com sua tribo.
+                Guarde o que quer ver, marque o que já viu, dê nota a cada episódio
+                e veja onde cada título está disponível no Brasil. Grátis.
               </p>
               <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start">
-                <Button asChild size="lg" className="w-full shadow-glow sm:w-auto">
-                  <Link to="/auth">
-                    Começar grátis
+                <Button
+                  asChild
+                  size="lg"
+                  className="w-full shadow-glow sm:w-auto"
+                  onClick={() => trackEvent("cta_click", { location: "hero" })}
+                >
+                  <Link to="/auth?tab=signup">
+                    Criar conta grátis
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
@@ -228,10 +235,11 @@ export default function Welcome() {
                   <CheckCircle2 className="h-4 w-4 text-accent" /> Sem cartão de crédito
                 </span>
                 <span className="inline-flex items-center gap-1.5">
-                  <CheckCircle2 className="h-4 w-4 text-accent" /> Para sempre grátis
+                  <CheckCircle2 className="h-4 w-4 text-accent" /> Entra com o Google em 1 toque
                 </span>
               </div>
             </div>
+
 
             <div className="relative mx-auto w-full max-w-[300px]">
               <div className="absolute inset-0 -z-10 scale-110 bg-gradient-to-tr from-primary/30 to-accent/20 blur-3xl" aria-hidden="true" />
@@ -269,6 +277,9 @@ export default function Welcome() {
           </div>
         </div>
       </section>
+
+      <LandingTryIt />
+
 
       {/* Features */}
       <section className="py-20 md:py-28">
@@ -475,8 +486,13 @@ export default function Welcome() {
             Crie sua conta em menos de 30 segundos. É grátis, é brasileiro e é seu.
           </p>
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button asChild size="lg" className="w-full shadow-glow sm:w-auto">
-              <Link to="/auth" aria-label="Criar conta gratuita no Gavetta">
+            <Button
+              asChild
+              size="lg"
+              className="w-full shadow-glow sm:w-auto"
+              onClick={() => trackEvent("cta_click", { location: "final" })}
+            >
+              <Link to="/auth?tab=signup" aria-label="Criar conta gratuita no Gavetta">
                 Começar grátis agora
                 <ArrowRight className="h-4 w-4" />
               </Link>
@@ -485,6 +501,7 @@ export default function Welcome() {
               <Link to="/auth">Já tenho conta</Link>
             </Button>
           </div>
+
           <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
               <Shield className="h-3.5 w-3.5 text-accent" /> Seus dados são privados
@@ -525,6 +542,23 @@ export default function Welcome() {
           </div>
         </div>
       </footer>
+
+      {/* CTA fixo no celular */}
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border/40 bg-background/95 p-3 backdrop-blur md:hidden">
+        <Button
+          asChild
+          size="lg"
+          className="w-full shadow-glow"
+          onClick={() => trackEvent("cta_click", { location: "sticky_mobile" })}
+        >
+          <Link to="/auth?tab=signup">
+            Criar conta grátis
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+        </Button>
+      </div>
+      <div className="h-20 md:hidden" aria-hidden="true" />
     </div>
+
   );
 }
