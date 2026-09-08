@@ -94,10 +94,11 @@ const testimonials = [
 ];
 
 const stats = [
-  { value: "10k+", label: "Filmes brasileiros" },
-  { value: "100%", label: "Gratuito" },
-  { value: "∞", label: "Gavetas por usuário" },
+  { value: "Séries", label: "episódio por episódio" },
+  { value: "100%", label: "grátis, sem cartão" },
+  { value: "30s", label: "para criar sua conta" },
 ];
+
 
 const faqs = [
   {
