@@ -16,6 +16,8 @@ import { z } from "zod";
 import { allAvatars } from "@/components/AvatarPickerDialog";
 import { cn } from "@/lib/utils";
 import { checkEmailPolicy } from "@/lib/emailPolicy";
+import { trackEvent } from "@/hooks/useAnalytics";
+
 
 const loginSchema = z.object({
   identifier: z
@@ -258,7 +260,7 @@ export default function Auth() {
     }
 
     setLoading(true);
-    const redirectUrl = `${window.location.origin}/`;
+    const redirectUrl = `${window.location.origin}${nextPath}`;
     
     const { error, data } = await supabase.auth.signUp({
       email,
@@ -324,11 +326,14 @@ export default function Auth() {
       });
     } else if (data.user && !data.session) {
       // User created but needs email confirmation
+      trackEvent("sign_up", { method: "email" });
       setConfirmationEmail(email);
       setShowConfirmation(true);
     } else if (data.session) {
       // Auto-confirmed (shouldn't happen with current config, but handle gracefully)
-      navigate("/", { replace: true });
+      trackEvent("sign_up", { method: "email" });
+      navigate(nextPath, { replace: true });
+
     }
   };
 
