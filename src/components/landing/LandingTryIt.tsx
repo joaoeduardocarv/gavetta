@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { Search, Loader2, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { searchAll, getTMDBImageUrl, getTrendingMovies } from "@/lib/tmdb";
+import { searchAll, getTMDBImageUrl, getTrendingMovies, getMovieDetails, getTVDetails } from "@/lib/tmdb";
 import { trackEvent } from "@/hooks/useAnalytics";
+import { formatRuntime } from "@/lib/utils";
 
 interface Item {
   id: number;
@@ -13,6 +14,31 @@ interface Item {
   poster: string | null;
   year: string;
   rating: number;
+  runtime?: number;
+}
+
+/** Preenche a duração em segundo plano (filme = runtime; série = média por episódio). */
+async function enrichRuntimes(list: Item[]): Promise<Item[]> {
+  return Promise.all(
+    list.map(async (item) => {
+      try {
+        if (item.type === "movie") {
+          const d = await getMovieDetails(item.id);
+          return { ...item, runtime: d?.runtime };
+        }
+        const d = await getTVDetails(item.id);
+        const runtimes = (d?.episode_run_time || []).filter((t: number) => t > 0);
+        return {
+          ...item,
+          runtime: runtimes.length
+            ? Math.round(runtimes.reduce((a: number, b: number) => a + b, 0) / runtimes.length)
+            : undefined,
+        };
+      } catch {
+        return item;
+      }
+    })
+  );
 }
 
 /**
@@ -82,6 +108,10 @@ export function LandingTryIt() {
           .sort((a, b) => b.rating - a.rating)
           .slice(0, 8);
         setItems(mapped);
+        // Duração chega depois, sem bloquear a exibição dos cartazes
+        enrichRuntimes(mapped).then((enriched) => {
+          if (reqRef.current === id) setItems(enriched);
+        });
       } finally {
         if (reqRef.current === id) setLoading(false);
       }
@@ -143,6 +173,7 @@ export function LandingTryIt() {
                 <div className="line-clamp-1 text-sm font-medium">{item.title}</div>
                 <div className="mt-0.5 text-xs text-muted-foreground">
                   {item.year || "—"} · {item.type === "movie" ? "Filme" : "Série"}
+                  {formatRuntime(item.runtime) ? ` · ${formatRuntime(item.runtime)}` : ""}
                 </div>
                 <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary">
                   <Plus className="h-3.5 w-3.5" /> Adicionar à gavetta
