@@ -113,23 +113,30 @@ export default function Auth() {
     };
   }, [previousTheme, setTheme]);
 
+  const nextPath = (() => {
+    const raw = searchParams.get("next");
+    return raw && raw.startsWith("/") && !raw.startsWith("//") ? raw : "/";
+  })();
+  const defaultTab = searchParams.get("tab") === "signup" ? "signup" : "login";
+
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) {
-        navigate("/", { replace: true });
+        navigate(nextPath, { replace: true });
       }
       setCheckingSession(false);
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        navigate("/", { replace: true });
+        navigate(nextPath, { replace: true });
       }
       setCheckingSession(false);
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, nextPath]);
+
 
   // Resend cooldown timer
   useEffect(() => {
