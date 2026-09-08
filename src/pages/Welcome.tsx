@@ -251,7 +251,7 @@ export default function Welcome() {
                   alt="Tela de Gavetas do app Gavetta com filmes brasileiros organizados"
                   width={390}
                   height={844}
-                  fetchPriority="high"
+                  {...{ fetchpriority: "high" }}
                   className="block w-full"
                 />
               </div>
