@@ -173,6 +173,7 @@ export function LandingTryIt() {
                 <div className="line-clamp-1 text-sm font-medium">{item.title}</div>
                 <div className="mt-0.5 text-xs text-muted-foreground">
                   {item.year || "—"} · {item.type === "movie" ? "Filme" : "Série"}
+                  {formatRuntime(item.runtime) ? ` · ${formatRuntime(item.runtime)}` : ""}
                 </div>
                 <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-primary">
                   <Plus className="h-3.5 w-3.5" /> Adicionar à gavetta
