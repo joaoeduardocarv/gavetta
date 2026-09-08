@@ -108,6 +108,10 @@ export function LandingTryIt() {
           .sort((a, b) => b.rating - a.rating)
           .slice(0, 8);
         setItems(mapped);
+        // Duração chega depois, sem bloquear a exibição dos cartazes
+        enrichRuntimes(mapped).then((enriched) => {
+          if (reqRef.current === id) setItems(enriched);
+        });
       } finally {
         if (reqRef.current === id) setLoading(false);
       }
