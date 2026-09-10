@@ -358,6 +358,66 @@ export type Database = {
           },
         ]
       }
+      title_awards: {
+        Row: {
+          created_at: string
+          emmy_nominations: number
+          emmy_wins: number
+          fetched_at: string
+          globe_nominations: number
+          globe_wins: number
+          has_awards: boolean
+          id: string
+          imdb_id: string | null
+          media_type: string
+          oscar_nominations: number
+          oscar_wins: number
+          raw_text: string | null
+          tmdb_id: number
+          total_nominations: number
+          total_wins: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          emmy_nominations?: number
+          emmy_wins?: number
+          fetched_at?: string
+          globe_nominations?: number
+          globe_wins?: number
+          has_awards?: boolean
+          id?: string
+          imdb_id?: string | null
+          media_type: string
+          oscar_nominations?: number
+          oscar_wins?: number
+          raw_text?: string | null
+          tmdb_id: number
+          total_nominations?: number
+          total_wins?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          emmy_nominations?: number
+          emmy_wins?: number
+          fetched_at?: string
+          globe_nominations?: number
+          globe_wins?: number
+          has_awards?: boolean
+          id?: string
+          imdb_id?: string | null
+          media_type?: string
+          oscar_nominations?: number
+          oscar_wins?: number
+          raw_text?: string | null
+          tmdb_id?: number
+          total_nominations?: number
+          total_wins?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_custom_drawers: {
         Row: {
           created_at: string
