@@ -350,6 +350,20 @@ export default function MyDrawers() {
 
   const hasActiveFilters = filterType !== "all" || filterProvider !== "all" || filterGenre !== "all";
 
+  // Só permite reordenar arrastando quando é uma gaveta própria e sem filtros ativos
+  const canReorder = Boolean(selectedDrawer) && !isSharedDrawerSelected && !hasActiveFilters;
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !selectedDrawer || !canReorder) return;
+    const ids = drawerContent.map((c) => c.id);
+    const oldIndex = ids.indexOf(String(active.id));
+    const newIndex = ids.indexOf(String(over.id));
+    if (oldIndex === -1 || newIndex === -1) return;
+    void reorderDrawerContents(selectedDrawer, arrayMove(ids, oldIndex, newIndex));
+  };
+
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <Helmet>
