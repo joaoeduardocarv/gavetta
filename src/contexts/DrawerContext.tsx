@@ -65,6 +65,7 @@ interface DrawerContextType {
   
   getContentDrawers: (contentId: string) => { defaultDrawer: DefaultDrawerId | null; customDrawers: string[]; rating: number | null; comment: string | null; rewatchCount: number };
   getDrawerContents: (drawerId: string) => Content[];
+  reorderDrawerContents: (drawerId: string, orderedContentIds: string[]) => Promise<void>;
   isDefaultDrawer: (drawerId: string) => boolean;
   isLoading: boolean;
 
