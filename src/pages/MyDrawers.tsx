@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
-import { ContentCard } from "@/components/ContentCard";
+
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { CreateDrawerDialog } from "@/components/CreateDrawerDialog";
 import { ShareDrawerDialog } from "@/components/ShareDrawerDialog";
@@ -27,6 +27,22 @@ import {
   getTMDBImageUrl 
 } from "@/lib/tmdb";
 import { extractTmdbInfoFromId } from "@/lib/contentNormalizer";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { SortableContentCard } from "@/components/SortableContentCard";
 
 interface Drawer {
   id: string;
@@ -69,7 +85,11 @@ const iconMap: Record<string, any> = {
 
 export default function MyDrawers() {
   const { toast } = useToast();
-  const { customDrawers, addCustomDrawer, getDrawerContents, isLoading } = useDrawers();
+  const { customDrawers, addCustomDrawer, getDrawerContents, reorderDrawerContents, isLoading } = useDrawers();
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { delay: 220, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
   const { sharedDrawers, isLoading: sharedLoading, getSharedDrawerContents } = useSharedDrawers();
   
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
@@ -330,6 +350,20 @@ export default function MyDrawers() {
 
   const hasActiveFilters = filterType !== "all" || filterProvider !== "all" || filterGenre !== "all";
 
+  // Só permite reordenar arrastando quando é uma gaveta própria e sem filtros ativos
+  const canReorder = Boolean(selectedDrawer) && !isSharedDrawerSelected && !hasActiveFilters;
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id || !selectedDrawer || !canReorder) return;
+    const ids = drawerContent.map((c) => c.id);
+    const oldIndex = ids.indexOf(String(active.id));
+    const newIndex = ids.indexOf(String(over.id));
+    if (oldIndex === -1 || newIndex === -1) return;
+    void reorderDrawerContents(selectedDrawer, arrayMove(ids, oldIndex, newIndex));
+  };
+
+
   return (
     <div className="min-h-screen bg-background pb-20">
       <Helmet>
@@ -586,13 +620,33 @@ export default function MyDrawers() {
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               )}
-              {drawerContent.map((content) => (
-                <ContentCard
-                  key={content.id}
-                  content={content}
-                  onClick={() => handleCardClick(content)}
-                />
-              ))}
+              {canReorder && drawerContent.length > 1 && (
+                <p className="text-[11px] text-muted-foreground">
+                  Pressione e segure um item para arrastar e mudar a ordem.
+                </p>
+              )}
+
+              <DndContext
+                sensors={dndSensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={drawerContent.map((c) => c.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-3">
+                    {drawerContent.map((content) => (
+                      <SortableContentCard
+                        key={content.id}
+                        content={content}
+                        disabled={!canReorder}
+                        onClick={() => handleCardClick(content)}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             </div>
 
             {drawerContent.length === 0 && (

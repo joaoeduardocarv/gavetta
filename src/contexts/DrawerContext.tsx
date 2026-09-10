@@ -65,6 +65,7 @@ interface DrawerContextType {
   
   getContentDrawers: (contentId: string) => { defaultDrawer: DefaultDrawerId | null; customDrawers: string[]; rating: number | null; comment: string | null; rewatchCount: number };
   getDrawerContents: (drawerId: string) => Content[];
+  reorderDrawerContents: (drawerId: string, orderedContentIds: string[]) => Promise<void>;
   isDefaultDrawer: (drawerId: string) => boolean;
   isLoading: boolean;
 
@@ -83,6 +84,8 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [customDrawers, setCustomDrawers] = useState<CustomDrawer[]>([]);
   const [assignments, setAssignments] = useState<ContentDrawerAssignment[]>([]);
+  // posições manuais (arrastar para reordenar) por gaveta: { drawerId: { contentId: position } }
+  const [drawerPositions, setDrawerPositions] = useState<Record<string, Record<string, number>>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [pendingWatchedAssignment, setPendingWatchedAssignment] = useState<PendingWatchedAssignment | null>(null);
   const writeLock = useRef(false);
@@ -103,7 +106,8 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
       }
 
       const assignmentMap = new Map<string, ContentDrawerAssignment>();
-      
+      const positions: Record<string, Record<string, number>> = {};
+
       (assignmentsData || []).forEach(a => {
         const content = normalizeStoredContent(a.production_data, {
           productionId: String(a.production_id),
@@ -114,6 +118,15 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
         const rating = a.rating as number | null;
         const comment = a.comment as string | null;
         const rewatchCount = ((a as any).rewatch_count as number | null) ?? 0;
+
+        const pos = (a as any).position as number | null | undefined;
+        if (typeof pos === 'number') {
+          const drawerKey = String(a.drawer_id);
+          positions[drawerKey] = positions[drawerKey] || {};
+          positions[drawerKey][contentKey] = pos;
+        }
+
+
         
         const existing = assignmentMap.get(contentKey);
         if (existing) {
@@ -147,6 +160,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
       });
 
       setAssignments(Array.from(assignmentMap.values()));
+      setDrawerPositions(positions);
     } catch (error) {
       console.error('Error refetching assignments:', error);
     }
@@ -615,15 +629,50 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
 
 
   const getDrawerContents = (drawerId: string): Content[] => {
-    if (isDefaultDrawer(drawerId)) {
-      return assignments
-        .filter(a => a.defaultDrawer === drawerId)
-        .map(a => a.content);
-    }
-    return assignments
-      .filter(a => a.customDrawers.includes(drawerId))
-      .map(a => a.content);
+    const list = isDefaultDrawer(drawerId)
+      ? assignments.filter(a => a.defaultDrawer === drawerId)
+      : assignments.filter(a => a.customDrawers.includes(drawerId));
+
+    const positions = drawerPositions[drawerId] || {};
+    return list
+      .map((a, index) => ({ a, index }))
+      .sort((x, y) => {
+        const px = positions[x.a.contentId];
+        const py = positions[y.a.contentId];
+        if (px !== undefined && py !== undefined) return px - py;
+        if (px !== undefined) return -1;
+        if (py !== undefined) return 1;
+        return x.index - y.index;
+      })
+      .map(({ a }) => a.content);
   };
+
+  /** Salva a ordem manual dos itens de uma gaveta (arrastar para cima/baixo). */
+  const reorderDrawerContents = useCallback(async (drawerId: string, orderedContentIds: string[]) => {
+    if (!user) return;
+
+    const nextPositions: Record<string, number> = {};
+    orderedContentIds.forEach((id, i) => { nextPositions[id] = i; });
+    setDrawerPositions(prev => ({ ...prev, [drawerId]: nextPositions }));
+
+    try {
+      await Promise.all(orderedContentIds.map((contentId, i) => {
+        const assignment = assignments.find(a => a.contentId === contentId);
+        if (!assignment) return Promise.resolve();
+        return supabase
+          .from('user_drawer_assignments')
+          .update({ position: i } as any)
+          .eq('user_id', user.id)
+          .eq('drawer_id', drawerId)
+          .eq('production_id', assignment.productionId)
+          .eq('production_type', assignment.productionType);
+      }));
+    } catch (error) {
+      console.error('Error reordering drawer contents:', error);
+      await refetchAssignments();
+    }
+  }, [user, assignments, refetchAssignments]);
+
 
   const addCustomDrawer = useCallback(async (drawer: Omit<CustomDrawer, 'id'>): Promise<CustomDrawer> => {
     if (!user) {
@@ -691,6 +740,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
       isInCustomDrawer,
       getContentDrawers,
       getDrawerContents,
+      reorderDrawerContents,
       isDefaultDrawer,
       isLoading,
       setContentRating,
