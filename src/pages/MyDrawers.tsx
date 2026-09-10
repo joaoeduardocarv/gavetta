@@ -3,7 +3,7 @@ import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
-import { ContentCard } from "@/components/ContentCard";
+
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { CreateDrawerDialog } from "@/components/CreateDrawerDialog";
 import { ShareDrawerDialog } from "@/components/ShareDrawerDialog";
