@@ -8,16 +8,17 @@ A fonte mais simples e confiável é o **OMDb**, que devolve um resumo pronto po
 
 ## O que eu faria
 
-1. **Selo discreto no mini card** — uma estatueta dourada pequena no canto do pôster apenas para títulos que **venceram** Oscar, Globo de Ouro ou Emmy. Nada de poluir cards sem prêmio.
+1. **Selo clicável no mini card** — uma estatueta dourada pequena no canto do pôster apenas para títulos premiados ou indicados. Ao tocar no selo (sem abrir o card do título), aparece um pop-up com as premiações e as indicações daquele filme ou série.
 2. **Seção "Premiações" no card de detalhes** — logo abaixo das notas: os prêmios de destaque em destaque (estatueta + "2 Oscars"), e abaixo a linha resumo "158 vitórias e 271 indicações".
-3. **Nada aparece quando não há dados** — título sem premiação simplesmente não mostra a seção, sem "carregando" nem espaço vazio.
+3. **Nada aparece quando não há dados** — título sem premiação simplesmente não mostra o selo nem a seção, sem "carregando" nem espaço vazio.
+
 
 ## Como funciona por trás
 
 - Nova tabela `title_awards` (chave: tipo + id do TMDB) com o texto bruto, contagens de Oscar/Globo/Emmy, total de vitórias e indicações, e data da última consulta. RLS: leitura pública, escrita só pelo serviço.
 - Nova Edge Function `awards`: recebe tipo + id do TMDB, resolve o `imdb_id` via `external_ids` do TMDB, consulta o OMDb, interpreta o campo `Awards` (vencedor x indicado, quantos Oscars, totais) e grava no cache. Revalida só depois de 30 dias.
 - Hook `useAwards(type, tmdbId)` no front: lê o cache; se não existir, chama a função em segundo plano e atualiza sem travar a interface.
-- Componentes tocados: `ContentCard.tsx` (selo), `ContentDetailDialog.tsx` (seção), mais um `AwardsBadge.tsx` novo.
+- Componentes tocados: `ContentCard.tsx` (selo clicável, com `stopPropagation` para não abrir o card do título), `ContentDetailDialog.tsx` (seção), mais `AwardsBadge.tsx` e `AwardsDialog.tsx` novos. O pop-up segue o padrão de diálogos do app (z-[60], reset de estado ao fechar).
 - O texto do OMDb vem em inglês; a interpretação converte para rótulos em português ("Oscar", "vitórias", "indicações").
 
 ## O que preciso de você
