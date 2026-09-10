@@ -106,7 +106,8 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
       }
 
       const assignmentMap = new Map<string, ContentDrawerAssignment>();
-      
+      const positions: Record<string, Record<string, number>> = {};
+
       (assignmentsData || []).forEach(a => {
         const content = normalizeStoredContent(a.production_data, {
           productionId: String(a.production_id),
