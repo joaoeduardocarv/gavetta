@@ -8,9 +8,10 @@ A fonte mais simples e confiável é o **OMDb**, que devolve um resumo pronto po
 
 ## O que eu faria
 
-1. **Selo discreto no mini card** — uma estatueta dourada pequena no canto do pôster apenas para títulos que **venceram** Oscar, Globo de Ouro ou Emmy. Nada de poluir cards sem prêmio.
+1. **Selo clicável no mini card** — uma estatueta dourada pequena no canto do pôster apenas para títulos premiados ou indicados. Ao tocar no selo (sem abrir o card do título), aparece um pop-up com as premiações e as indicações daquele filme ou série.
 2. **Seção "Premiações" no card de detalhes** — logo abaixo das notas: os prêmios de destaque em destaque (estatueta + "2 Oscars"), e abaixo a linha resumo "158 vitórias e 271 indicações".
-3. **Nada aparece quando não há dados** — título sem premiação simplesmente não mostra a seção, sem "carregando" nem espaço vazio.
+3. **Nada aparece quando não há dados** — título sem premiação simplesmente não mostra o selo nem a seção, sem "carregando" nem espaço vazio.
+
 
 ## Como funciona por trás
 
