@@ -620,13 +620,27 @@ export default function MyDrawers() {
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               )}
-              {drawerContent.map((content) => (
-                <ContentCard
-                  key={content.id}
-                  content={content}
-                  onClick={() => handleCardClick(content)}
-                />
-              ))}
+              <DndContext
+                sensors={dndSensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={drawerContent.map((c) => c.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-3">
+                    {drawerContent.map((content) => (
+                      <SortableContentCard
+                        key={content.id}
+                        content={content}
+                        disabled={!canReorder}
+                        onClick={() => handleCardClick(content)}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             </div>
 
             {drawerContent.length === 0 && (
