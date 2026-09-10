@@ -81,9 +81,11 @@ export function parseAwards(raw: string | null | undefined): ParsedAwards {
 }
 
 async function fetchImdbId(mediaType: string, tmdbId: number): Promise<string | null> {
-  if (!TMDB_API_KEY) return null;
-  const url = `https://api.themoviedb.org/3/${mediaType}/${tmdbId}/external_ids?api_key=${TMDB_API_KEY}`;
-  const res = await fetch(url);
+  if (!TMDB_TOKEN) return null;
+  const url = `https://api.themoviedb.org/3/${mediaType}/${tmdbId}/external_ids`;
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${TMDB_TOKEN}`, Accept: 'application/json' },
+  });
   if (!res.ok) return null;
   const data = await res.json();
   return data?.imdb_id || null;
