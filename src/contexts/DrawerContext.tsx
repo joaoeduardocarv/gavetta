@@ -629,15 +629,50 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
 
 
   const getDrawerContents = (drawerId: string): Content[] => {
-    if (isDefaultDrawer(drawerId)) {
-      return assignments
-        .filter(a => a.defaultDrawer === drawerId)
-        .map(a => a.content);
-    }
-    return assignments
-      .filter(a => a.customDrawers.includes(drawerId))
-      .map(a => a.content);
+    const list = isDefaultDrawer(drawerId)
+      ? assignments.filter(a => a.defaultDrawer === drawerId)
+      : assignments.filter(a => a.customDrawers.includes(drawerId));
+
+    const positions = drawerPositions[drawerId] || {};
+    return list
+      .map((a, index) => ({ a, index }))
+      .sort((x, y) => {
+        const px = positions[x.a.contentId];
+        const py = positions[y.a.contentId];
+        if (px !== undefined && py !== undefined) return px - py;
+        if (px !== undefined) return -1;
+        if (py !== undefined) return 1;
+        return x.index - y.index;
+      })
+      .map(({ a }) => a.content);
   };
+
+  /** Salva a ordem manual dos itens de uma gaveta (arrastar para cima/baixo). */
+  const reorderDrawerContents = useCallback(async (drawerId: string, orderedContentIds: string[]) => {
+    if (!user) return;
+
+    const nextPositions: Record<string, number> = {};
+    orderedContentIds.forEach((id, i) => { nextPositions[id] = i; });
+    setDrawerPositions(prev => ({ ...prev, [drawerId]: nextPositions }));
+
+    try {
+      await Promise.all(orderedContentIds.map((contentId, i) => {
+        const assignment = assignments.find(a => a.contentId === contentId);
+        if (!assignment) return Promise.resolve();
+        return supabase
+          .from('user_drawer_assignments')
+          .update({ position: i } as any)
+          .eq('user_id', user.id)
+          .eq('drawer_id', drawerId)
+          .eq('production_id', assignment.productionId)
+          .eq('production_type', assignment.productionType);
+      }));
+    } catch (error) {
+      console.error('Error reordering drawer contents:', error);
+      await refetchAssignments();
+    }
+  }, [user, assignments, refetchAssignments]);
+
 
   const addCustomDrawer = useCallback(async (drawer: Omit<CustomDrawer, 'id'>): Promise<CustomDrawer> => {
     if (!user) {
