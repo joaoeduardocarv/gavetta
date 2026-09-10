@@ -118,6 +118,15 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
         const rating = a.rating as number | null;
         const comment = a.comment as string | null;
         const rewatchCount = ((a as any).rewatch_count as number | null) ?? 0;
+
+        const pos = (a as any).position as number | null | undefined;
+        if (typeof pos === 'number') {
+          const drawerKey = String(a.drawer_id);
+          positions[drawerKey] = positions[drawerKey] || {};
+          positions[drawerKey][contentKey] = pos;
+        }
+
+
         
         const existing = assignmentMap.get(contentKey);
         if (existing) {
