@@ -69,7 +69,11 @@ const iconMap: Record<string, any> = {
 
 export default function MyDrawers() {
   const { toast } = useToast();
-  const { customDrawers, addCustomDrawer, getDrawerContents, isLoading } = useDrawers();
+  const { customDrawers, addCustomDrawer, getDrawerContents, reorderDrawerContents, isLoading } = useDrawers();
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { delay: 220, tolerance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
   const { sharedDrawers, isLoading: sharedLoading, getSharedDrawerContents } = useSharedDrawers();
   
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
