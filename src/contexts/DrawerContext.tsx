@@ -740,6 +740,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
       isInCustomDrawer,
       getContentDrawers,
       getDrawerContents,
+      reorderDrawerContents,
       isDefaultDrawer,
       isLoading,
       setContentRating,
