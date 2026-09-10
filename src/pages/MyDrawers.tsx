@@ -620,11 +620,6 @@ export default function MyDrawers() {
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               )}
-              {canReorder && drawerContent.length > 1 && (
-                <p className="text-[11px] text-muted-foreground">
-                  Pressione e segure um item para arrastar e mudar a ordem.
-                </p>
-              )}
 
               <DndContext
                 sensors={dndSensors}
