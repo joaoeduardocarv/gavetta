@@ -18,7 +18,7 @@ A fonte mais simples e confiável é o **OMDb**, que devolve um resumo pronto po
 - Nova tabela `title_awards` (chave: tipo + id do TMDB) com o texto bruto, contagens de Oscar/Globo/Emmy, total de vitórias e indicações, e data da última consulta. RLS: leitura pública, escrita só pelo serviço.
 - Nova Edge Function `awards`: recebe tipo + id do TMDB, resolve o `imdb_id` via `external_ids` do TMDB, consulta o OMDb, interpreta o campo `Awards` (vencedor x indicado, quantos Oscars, totais) e grava no cache. Revalida só depois de 30 dias.
 - Hook `useAwards(type, tmdbId)` no front: lê o cache; se não existir, chama a função em segundo plano e atualiza sem travar a interface.
-- Componentes tocados: `ContentCard.tsx` (selo), `ContentDetailDialog.tsx` (seção), mais um `AwardsBadge.tsx` novo.
+- Componentes tocados: `ContentCard.tsx` (selo clicável, com `stopPropagation` para não abrir o card do título), `ContentDetailDialog.tsx` (seção), mais `AwardsBadge.tsx` e `AwardsDialog.tsx` novos. O pop-up segue o padrão de diálogos do app (z-[60], reset de estado ao fechar).
 - O texto do OMDb vem em inglês; a interpretação converte para rótulos em português ("Oscar", "vitórias", "indicações").
 
 ## O que preciso de você
