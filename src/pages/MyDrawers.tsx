@@ -27,6 +27,22 @@ import {
   getTMDBImageUrl 
 } from "@/lib/tmdb";
 import { extractTmdbInfoFromId } from "@/lib/contentNormalizer";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { SortableContentCard } from "@/components/SortableContentCard";
 
 interface Drawer {
   id: string;
