@@ -391,6 +391,7 @@ export type Database = {
           created_at: string
           drawer_id: string
           id: string
+          position: number | null
           production_data: Json
           production_id: string
           production_type: string
@@ -403,6 +404,7 @@ export type Database = {
           created_at?: string
           drawer_id: string
           id?: string
+          position?: number | null
           production_data: Json
           production_id: string
           production_type: string
@@ -415,6 +417,7 @@ export type Database = {
           created_at?: string
           drawer_id?: string
           id?: string
+          position?: number | null
           production_data?: Json
           production_id?: string
           production_type?: string
