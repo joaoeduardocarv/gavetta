@@ -160,6 +160,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
       });
 
       setAssignments(Array.from(assignmentMap.values()));
+      setDrawerPositions(positions);
     } catch (error) {
       console.error('Error refetching assignments:', error);
     }
