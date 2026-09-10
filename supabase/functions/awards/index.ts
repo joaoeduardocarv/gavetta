@@ -2,7 +2,7 @@ import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 
 const OMDB_API_KEY = Deno.env.get('OMDB_API_KEY');
-const TMDB_API_KEY = Deno.env.get('TMDB_API_KEY');
+const TMDB_TOKEN = Deno.env.get('TMDB_TOKEN');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
