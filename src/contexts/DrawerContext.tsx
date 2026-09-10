@@ -84,6 +84,8 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
   const [customDrawers, setCustomDrawers] = useState<CustomDrawer[]>([]);
   const [assignments, setAssignments] = useState<ContentDrawerAssignment[]>([]);
+  // posições manuais (arrastar para reordenar) por gaveta: { drawerId: { contentId: position } }
+  const [drawerPositions, setDrawerPositions] = useState<Record<string, Record<string, number>>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [pendingWatchedAssignment, setPendingWatchedAssignment] = useState<PendingWatchedAssignment | null>(null);
   const writeLock = useRef(false);
