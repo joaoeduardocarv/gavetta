@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Film, Tv, Calendar, Star, Share2, MessageCircle, Check, Play, Eye, CheckCircle, Loader2, Link2, Languages, Repeat, Plus, Minus, Clock } from "lucide-react";
+import { Film, Tv, Calendar, Star, Share2, MessageCircle, Check, Play, Eye, CheckCircle, Loader2, Link2, Languages, Repeat, Plus, Minus, Clock, Trophy, Award } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { useTitleLanguage, hasAlternateTitle } from "@/hooks/useTitleLanguage";
 import { GavetaIcon } from "@/components/GavetaIcon";
@@ -23,6 +23,7 @@ import { useDrawers, DEFAULT_DRAWER_IDS, DefaultDrawerId } from "@/contexts/Draw
 import { useToast } from "@/hooks/use-toast";
 import { searchPerson, getTMDBProfileUrl, TMDBPersonCredit, getMovieDetails, getTVDetails, getMovieCredits, getTVCredits, getMovieWatchProviders, getTVWatchProviders, extractStreamingNames, extractStreamingLogos, getTMDBImageUrl } from "@/lib/tmdb";
 import { extractTmdbInfoFromId } from "@/lib/contentNormalizer";
+import { formatAwardsSummary, getAwardHighlights, useAwards } from "@/hooks/useAwards";
 
 interface ContentDetailDialogProps {
   content: Content | null;
@@ -71,6 +72,11 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
     decrementRewatch,
   } = useDrawers();
   const { lang: titleLang, toggle: toggleTitleLang, resolveTitle } = useTitleLanguage();
+  const awardsTmdb = content ? extractTmdbInfoFromId(content.id) : null;
+  const { awards, hasAwards } = useAwards(
+    awardsTmdb?.mediaType ?? null,
+    awardsTmdb?.tmdbId ?? null,
+  );
   
   const [comment, setComment] = useState("");
   const [userHandle, setUserHandle] = useState<string | null>(null);
@@ -623,6 +629,32 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
             </div>
 
             <Separator />
+
+            {hasAwards && awards && (
+              <section aria-labelledby="awards-heading" className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Trophy className="h-4 w-4 text-accent" />
+                  <Label id="awards-heading" className="text-sm font-semibold">Premiações</Label>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {getAwardHighlights(awards).map((highlight) => (
+                    <Badge key={highlight.label} variant="outline" className="gap-1.5 py-1">
+                      <Award className="h-3.5 w-3.5 text-accent" />
+                      {highlight.wins > 0
+                        ? `${highlight.wins} ${highlight.wins === 1 ? "vitória" : "vitórias"} no ${highlight.label}`
+                        : `${highlight.nominations} ${highlight.nominations === 1 ? "indicação" : "indicações"} ao ${highlight.label}`}
+                    </Badge>
+                  ))}
+                </div>
+                {formatAwardsSummary(awards) && (
+                  <p className="text-sm text-muted-foreground">
+                    No total: <span className="font-medium text-foreground">{formatAwardsSummary(awards)}</span>.
+                  </p>
+                )}
+              </section>
+            )}
+
+            {hasAwards && <Separator />}
 
             {/* Informações Detalhadas */}
             <div className="space-y-4">
