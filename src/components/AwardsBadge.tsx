@@ -3,6 +3,7 @@ import { Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAwards } from "@/hooks/useAwards";
 import { AwardsDialog } from "./AwardsDialog";
+import { Button } from "@/components/ui/button";
 
 interface AwardsBadgeProps {
   mediaType: "movie" | "tv" | null;
@@ -21,21 +22,23 @@ export function AwardsBadge({ mediaType, tmdbId, title, className }: AwardsBadge
 
   return (
     <>
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon"
         onClick={(e) => {
           e.stopPropagation();
           setOpen(true);
         }}
         aria-label={`Ver premiações de ${title}`}
         className={cn(
-          "flex h-6 w-6 items-center justify-center rounded-full shadow-md ring-1 ring-background transition-transform active:scale-90",
+          "h-7 w-7 rounded-full shadow-md ring-1 ring-background transition-transform active:scale-90",
           isWinner ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground",
           className,
         )}
       >
         <Trophy className="h-3.5 w-3.5" />
-      </button>
+      </Button>
       <AwardsDialog
         open={open}
         onOpenChange={(next) => setOpen(next)}
