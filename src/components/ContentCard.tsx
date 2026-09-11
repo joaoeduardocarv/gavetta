@@ -13,6 +13,7 @@ import { useSeriesEpisodeProgress } from "@/hooks/useWatchedEpisodes";
 import { extractTmdbInfoFromId } from "@/lib/contentNormalizer";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "./ui/tooltip";
 import { useTitleLanguage, hasAlternateTitle } from "@/hooks/useTitleLanguage";
+import { AwardsBadge } from "./AwardsBadge";
 
 interface ContentCardProps {
   content: Content;
@@ -62,6 +63,7 @@ export function ContentCard({ content, onClick, skipProviderRefresh }: ContentCa
   const isSeries = content.type === 'series' || content.type === 'tv';
   const parsedTmdb = isSeries ? extractTmdbInfoFromId(content.id) : null;
   const tmdbTvId = parsedTmdb?.mediaType === 'tv' ? parsedTmdb.tmdbId : null;
+  const awardsTmdb = extractTmdbInfoFromId(content.id);
   const { watched: watchedEpCount, total: totalEpCount } = useSeriesEpisodeProgress(tmdbTvId);
 
   const posterSrc =
@@ -195,6 +197,12 @@ export function ContentCard({ content, onClick, skipProviderRefresh }: ContentCa
             </Tooltip>
           </TooltipProvider>
         )}
+        <AwardsBadge
+          mediaType={awardsTmdb?.mediaType ?? null}
+          tmdbId={awardsTmdb?.tmdbId ?? null}
+          title={safeTitle}
+          className="absolute -bottom-1.5 -right-1.5"
+        />
       </div>
 
       <div className="flex-1 min-w-0">
