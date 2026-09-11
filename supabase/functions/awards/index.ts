@@ -4,6 +4,7 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 const OMDB_API_KEY = Deno.env.get('OMDB_API_KEY');
 const TMDB_TOKEN = Deno.env.get('TMDB_TOKEN');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
+const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
 const SERVICE_ROLE = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 const STALE_DAYS = 30;
@@ -103,6 +104,15 @@ Deno.serve(async (req) => {
     });
 
   try {
+    const authorization = req.headers.get('Authorization');
+    if (!authorization) return json({ error: 'Unauthorized' }, 401);
+
+    const authClient = createClient(SUPABASE_URL, ANON_KEY, {
+      global: { headers: { Authorization: authorization } },
+    });
+    const { data: { user }, error: authError } = await authClient.auth.getUser();
+    if (authError || !user) return json({ error: 'Unauthorized' }, 401);
+
     const url = new URL(req.url);
     let mediaType = url.searchParams.get('mediaType');
     let tmdbIdRaw = url.searchParams.get('tmdbId');

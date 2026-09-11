@@ -14,6 +14,7 @@ export interface TitleAwards {
   total_wins: number;
   total_nominations: number;
   has_awards: boolean;
+  fetched_at?: string;
 }
 
 type MediaType = "movie" | "tv";
@@ -37,7 +38,11 @@ async function loadAwards(mediaType: MediaType, tmdbId: number): Promise<TitleAw
         .eq("tmdb_id", tmdbId)
         .maybeSingle();
 
-      if (cached) {
+      const cacheIsFresh = cached?.fetched_at
+        ? Date.now() - new Date(cached.fetched_at).getTime() < 30 * 86400000
+        : false;
+
+      if (cached && cacheIsFresh) {
         const value = cached as unknown as TitleAwards;
         memoryCache.set(key, value);
         return value;
@@ -46,7 +51,10 @@ async function loadAwards(mediaType: MediaType, tmdbId: number): Promise<TitleAw
       const { data, error } = await supabase.functions.invoke("awards", {
         body: { mediaType, tmdbId },
       });
-      if (error) throw error;
+      if (error) {
+        if (cached) return cached as unknown as TitleAwards;
+        throw error;
+      }
       const value = (data?.awards ?? null) as TitleAwards | null;
       memoryCache.set(key, value);
       return value;
