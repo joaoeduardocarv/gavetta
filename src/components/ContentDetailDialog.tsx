@@ -76,6 +76,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
   const { awards, hasAwards } = useAwards(
     awardsTmdb?.mediaType ?? null,
     awardsTmdb?.tmdbId ?? null,
+    content?.releaseDate,
   );
   
   const [comment, setComment] = useState("");

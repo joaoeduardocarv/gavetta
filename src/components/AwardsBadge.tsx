@@ -9,11 +9,12 @@ interface AwardsBadgeProps {
   mediaType: "movie" | "tv" | null;
   tmdbId: number | null;
   title: string;
+  releaseDate?: string | null;
   className?: string;
 }
 
-export function AwardsBadge({ mediaType, tmdbId, title, className }: AwardsBadgeProps) {
-  const { awards, hasAwards } = useAwards(mediaType, tmdbId);
+export function AwardsBadge({ mediaType, tmdbId, title, releaseDate, className }: AwardsBadgeProps) {
+  const { awards, hasAwards } = useAwards(mediaType, tmdbId, releaseDate);
   const [open, setOpen] = useState(false);
 
   if (!hasAwards || !awards) return null;
@@ -32,12 +33,12 @@ export function AwardsBadge({ mediaType, tmdbId, title, className }: AwardsBadge
         }}
         aria-label={`Ver premiações de ${title}`}
         className={cn(
-          "h-7 w-7 rounded-full shadow-md ring-1 ring-background transition-transform active:scale-90",
-          isWinner ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground",
+          "h-6 w-6 rounded-sm bg-transparent p-0 shadow-none transition-colors active:scale-90",
+          isWinner ? "text-accent hover:bg-accent/10" : "text-muted-foreground hover:bg-muted",
           className,
         )}
       >
-        <Trophy className="h-3.5 w-3.5" />
+        <Trophy className="h-3 w-3" />
       </Button>
       <AwardsDialog
         open={open}

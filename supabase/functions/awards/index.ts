@@ -81,15 +81,25 @@ export function parseAwards(raw: string | null | undefined): ParsedAwards {
   return result;
 }
 
-async function fetchImdbId(mediaType: string, tmdbId: number): Promise<string | null> {
+interface TmdbIdentity {
+  imdbId: string | null;
+  title: string;
+  releaseDate: string | null;
+}
+
+async function fetchTmdbIdentity(mediaType: string, tmdbId: number): Promise<TmdbIdentity | null> {
   if (!TMDB_TOKEN) return null;
-  const url = `https://api.themoviedb.org/3/${mediaType}/${tmdbId}/external_ids`;
+  const url = `https://api.themoviedb.org/3/${mediaType}/${tmdbId}?append_to_response=external_ids`;
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${TMDB_TOKEN}`, Accept: 'application/json' },
   });
   if (!res.ok) return null;
   const data = await res.json();
-  return data?.imdb_id || null;
+  return {
+    imdbId: data?.imdb_id || data?.external_ids?.imdb_id || null,
+    title: String(data?.title || data?.name || ""),
+    releaseDate: data?.release_date || data?.first_air_date || null,
+  };
 }
 
 Deno.serve(async (req) => {
@@ -132,6 +142,13 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
+    const tmdbIdentity = await fetchTmdbIdentity(mediaType, tmdbId);
+    const releaseTime = tmdbIdentity?.releaseDate ? new Date(tmdbIdentity.releaseDate).getTime() : NaN;
+
+    // Future titles cannot yet have awards attributed to the finished production.
+    if (Number.isFinite(releaseTime) && releaseTime > Date.now()) {
+      return json({ awards: null, cached: false, unreleased: true });
+    }
 
     const { data: cached } = await supabase
       .from('title_awards')
@@ -150,7 +167,7 @@ Deno.serve(async (req) => {
       return json({ awards: cached ?? null, cached: Boolean(cached), warning: 'OMDB_API_KEY not configured' });
     }
 
-    const imdbId = cached?.imdb_id || (await fetchImdbId(mediaType, tmdbId));
+    const imdbId = tmdbIdentity?.imdbId || cached?.imdb_id;
     if (!imdbId) {
       return json({ awards: cached ?? null, cached: Boolean(cached), warning: 'imdb_id not found' });
     }
@@ -164,6 +181,12 @@ Deno.serve(async (req) => {
     const omdb = await omdbRes.json();
     if (omdb?.Response === 'False') {
       return json({ awards: cached ?? null, cached: Boolean(cached), warning: omdb?.Error ?? 'omdb error' });
+    }
+
+    const omdbTitle = String(omdb?.Title || "").trim().toLocaleLowerCase();
+    const tmdbTitle = String(tmdbIdentity?.title || "").trim().toLocaleLowerCase();
+    if (tmdbTitle && omdbTitle && tmdbTitle !== omdbTitle) {
+      return json({ awards: null, cached: false, warning: 'title mismatch' });
     }
 
     const parsed = parseAwards(omdb?.Awards);

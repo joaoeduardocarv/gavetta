@@ -197,12 +197,6 @@ export function ContentCard({ content, onClick, skipProviderRefresh }: ContentCa
             </Tooltip>
           </TooltipProvider>
         )}
-        <AwardsBadge
-          mediaType={awardsTmdb?.mediaType ?? null}
-          tmdbId={awardsTmdb?.tmdbId ?? null}
-          title={safeTitle}
-          className="absolute -bottom-1.5 -right-1.5"
-        />
       </div>
 
       <div className="flex-1 min-w-0">
@@ -210,7 +204,7 @@ export function ContentCard({ content, onClick, skipProviderRefresh }: ContentCa
           <h3 className="font-heading font-bold text-foreground line-clamp-1">
             {safeTitle}
           </h3>
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex items-start gap-1 flex-shrink-0">
             {canToggleTitle && (
               <TooltipProvider>
                 <Tooltip>
@@ -232,18 +226,26 @@ export function ContentCard({ content, onClick, skipProviderRefresh }: ContentCa
                 </Tooltip>
               </TooltipProvider>
             )}
-            <DrawerPickerPopover content={content}>
-              <button
-                className="p-1 -m-1 hover:bg-accent/10 rounded transition-colors"
-                onClick={(e) => e.stopPropagation()}
-                aria-label={isInAnyDrawer ? `${safeTitle} está em uma gavetta — alterar` : `Adicionar ${safeTitle} a uma gavetta`}
-              >
-                <GavetaIcon className={cn(
-                  "h-4 w-4 flex-shrink-0 transition-opacity",
-                  isInAnyDrawer ? "opacity-100" : "opacity-40"
-                )} />
-              </button>
-            </DrawerPickerPopover>
+            <div className="flex flex-col items-center gap-0.5">
+              <DrawerPickerPopover content={content}>
+                <button
+                  className="p-1 -m-1 hover:bg-accent/10 rounded transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                  aria-label={isInAnyDrawer ? `${safeTitle} está em uma gavetta — alterar` : `Adicionar ${safeTitle} a uma gavetta`}
+                >
+                  <GavetaIcon className={cn(
+                    "h-4 w-4 flex-shrink-0 transition-opacity",
+                    isInAnyDrawer ? "opacity-100" : "opacity-40"
+                  )} />
+                </button>
+              </DrawerPickerPopover>
+              <AwardsBadge
+                mediaType={awardsTmdb?.mediaType ?? null}
+                tmdbId={awardsTmdb?.tmdbId ?? null}
+                title={safeTitle}
+                releaseDate={content.releaseDate}
+              />
+            </div>
           </div>
         </div>
         
