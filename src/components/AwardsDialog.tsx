@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Award } from "lucide-react";
+import { Trophy, Award, Calendar } from "lucide-react";
 import { formatAwardsSummary, getAwardHighlights, type TitleAwards } from "@/hooks/useAwards";
 
 interface AwardsDialogProps {
@@ -57,6 +57,35 @@ export function AwardsDialog({ open, onOpenChange, title, awards }: AwardsDialog
                   </div>
                 ))}
               </div>
+            )}
+
+            {awards.award_details && awards.award_details.length > 0 && (
+              <div className="space-y-2 border-t border-border pt-3">
+                <p className="text-xs font-semibold uppercase text-muted-foreground">Prêmios detalhados</p>
+                {awards.award_details.map((detail, index) => (
+                  <div key={`${detail.award}-${detail.year ?? "sem-ano"}-${index}`} className="flex gap-2.5 py-1.5">
+                    <Award className="mt-0.5 h-4 w-4 flex-shrink-0 text-accent" />
+                    <div className="min-w-0 space-y-0.5">
+                      <p className="text-sm font-medium leading-snug">{detail.award}</p>
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <span>{detail.result === "winner" ? "Vencedor" : "Indicado"}</span>
+                        {detail.year && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {detail.year}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {(!awards.award_details || awards.award_details.length === 0) && awards.raw_text && (
+              <p className="text-xs text-muted-foreground">
+                A fonte informa apenas os totais deste título; categoria e ano não estão disponíveis.
+              </p>
             )}
 
             {summary && (

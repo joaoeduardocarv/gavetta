@@ -21,6 +21,13 @@ interface ParsedAwards {
   has_awards: boolean;
 }
 
+interface AwardDetail {
+  award: string;
+  category: string | null;
+  year: number | null;
+  result: 'winner' | 'nominee';
+}
+
 const EMPTY: ParsedAwards = {
   oscar_wins: 0,
   oscar_nominations: 0,
@@ -81,15 +88,97 @@ export function parseAwards(raw: string | null | undefined): ParsedAwards {
   return result;
 }
 
-async function fetchImdbId(mediaType: string, tmdbId: number): Promise<string | null> {
+interface TmdbIdentity {
+  imdbId: string | null;
+  title: string;
+  releaseDate: string | null;
+}
+
+async function fetchTmdbIdentity(mediaType: string, tmdbId: number): Promise<TmdbIdentity | null> {
   if (!TMDB_TOKEN) return null;
-  const url = `https://api.themoviedb.org/3/${mediaType}/${tmdbId}/external_ids`;
+  const url = `https://api.themoviedb.org/3/${mediaType}/${tmdbId}?append_to_response=external_ids`;
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${TMDB_TOKEN}`, Accept: 'application/json' },
   });
   if (!res.ok) return null;
   const data = await res.json();
-  return data?.imdb_id || null;
+  return {
+    imdbId: data?.imdb_id || data?.external_ids?.imdb_id || null,
+    title: String(data?.title || data?.name || ""),
+    releaseDate: data?.release_date || data?.first_air_date || null,
+  };
+}
+
+async function fetchWikidataAwards(imdbId: string): Promise<AwardDetail[]> {
+  const safeImdbId = imdbId.replace(/[^a-zA-Z0-9]/g, '');
+  if (!safeImdbId) return [];
+
+  const query = `
+    SELECT ?award ?awardLabel ?year ?result WHERE {
+      ?item wdt:P345 "${safeImdbId}" .
+      {
+        ?item p:P166 ?statement .
+        ?statement ps:P166 ?award .
+        BIND("winner" AS ?result)
+      }
+      UNION
+      {
+        ?item p:P1411 ?statement .
+        ?statement ps:P1411 ?award .
+        BIND("nominee" AS ?result)
+      }
+      OPTIONAL { ?statement pq:P585 ?date . BIND(YEAR(?date) AS ?year) }
+      SERVICE wikibase:label { bd:serviceParam wikibase:language "pt,en". }
+    }
+    LIMIT 100
+  `;
+
+  try {
+    const response = await fetch(
+      `https://query.wikidata.org/sparql?query=${encodeURIComponent(query)}&format=json`,
+      {
+        headers: {
+          Accept: 'application/sparql-results+json',
+          'User-Agent': 'Gavetta/1.0 (https://gavetta.com.br)',
+        },
+      },
+    );
+    if (!response.ok) return [];
+    const payload = await response.json();
+    const rows = Array.isArray(payload?.results?.bindings) ? payload.results.bindings : [];
+    const details = rows
+      .map((row: Record<string, { value?: string }>) => {
+        const award = String(row?.awardLabel?.value || '').trim();
+        const yearValue = Number.parseInt(String(row?.year?.value || ''), 10);
+        const result = row?.result?.value === 'winner' ? 'winner' : 'nominee';
+        if (!award) return null;
+        return {
+          award,
+          category: null,
+          year: Number.isFinite(yearValue) ? yearValue : null,
+          result,
+        } satisfies AwardDetail;
+      })
+      .filter((detail: AwardDetail | null): detail is AwardDetail => detail !== null);
+
+    const winners = new Set(
+      details
+        .filter((detail) => detail.result === 'winner')
+        .map((detail) => `${detail.award.toLocaleLowerCase()}:${detail.year ?? ''}`),
+    );
+    return details.filter((detail, index) => {
+      const key = `${detail.award.toLocaleLowerCase()}:${detail.year ?? ''}`;
+      if (detail.result === 'nominee' && winners.has(key)) return false;
+      return details.findIndex((candidate) =>
+        candidate.award === detail.award
+        && candidate.year === detail.year
+        && candidate.result === detail.result
+      ) === index;
+    });
+  } catch (error) {
+    console.warn('wikidata awards unavailable', error);
+    return [];
+  }
 }
 
 Deno.serve(async (req) => {
@@ -132,6 +221,13 @@ Deno.serve(async (req) => {
     }
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE);
+    const tmdbIdentity = await fetchTmdbIdentity(mediaType, tmdbId);
+    const releaseTime = tmdbIdentity?.releaseDate ? new Date(tmdbIdentity.releaseDate).getTime() : NaN;
+
+    // Future titles cannot yet have awards attributed to the finished production.
+    if (Number.isFinite(releaseTime) && releaseTime > Date.now()) {
+      return json({ awards: null, cached: false, unreleased: true });
+    }
 
     const { data: cached } = await supabase
       .from('title_awards')
@@ -150,7 +246,7 @@ Deno.serve(async (req) => {
       return json({ awards: cached ?? null, cached: Boolean(cached), warning: 'OMDB_API_KEY not configured' });
     }
 
-    const imdbId = cached?.imdb_id || (await fetchImdbId(mediaType, tmdbId));
+    const imdbId = tmdbIdentity?.imdbId || cached?.imdb_id;
     if (!imdbId) {
       return json({ awards: cached ?? null, cached: Boolean(cached), warning: 'imdb_id not found' });
     }
@@ -166,12 +262,22 @@ Deno.serve(async (req) => {
       return json({ awards: cached ?? null, cached: Boolean(cached), warning: omdb?.Error ?? 'omdb error' });
     }
 
-    const parsed = parseAwards(omdb?.Awards);
+    const omdbTitle = String(omdb?.Title || "").trim().toLocaleLowerCase();
+    const tmdbTitle = String(tmdbIdentity?.title || "").trim().toLocaleLowerCase();
+    if (tmdbTitle && omdbTitle && tmdbTitle !== omdbTitle) {
+      return json({ awards: null, cached: false, warning: 'title mismatch' });
+    }
+
+    const [parsed, awardDetails] = await Promise.all([
+      Promise.resolve(parseAwards(omdb?.Awards)),
+      fetchWikidataAwards(imdbId),
+    ]);
     const row = {
       media_type: mediaType,
       tmdb_id: tmdbId,
       imdb_id: imdbId,
       raw_text: omdb?.Awards && omdb.Awards !== 'N/A' ? omdb.Awards : null,
+      award_details: awardDetails,
       ...parsed,
       fetched_at: new Date().toISOString(),
     };

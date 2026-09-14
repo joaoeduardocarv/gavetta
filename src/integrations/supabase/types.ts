@@ -360,6 +360,7 @@ export type Database = {
       }
       title_awards: {
         Row: {
+          award_details: Json
           created_at: string
           emmy_nominations: number
           emmy_wins: number
@@ -379,6 +380,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          award_details?: Json
           created_at?: string
           emmy_nominations?: number
           emmy_wins?: number
@@ -398,6 +400,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          award_details?: Json
           created_at?: string
           emmy_nominations?: number
           emmy_wins?: number

@@ -14,7 +14,15 @@ export interface TitleAwards {
   total_wins: number;
   total_nominations: number;
   has_awards: boolean;
+  award_details?: AwardDetail[] | null;
   fetched_at?: string;
+}
+
+export interface AwardDetail {
+  award: string;
+  category?: string | null;
+  year?: number | null;
+  result: "winner" | "nominee";
 }
 
 type MediaType = "movie" | "tv";
@@ -70,13 +78,16 @@ async function loadAwards(mediaType: MediaType, tmdbId: number): Promise<TitleAw
   return promise;
 }
 
-export function useAwards(mediaType: MediaType | null, tmdbId: number | null) {
+export function useAwards(mediaType: MediaType | null, tmdbId: number | null, releaseDate?: string | null) {
   const [awards, setAwards] = useState<TitleAwards | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!mediaType || !tmdbId) {
+    const release = releaseDate ? new Date(releaseDate) : null;
+    const isUnreleased = Boolean(release && !Number.isNaN(release.getTime()) && release.getTime() > Date.now());
+    if (!mediaType || !tmdbId || isUnreleased) {
       setAwards(null);
+      setLoading(false);
       return;
     }
     let cancelled = false;
@@ -89,7 +100,7 @@ export function useAwards(mediaType: MediaType | null, tmdbId: number | null) {
     return () => {
       cancelled = true;
     };
-  }, [mediaType, tmdbId]);
+  }, [mediaType, tmdbId, releaseDate]);
 
   const hasAwards = Boolean(awards?.has_awards);
   return { awards, loading, hasAwards };

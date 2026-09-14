@@ -76,6 +76,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
   const { awards, hasAwards } = useAwards(
     awardsTmdb?.mediaType ?? null,
     awardsTmdb?.tmdbId ?? null,
+    content?.releaseDate,
   );
   
   const [comment, setComment] = useState("");
@@ -650,6 +651,22 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                   <p className="text-sm text-muted-foreground">
                     No total: <span className="font-medium text-foreground">{formatAwardsSummary(awards)}</span>.
                   </p>
+                )}
+                {awards.award_details && awards.award_details.length > 0 && (
+                  <div className="space-y-2">
+                    {awards.award_details.slice(0, 5).map((detail, index) => (
+                      <div key={`${detail.award}-${detail.year ?? "sem-ano"}-${index}`} className="flex items-start gap-2 text-sm">
+                        <Award className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-accent" />
+                        <p>
+                          <span className="font-medium">{detail.award}</span>
+                          <span className="text-muted-foreground">
+                            {` · ${detail.result === "winner" ? "Vencedor" : "Indicado"}`}
+                            {detail.year ? ` · ${detail.year}` : ""}
+                          </span>
+                        </p>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </section>
             )}
