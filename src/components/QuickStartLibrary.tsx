@@ -14,11 +14,11 @@ import { Content } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Check, Plus, SkipForward, X, Loader2, Sparkles } from "lucide-react";
 
-const BATCH_SIZE = 20;
+const BATCH_SIZE = 5;
 
 
 function interleave(movies: Content[], series: Content[]): Content[] {
-  // ~60% movies / 40% series
+  // Three movies and two series keep the first-use flow short and balanced.
   const out: Content[] = [];
   const mCount = Math.round(BATCH_SIZE * 0.6);
   const sCount = BATCH_SIZE - mCount;

@@ -36,25 +36,26 @@ const steps: Step[] = [
     description:
       "Adicione amigos pelo @handle, acompanhe o que estão assistindo e envie recomendações diretas.",
   },
-  {
-    target: "nav-trending",
-    title: "Em Alta",
-    description:
-      "Descubra os filmes, séries e notícias mais comentados do momento, com filtros diário e semanal.",
-  },
-  {
-    target: "nav-profile",
-    title: "Seu Perfil",
-    description:
-      "Edite avatar, @handle, ajustes de privacidade, notificações e compartilhe seu perfil público.",
-  },
-  {
-    target: "header-notifications",
-    title: "Notificações",
-    description:
-      "Receba avisos de novos episódios, estreias, mudanças de streaming, pedidos de amizade e recomendações.",
-  },
 ];
+
+const onboardingLockKey = (userId: string) =>
+  `gavetta:onboarding-seen:${userId}`;
+
+function hasOnboardingLock(userId: string): boolean {
+  try {
+    return sessionStorage.getItem(onboardingLockKey(userId)) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function setOnboardingLock(userId: string): void {
+  try {
+    sessionStorage.setItem(onboardingLockKey(userId), "1");
+  } catch {
+    // The profile flag remains the source of truth when storage is unavailable.
+  }
+}
 
 type Rect = { top: number; left: number; width: number; height: number };
 
@@ -98,6 +99,7 @@ export function OnboardingDialog() {
 
   useEffect(() => {
     if (loading || !user) return;
+    if (hasOnboardingLock(user.id)) return;
     let cancelled = false;
     (async () => {
       const { data, error } = await supabase
@@ -107,6 +109,7 @@ export function OnboardingDialog() {
         .maybeSingle();
       if (cancelled) return;
       if (!error && data && !data.onboarded_at) {
+        setOnboardingLock(user.id);
         setOpen(true);
       }
     })();
@@ -118,15 +121,18 @@ export function OnboardingDialog() {
   const current = steps[step];
   const rect = useTargetRect(open ? current.target : undefined);
 
-  const finish = () => {
-    if (user) {
-      void supabase
-        .from("profiles")
-        .update({ onboarded_at: new Date().toISOString() })
-        .eq("id", user.id);
-    }
+  const finish = async () => {
+    if (!user) return;
+
+    setOnboardingLock(user.id);
     setOpen(false);
     setStep(0);
+
+    await supabase
+      .from("profiles")
+      .update({ onboarded_at: new Date().toISOString() })
+      .eq("id", user.id);
+
     try {
       window.dispatchEvent(new Event("gavetta:onboarding-finished"));
     } catch {
@@ -274,7 +280,7 @@ export function OnboardingDialog() {
           <Button
             size="sm"
             className="flex-1"
-            onClick={() => (isLast ? finish() : setStep((s) => s + 1))}
+            onClick={() => (isLast ? void finish() : setStep((s) => s + 1))}
           >
             {isLast ? "Começar a usar" : "Próximo"}
             {!isLast && <ChevronRight className="h-4 w-4" />}
@@ -284,7 +290,7 @@ export function OnboardingDialog() {
         {!isLast && (
           <button
             type="button"
-            onClick={finish}
+            onClick={() => void finish()}
             className="mt-2 w-full text-center text-xs text-muted-foreground underline-offset-2 hover:underline"
           >
             Pular tour
