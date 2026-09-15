@@ -13,7 +13,6 @@ import { useSeriesEpisodeProgress } from "@/hooks/useWatchedEpisodes";
 import { extractTmdbInfoFromId } from "@/lib/contentNormalizer";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "./ui/tooltip";
 import { useTitleLanguage, hasAlternateTitle } from "@/hooks/useTitleLanguage";
-import { AwardsBadge } from "./AwardsBadge";
 
 interface ContentCardProps {
   content: Content;
@@ -63,7 +62,6 @@ export function ContentCard({ content, onClick, skipProviderRefresh }: ContentCa
   const isSeries = content.type === 'series' || content.type === 'tv';
   const parsedTmdb = isSeries ? extractTmdbInfoFromId(content.id) : null;
   const tmdbTvId = parsedTmdb?.mediaType === 'tv' ? parsedTmdb.tmdbId : null;
-  const awardsTmdb = extractTmdbInfoFromId(content.id);
   const { watched: watchedEpCount, total: totalEpCount } = useSeriesEpisodeProgress(tmdbTvId);
 
   const posterSrc =
@@ -226,26 +224,18 @@ export function ContentCard({ content, onClick, skipProviderRefresh }: ContentCa
                 </Tooltip>
               </TooltipProvider>
             )}
-            <div className="flex flex-col items-center gap-0.5">
-              <DrawerPickerPopover content={content}>
-                <button
-                  className="p-1 -m-1 hover:bg-accent/10 rounded transition-colors"
-                  onClick={(e) => e.stopPropagation()}
-                  aria-label={isInAnyDrawer ? `${safeTitle} está em uma gavetta — alterar` : `Adicionar ${safeTitle} a uma gavetta`}
-                >
-                  <GavetaIcon className={cn(
-                    "h-4 w-4 flex-shrink-0 transition-opacity",
-                    isInAnyDrawer ? "opacity-100" : "opacity-40"
-                  )} />
-                </button>
-              </DrawerPickerPopover>
-              <AwardsBadge
-                mediaType={awardsTmdb?.mediaType ?? null}
-                tmdbId={awardsTmdb?.tmdbId ?? null}
-                title={safeTitle}
-                releaseDate={content.releaseDate}
-              />
-            </div>
+            <DrawerPickerPopover content={content}>
+              <button
+                className="p-1 -m-1 hover:bg-accent/10 rounded transition-colors"
+                onClick={(e) => e.stopPropagation()}
+                aria-label={isInAnyDrawer ? `${safeTitle} está em uma gavetta — alterar` : `Adicionar ${safeTitle} a uma gavetta`}
+              >
+                <GavetaIcon className={cn(
+                  "h-4 w-4 flex-shrink-0 transition-opacity",
+                  isInAnyDrawer ? "opacity-100" : "opacity-40"
+                )} />
+              </button>
+            </DrawerPickerPopover>
           </div>
         </div>
         
