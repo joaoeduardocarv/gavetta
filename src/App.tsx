@@ -33,6 +33,8 @@ const AdminSignupDebug = lazy(() => import("./pages/AdminSignupDebug"));
 const Admin = lazy(() => import("./pages/Admin"));
 const SharePage = lazy(() => import("./pages/SharePage"));
 const ImportPage = lazy(() => import("./pages/ImportPage"));
+const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -85,6 +87,8 @@ const App = () => (
                   <Routes>
                     <Route path="/welcome" element={<Welcome />} />
                     <Route path="/auth" element={<Auth />} />
+                    <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/reset-password" element={<ResetPassword />} />
                     <Route path="/signup-help" element={<SignupHelp />} />
                     <Route path="/" element={<ProtectedRoute><MyDrawers /></ProtectedRoute>} />
                     <Route path="/my-drawers" element={<ProtectedRoute><MyDrawers /></ProtectedRoute>} />

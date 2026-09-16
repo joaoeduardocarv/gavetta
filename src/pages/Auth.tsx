@@ -368,20 +368,31 @@ export default function Auth() {
   const handleGoogleLogin = async () => {
     if (googleLoading) return;
     setGoogleLoading(true);
-    
+    trackEvent("login_start", { method: "google" });
+
+    const callbackUrl = new URL("/auth", window.location.origin);
+    callbackUrl.searchParams.set("next", nextPath);
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+      redirect_uri: callbackUrl.toString(),
+      extraParams: { prompt: "select_account" },
     });
 
     if (result?.error) {
       setGoogleLoading(false);
+      trackEvent("login_error", { method: "google" });
       toast({
         variant: "destructive",
         title: "Erro ao entrar com Google",
         description: result.error instanceof Error ? result.error.message : "Falha na autenticação com Google. Tente novamente.",
       });
+      return;
     }
-    // If redirected, loading stays true until redirect completes
+
+    if (!result?.redirected) {
+      trackEvent("login_success", { method: "google" });
+      navigate(nextPath, { replace: true });
+    }
+    // Em redirecionamento completo, mantém o estado de carregamento até a saída da página.
   };
 
   const handleBackToLogin = () => {
@@ -473,7 +484,7 @@ export default function Auth() {
             <Button
               type="button"
               size="lg"
-              className="w-full"
+                className="h-12 w-full text-base shadow-glow"
               onClick={handleGoogleLogin}
               disabled={isAnyLoading}
             >
@@ -487,7 +498,7 @@ export default function Auth() {
                   <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                 </svg>
               )}
-              Continuar com Google
+              {googleLoading ? "Abrindo Google…" : "Continuar com Google"}
             </Button>
             <p className="text-center text-xs text-muted-foreground">
               Um toque, sem senha e sem confirmar email.
@@ -531,7 +542,15 @@ export default function Auth() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="login-password">Senha</Label>
+                    <div className="flex items-center justify-between gap-3">
+                      <Label htmlFor="login-password">Senha</Label>
+                      <Link
+                        to={`/forgot-password${email ? `?email=${encodeURIComponent(email)}` : ""}`}
+                        className="text-xs font-medium text-primary hover:underline"
+                      >
+                        Esqueci minha senha
+                      </Link>
+                    </div>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
