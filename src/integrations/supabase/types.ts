@@ -590,6 +590,10 @@ export type Database = {
         Args: { _profile_id: string }
         Returns: boolean
       }
+      reorder_user_drawer: {
+        Args: { _drawer_id: string; _production_ids: string[] }
+        Returns: undefined
+      }
       search_profiles_by_handle: {
         Args: { _query: string }
         Returns: {
