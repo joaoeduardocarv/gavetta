@@ -374,7 +374,6 @@ export default function Auth() {
     callbackUrl.searchParams.set("next", nextPath);
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: callbackUrl.toString(),
-      extraParams: { prompt: "select_account" },
     });
 
     if (result?.error) {
