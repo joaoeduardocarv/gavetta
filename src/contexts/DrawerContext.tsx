@@ -656,17 +656,21 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
     setDrawerPositions(prev => ({ ...prev, [drawerId]: nextPositions }));
 
     try {
-      await Promise.all(orderedContentIds.map((contentId, i) => {
+      const productionIds = orderedContentIds.map((contentId) => {
         const assignment = assignments.find(a => a.contentId === contentId);
-        if (!assignment) return Promise.resolve();
-        return supabase
-          .from('user_drawer_assignments')
-          .update({ position: i } as any)
-          .eq('user_id', user.id)
-          .eq('drawer_id', drawerId)
-          .eq('production_id', assignment.productionId)
-          .eq('production_type', assignment.productionType);
-      }));
+        return assignment?.productionId;
+      });
+
+      if (productionIds.some((productionId) => !productionId)) {
+        throw new Error('Não foi possível identificar todos os títulos desta gavetta.');
+      }
+
+      const { error } = await supabase.rpc('reorder_user_drawer', {
+        _drawer_id: drawerId,
+        _production_ids: productionIds as string[],
+      });
+
+      if (error) throw error;
     } catch (error) {
       console.error('Error reordering drawer contents:', error);
       await refetchAssignments();
