@@ -4,3 +4,4 @@
 - [x] Reduzir a seleção inicial para cinco títulos
 - [x] Criar recuperação de senha por email com definição de nova senha
 - [x] Destacar e agilizar o acesso pelo Google
+- [x] Salvar as gavettas e a ordem dos títulos no perfil do usuário
