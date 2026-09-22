@@ -281,7 +281,7 @@ export default function Auth() {
       const msg = error.message || "";
       let description = msg;
       if (msg.includes("already registered") || msg.includes("already been registered") || msg.includes("User already registered")) {
-        description = "Este email já está cadastrado. Tente fazer login.";
+        description = "Este email já tem uma conta. Entre com Google ou use ‘Esqueci minha senha’ — suas Gavettas serão as mesmas.";
       } else if (msg.includes("Invalid username")) {
         description = "Nome inválido: use apenas letras, números, espaços, _ e -. Mínimo 2, máximo 50 caracteres.";
       } else if (msg.includes("Invalid handle")) {
@@ -516,7 +516,7 @@ export default function Auth() {
             <CardContent className="pt-4">
               <TabsContent value="login" className="mt-0 space-y-4">
                 <CardTitle className="text-xl">Bem-vindo de volta!</CardTitle>
-                <CardDescription>Entre na sua conta para continuar</CardDescription>
+                <CardDescription>Use o mesmo email no Google ou na senha para abrir suas Gavettas</CardDescription>
                 
                 <form onSubmit={handleLogin} className="space-y-4 mt-4">
                   <div className="space-y-2">

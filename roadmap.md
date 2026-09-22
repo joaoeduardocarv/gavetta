@@ -5,3 +5,4 @@
 - [x] Criar recuperação de senha por email com definição de nova senha
 - [x] Destacar e agilizar o acesso pelo Google
 - [x] Salvar as gavettas e a ordem dos títulos no perfil do usuário
+- [x] Unificar o acesso por Google e senha no mesmo perfil com Gavettas
