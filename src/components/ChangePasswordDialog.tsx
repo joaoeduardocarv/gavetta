@@ -1,100 +1,84 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Loader2, Lock, Eye, EyeOff } from "lucide-react";
+import { CheckCircle2, Loader2, Lock, Mail } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { trackEvent } from "@/hooks/useAnalytics";
 
 interface ChangePasswordDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  email: string;
+  hasPassword: boolean;
 }
 
-export function ChangePasswordDialog({ open, onOpenChange }: ChangePasswordDialogProps) {
+export function ChangePasswordDialog({ open, onOpenChange, email, hasPassword }: ChangePasswordDialogProps) {
   const { toast } = useToast();
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
 
-  const handleChangePassword = async () => {
-    if (newPassword.length < 6) {
-      toast({ variant: "destructive", title: "Erro", description: "A senha deve ter pelo menos 6 caracteres." });
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      toast({ variant: "destructive", title: "Erro", description: "As senhas não coincidem." });
-      return;
-    }
+  useEffect(() => {
+    if (!open) setSent(false);
+  }, [open]);
 
+  const handleSendLink = async () => {
+    if (!email) return;
     setLoading(true);
-    try {
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) throw error;
+    trackEvent(hasPassword ? "password_change_start" : "password_create_start");
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setLoading(false);
 
-      toast({ title: "Senha alterada!", description: "Sua senha foi atualizada com sucesso." });
-      setNewPassword("");
-      setConfirmPassword("");
-      onOpenChange(false);
-    } catch (err: any) {
-      toast({ variant: "destructive", title: "Erro", description: err.message || "Não foi possível alterar a senha." });
-    } finally {
-      setLoading(false);
+    if (error) {
+      trackEvent(hasPassword ? "password_change_error" : "password_create_error");
+      toast({
+        variant: "destructive",
+        title: "Não foi possível enviar",
+        description: error.message.toLowerCase().includes("rate limit")
+          ? "Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente novamente."
+          : "Tente novamente em alguns instantes.",
+      });
+      return;
     }
+
+    trackEvent(hasPassword ? "password_change_link_sent" : "password_create_link_sent");
+    setSent(true);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>Alterar Senha</DialogTitle>
-          <DialogDescription>Digite sua nova senha</DialogDescription>
+          <DialogTitle>{hasPassword ? "Alterar senha" : "Criar senha"}</DialogTitle>
+          <DialogDescription>
+            {hasPassword
+              ? "Enviaremos um link seguro para trocar a senha da sua conta."
+              : "Crie uma senha para entrar com o mesmo email e manter suas Gavettas."}
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="new-password">Nova Senha</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="new-password"
-                type={showPassword ? "text" : "password"}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="pl-10 pr-10"
-                placeholder="••••••••"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
+        {sent ? (
+          <div className="space-y-4 text-center">
+            <CheckCircle2 className="mx-auto h-10 w-10 text-primary" aria-hidden="true" />
+            <div>
+              <p className="font-medium text-foreground">Confira seu email</p>
+              <p className="mt-1 text-sm text-muted-foreground">Enviamos o link para {email}.</p>
             </div>
+            <Button onClick={() => onOpenChange(false)} className="w-full">Entendi</Button>
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="confirm-password">Confirmar Senha</Label>
-            <div className="relative">
-              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                id="confirm-password"
-                type={showPassword ? "text" : "password"}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="pl-10"
-                placeholder="••••••••"
-              />
+        ) : (
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 rounded-md border border-border bg-muted/30 p-3">
+              <Mail className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span className="min-w-0 truncate text-sm text-foreground">{email}</span>
             </div>
+            <Button onClick={handleSendLink} className="w-full" disabled={loading || !email}>
+              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Lock className="mr-2 h-4 w-4" />}
+              {hasPassword ? "Enviar link para alterar" : "Enviar link para criar senha"}
+            </Button>
           </div>
-
-          <Button onClick={handleChangePassword} className="w-full" disabled={loading}>
-            {loading && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-            Alterar Senha
-          </Button>
-        </div>
+        )}
       </DialogContent>
     </Dialog>
   );

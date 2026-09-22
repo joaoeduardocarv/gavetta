@@ -82,7 +82,15 @@ export default function Profile() {
     toast({ title: "Até logo!", description: "Você saiu da sua conta." });
   };
 
-  const isGoogleUser = user?.app_metadata?.provider === "google";
+  const identityProviders = new Set((user?.identities ?? []).map((identity) => identity.provider));
+  const appProviders = Array.isArray(user?.app_metadata?.providers)
+    ? user.app_metadata.providers.filter((provider): provider is string => typeof provider === "string")
+    : [];
+  appProviders.forEach((provider) => identityProviders.add(provider));
+  if (typeof user?.app_metadata?.provider === "string") identityProviders.add(user.app_metadata.provider);
+  const hasGoogle = identityProviders.has("google");
+  const hasPassword = identityProviders.has("email");
+  const loginMethods = hasGoogle && hasPassword ? "Google e senha" : hasGoogle ? "Google" : "Email e senha";
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -152,7 +160,7 @@ export default function Profile() {
               <div className="flex items-center gap-3 text-sm">
                 <Shield className="h-4 w-4 text-muted-foreground" />
                 <span className="text-muted-foreground">
-                  Login via {isGoogleUser ? "Google" : "Email"}
+                  Login via {loginMethods}
                 </span>
               </div>
               <div className="flex items-center gap-3 text-sm">
@@ -181,22 +189,21 @@ export default function Profile() {
           <div className="bg-card rounded-lg p-6 space-y-1">
             <h3 className="font-heading font-bold text-foreground mb-4">Configurações</h3>
 
-            {/* Alterar senha - apenas para login por email */}
-            {!isGoogleUser && (
-              <button
-                onClick={() => setIsChangePasswordOpen(true)}
-                className="w-full flex items-center justify-between py-3 px-1 rounded-md hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <Lock className="h-4 w-4 text-muted-foreground" />
-                  <div className="text-left">
-                    <p className="text-sm font-medium text-foreground">Alterar Senha</p>
-                    <p className="text-xs text-muted-foreground">Atualize sua senha de acesso</p>
-                  </div>
+            <button
+              onClick={() => setIsChangePasswordOpen(true)}
+              className="w-full flex items-center justify-between py-3 px-1 rounded-md hover:bg-muted/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <Lock className="h-4 w-4 text-muted-foreground" />
+                <div className="text-left">
+                  <p className="text-sm font-medium text-foreground">{hasPassword ? "Alterar senha" : "Criar senha"}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {hasPassword ? "Atualize sua senha de acesso" : "Use Google ou senha na mesma conta"}
+                  </p>
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </button>
-            )}
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </button>
 
             {/* Notificações */}
             <button
@@ -307,7 +314,12 @@ export default function Profile() {
         onSelectAvatar={handleAvatarSelect}
       />
       <EditProfileDialog open={isEditProfileOpen} onOpenChange={setIsEditProfileOpen} />
-      <ChangePasswordDialog open={isChangePasswordOpen} onOpenChange={setIsChangePasswordOpen} />
+      <ChangePasswordDialog
+        open={isChangePasswordOpen}
+        onOpenChange={setIsChangePasswordOpen}
+        email={user?.email ?? ""}
+        hasPassword={hasPassword}
+      />
       <NotificationSettingsDialog open={isNotifSettingsOpen} onOpenChange={setIsNotifSettingsOpen} />
     </div>
   );
