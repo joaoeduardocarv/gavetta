@@ -593,6 +593,15 @@ export type Database = {
         Args: { _profile_id: string }
         Returns: boolean
       }
+      quick_add_to_watch: {
+        Args: {
+          _candidate_ids: string[]
+          _production_data: Json
+          _production_id: string
+          _production_type: string
+        }
+        Returns: undefined
+      }
       reorder_user_drawer: {
         Args: { _drawer_id: string; _production_ids: string[] }
         Returns: undefined

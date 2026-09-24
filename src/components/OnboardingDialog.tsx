@@ -119,6 +119,7 @@ export function OnboardingDialog() {
       if (!error && data?.avatar_selected_at && !data.onboarded_at) {
         setOnboardingLock(user.id);
         setOpen(true);
+        window.dispatchEvent(new Event("gavetta:onboarding-started"));
       }
     })();
     return () => {
