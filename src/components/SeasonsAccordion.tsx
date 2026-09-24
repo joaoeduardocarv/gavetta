@@ -50,7 +50,7 @@ function formatEpisodeAirDate(airDate: string | null | undefined): { label: stri
 }
 
 export function isSeasonFinalEpisode(
-  seasons: TMDBSeason[],
+  seasons: Pick<TMDBSeason, "season_number" | "episode_count">[],
   seasonNumber: number,
   episodeNumber: number
 ): boolean {
