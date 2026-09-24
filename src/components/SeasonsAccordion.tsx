@@ -49,6 +49,15 @@ function formatEpisodeAirDate(airDate: string | null | undefined): { label: stri
   return { label: formatted, isFuture };
 }
 
+export function isSeasonFinalEpisode(
+  seasons: Pick<TMDBSeason, "season_number" | "episode_count">[],
+  seasonNumber: number,
+  episodeNumber: number
+): boolean {
+  const season = seasons.find((item) => item.season_number === seasonNumber);
+  return (season?.episode_count ?? 0) > 0 && episodeNumber === season?.episode_count;
+}
+
 export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: SeasonsAccordionProps) {
   const [seriesStatus, setSeriesStatus] = useState<string | undefined>(undefined);
   const [seasons, setSeasons] = useState<TMDBSeason[]>([]);
@@ -209,77 +218,14 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
     }
   };
 
-  /** Loads any season's episode list that is still missing and returns the merged map. */
-  const ensureAllSeasonsLoaded = async (): Promise<Record<number, TMDBEpisode[]>> => {
-    const missing = seasons.filter((s) => !episodesBySeason[s.season_number]);
-    if (missing.length === 0) return episodesBySeason;
-    const results = await Promise.all(
-      missing.map((s) =>
-        getSeasonEpisodes(tmdbTvId, s.season_number).then((eps) => ({
-          season: s.season_number,
-          eps,
-        }))
-      )
-    );
-    const merged = { ...episodesBySeason };
-    results.forEach(({ season, eps }) => {
-      merged[season] = eps;
-    });
-    setEpisodesBySeason(merged);
-    return merged;
-  };
-
-  /** After an episode is marked, check if user reached 100% of aired episodes and prompt to move. */
-  const maybePromptMoveToWatched = async (justMarked?: { season: number; episode: number }) => {
+  /** Prompts only when the individually marked episode is the season's actual finale. */
+  const maybePromptMoveToWatched = (justMarked: { season: number; episode: number }) => {
     if (!content) return;
     if (isAlreadyWatched) return;
     if (promptShownRef.current) return;
-    if (totalEpisodes === 0) return;
-    try {
-      const loaded = await ensureAllSeasonsLoaded();
-
-      // When marking a single episode, only prompt if it completes its season's aired episodes.
-      // (The "mark all aired" flow passes no justMarked and bypasses this guard.)
-      if (justMarked) {
-        const seasonEps = loaded[justMarked.season];
-        if (!seasonEps) return;
-        let seasonAired = 0;
-        let seasonAiredWatched = 0;
-        for (const ep of seasonEps) {
-          if (!hasAired(ep.air_date)) continue;
-          seasonAired++;
-          const isJustMarked = justMarked.episode === ep.episode_number;
-          if (isJustMarked || isWatched(justMarked.season, ep.episode_number)) {
-            seasonAiredWatched++;
-          }
-        }
-        if (seasonAired === 0 || seasonAiredWatched < seasonAired) return;
-      }
-
-      let totalAired = 0;
-      let airedWatched = 0;
-      for (const s of seasons) {
-        const eps = loaded[s.season_number];
-        if (!eps) continue;
-        for (const ep of eps) {
-          if (!hasAired(ep.air_date)) continue;
-          totalAired++;
-          const isJustMarked =
-            justMarked &&
-            justMarked.season === s.season_number &&
-            justMarked.episode === ep.episode_number;
-          if (isJustMarked || isWatched(s.season_number, ep.episode_number)) {
-            airedWatched++;
-          }
-        }
-      }
-      if (totalAired > 0 && airedWatched >= totalAired) {
-        promptShownRef.current = true;
-        setShowMoveToWatchedPrompt(true);
-      }
-    } catch (err) {
-      console.error("Error checking aired-episode totals:", err);
-    }
+    if (!isSeasonFinalEpisode(seasons, justMarked.season, justMarked.episode)) return;
+    promptShownRef.current = true;
+    setShowMoveToWatchedPrompt(true);
   };
 
 
@@ -577,12 +523,18 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
                                 await toggleEpisode(season.season_number, ep.episode_number);
                                 if (!wasWatched) {
                                   setAutoOpenRatingKey(`${season.season_number}:${ep.episode_number}`);
-                                  const promptedWatching = maybePromptMoveToWatching();
-                                  if (!promptedWatching) {
+                                  const isFinalEpisode = isSeasonFinalEpisode(
+                                    seasons,
+                                    season.season_number,
+                                    ep.episode_number
+                                  );
+                                  if (isFinalEpisode) {
                                     maybePromptMoveToWatched({
                                       season: season.season_number,
                                       episode: ep.episode_number,
                                     });
+                                  } else {
+                                    maybePromptMoveToWatching();
                                   }
                                 }
                               }}

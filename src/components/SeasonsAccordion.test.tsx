@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import { SeasonsAccordion } from "./SeasonsAccordion";
+import { SeasonsAccordion, isSeasonFinalEpisode } from "./SeasonsAccordion";
 
 // --- Mocks for external dependencies ---
 
@@ -124,5 +124,23 @@ describe("SeasonsAccordion — Accessibility", () => {
     });
     expect(checkbox).toBeInTheDocument();
     expect(checkbox).toHaveAttribute("aria-label", "Marcar episódio 1 como assistido");
+  });
+});
+
+describe("SeasonsAccordion — aviso de conclusão", () => {
+  const seasons = [
+    { id: 1, season_number: 1, name: "Temporada 1", episode_count: 10, air_date: "2020-01-01" },
+  ];
+
+  it("não considera um episódio intermediário como o último da temporada", () => {
+    expect(isSeasonFinalEpisode(seasons, 1, 5)).toBe(false);
+  });
+
+  it("não considera o último episódio disponível como o final se a temporada ainda tem episódios", () => {
+    expect(isSeasonFinalEpisode(seasons, 1, 8)).toBe(false);
+  });
+
+  it("considera somente o episódio final numerado da temporada", () => {
+    expect(isSeasonFinalEpisode(seasons, 1, 10)).toBe(true);
   });
 });
