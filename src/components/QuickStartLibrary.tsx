@@ -108,14 +108,15 @@ export function QuickStartLibrary() {
   }, [open, preloadRequested, items, assignments]);
 
   useEffect(() => {
-    if (!items || !open) return;
-    const next = items[index + 1];
+    if (!items || (!open && !preloadRequested)) return;
+    const preloadIndex = open ? index + 1 : 0;
+    const next = items[preloadIndex];
     if (!next?.posterUrl) return;
     const image = new Image();
     image.src = next.posterUrl.startsWith("http")
       ? next.posterUrl
       : getTMDBImageUrl(next.posterUrl, "w500");
-  }, [index, items, open]);
+  }, [index, items, open, preloadRequested]);
 
   const finish = () => {
     setOpen(false);

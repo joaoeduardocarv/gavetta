@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback, useRef } from "react";
 import { Content } from "@/lib/mockData";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
 import {
   getMovieDetails,
@@ -448,7 +449,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
 
     const { error } = await supabase.rpc('quick_add_to_watch', {
       _candidate_ids: candidateIds,
-      _production_data: normalizedContent as unknown as Record<string, unknown>,
+      _production_data: normalizedContent as unknown as Json,
       _production_id: productionId,
       _production_type: productionType,
     });
@@ -462,7 +463,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
       if (enrichedContent === normalizedContent) return;
       const { error: updateError } = await supabase
         .from('user_drawer_assignments')
-        .update({ production_data: enrichedContent as unknown as Record<string, unknown> })
+        .update({ production_data: enrichedContent as unknown as Json })
         .eq('user_id', user.id)
         .eq('drawer_id', 'to-watch')
         .eq('production_id', productionId);
