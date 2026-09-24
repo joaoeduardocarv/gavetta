@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -89,7 +89,8 @@ function getCroppedBlob(image: HTMLImageElement, crop: Crop, zoom: number): Prom
   const size = 256;
   canvas.width = size;
   canvas.height = size;
-  const ctx = canvas.getContext("2d")!;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return Promise.reject(new Error("Canvas indisponível"));
 
   // The crop coordinates are relative to the displayed (zoomed) image
   // We need to adjust for zoom when mapping to natural coordinates
@@ -119,6 +120,8 @@ interface AvatarPickerDialogProps {
   onOpenChange: (open: boolean) => void;
   currentAvatar: string;
   onSelectAvatar: (avatarId: string) => void;
+  onboarding?: boolean;
+  saving?: boolean;
 }
 
 export function AvatarPickerDialog({
@@ -126,6 +129,8 @@ export function AvatarPickerDialog({
   onOpenChange,
   currentAvatar,
   onSelectAvatar,
+  onboarding = false,
+  saving = false,
 }: AvatarPickerDialogProps) {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -138,6 +143,10 @@ export function AvatarPickerDialog({
   const [crop, setCrop] = useState<Crop>();
   const [zoom, setZoom] = useState(1);
   const imgRef = useRef<HTMLImageElement>(null);
+
+  useEffect(() => {
+    if (open) setSelectedId(currentAvatar);
+  }, [currentAvatar, open]);
 
   const handleSelect = (avatar: AvatarOption) => {
     setSelectedId(avatar.id);
@@ -216,12 +225,24 @@ export function AvatarPickerDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) setImageSrc(null); }}>
-      <DialogContent className="max-w-md">
+    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v && !onboarding) setImageSrc(null); }}>
+      <DialogContent
+        className={cn(
+          onboarding ? "max-w-xl max-h-[92vh] [&>button]:hidden" : "max-w-md",
+          "z-[110]",
+        )}
+        onEscapeKeyDown={(event) => onboarding && event.preventDefault()}
+        onPointerDownOutside={(event) => onboarding && event.preventDefault()}
+      >
         <DialogHeader>
           <DialogTitle className="font-heading text-xl">
-            {imageSrc ? "Recortar imagem" : "Escolha seu Avatar"}
+            {imageSrc ? "Recortar imagem" : onboarding ? "Escolha seu avatar" : "Escolha seu Avatar"}
           </DialogTitle>
+          {onboarding && !imageSrc && (
+            <DialogDescription>
+              Este será seu rosto nas Gavettas. Escolha um personagem ou envie sua foto.
+            </DialogDescription>
+          )}
         </DialogHeader>
 
         {imageSrc ? (
@@ -257,11 +278,11 @@ export function AvatarPickerDialog({
               <span className="text-xs text-muted-foreground w-10 text-right">{Math.round(zoom * 100)}%</span>
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" className="flex-1" onClick={handleCropCancel} disabled={uploading}>
+              <Button variant="outline" className="flex-1" onClick={handleCropCancel} disabled={uploading || saving}>
                 <X className="h-4 w-4 mr-2" />
                 Cancelar
               </Button>
-              <Button className="flex-1" onClick={handleCropConfirm} disabled={uploading}>
+              <Button className="flex-1" onClick={handleCropConfirm} disabled={uploading || saving}>
                 {uploading ? (
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
                 ) : (
@@ -286,6 +307,7 @@ export function AvatarPickerDialog({
                 variant="outline"
                 className="w-full"
                 onClick={() => fileInputRef.current?.click()}
+                disabled={saving}
               >
                 <Upload className="h-4 w-4 mr-2" />
                 Enviar foto da biblioteca
@@ -293,14 +315,16 @@ export function AvatarPickerDialog({
               <p className="text-xs text-muted-foreground mt-1 text-center">JPG, PNG ou WebP • Máx. 5MB</p>
             </div>
 
-            <ScrollArea className="h-[350px] pr-4">
-              <div className="grid grid-cols-4 gap-3">
+            <ScrollArea className={cn(onboarding ? "h-[52vh] min-h-[320px]" : "h-[350px]", "pr-3")}>
+              <div className={cn("grid", onboarding ? "grid-cols-3 gap-5 p-2 sm:grid-cols-4 sm:gap-6" : "grid-cols-4 gap-3")}>
                 {allAvatars.map((avatar) => (
                   <button
                     key={avatar.id}
                     onClick={() => handleSelect(avatar)}
+                      disabled={saving}
+                      aria-label={`Escolher ${avatar.name}`}
                     className={cn(
-                      "relative aspect-square rounded-full overflow-hidden border-2 transition-all duration-200 hover:scale-105",
+                       "relative aspect-square rounded-full overflow-hidden border-2 transition-all duration-200 hover:scale-105 disabled:pointer-events-none disabled:opacity-60",
                       selectedId === avatar.id
                         ? "border-primary ring-2 ring-primary/50"
                         : "border-transparent hover:border-muted-foreground/30"

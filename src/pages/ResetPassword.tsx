@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { trackEvent } from "@/hooks/useAnalytics";
 import gavettaLogo from "@/assets/gavettalogo.png";
+import { getPasswordErrorMessage, PASSWORD_HELP } from "@/lib/passwordGuidance";
 
 export default function ResetPassword() {
   const [password, setPassword] = useState("");
@@ -54,7 +55,14 @@ export default function ResetPassword() {
 
     if (error) {
       trackEvent("password_reset_error");
-      toast({ variant: "destructive", title: "Não foi possível alterar", description: "O link pode ter expirado. Solicite um novo link." });
+      const passwordRejected = /password|weak|pwned|known|leaked/i.test(error.message);
+      toast({
+        variant: "destructive",
+        title: "Não foi possível alterar",
+        description: passwordRejected
+          ? getPasswordErrorMessage(error.message)
+          : "O link pode ter expirado. Solicite um novo link.",
+      });
       return;
     }
 
@@ -111,6 +119,7 @@ export default function ResetPassword() {
                         {showPassword ? <EyeOff /> : <Eye />}
                       </Button>
                     </div>
+                   <p className="text-xs text-muted-foreground">{PASSWORD_HELP}</p>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="confirm-new-password">Confirme a nova senha</Label>
