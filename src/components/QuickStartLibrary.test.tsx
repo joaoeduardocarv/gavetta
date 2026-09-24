@@ -18,7 +18,8 @@ vi.mock("@/hooks/use-toast", () => ({
   useToast: () => ({ toast }),
 }));
 
-vi.mock("@/lib/tmdb", () => ({
+vi.mock("@/lib/tmdb", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/tmdb")>()),
   getTrendingMovies: vi.fn(async () => [
     { id: 1, title: "Filme um", overview: "", poster_path: "/one.jpg", backdrop_path: null, release_date: "2026-01-01", vote_average: 7, genre_ids: [], popularity: 10 },
     { id: 2, title: "Filme dois", overview: "", poster_path: "/two.jpg", backdrop_path: null, release_date: "2026-01-02", vote_average: 7, genre_ids: [], popularity: 9 },
