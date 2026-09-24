@@ -14,6 +14,7 @@ import { useMigrateIncompleteContent } from "@/hooks/useMigrateIncompleteContent
 import { GlobalRatingDialog } from "@/components/GlobalRatingDialog";
 import { OnboardingDialog } from "@/components/OnboardingDialog";
 import { QuickStartLibrary } from "@/components/QuickStartLibrary";
+import { FirstAvatarSetup } from "@/components/FirstAvatarSetup";
 import { AnalyticsTracker } from "@/hooks/useAnalytics";
 
 // Eager: landing/auth (first paint critical)
@@ -79,6 +80,7 @@ const App = () => (
               <Toaster />
               <Sonner />
               <GlobalRatingDialog />
+              <FirstAvatarSetup />
               <OnboardingDialog />
               <QuickStartLibrary />
               <BrowserRouter>

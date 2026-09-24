@@ -13,10 +13,10 @@ import { useToast } from "@/hooks/use-toast";
 import { Mail, Lock, User, AtSign, Loader2, CheckCircle2, HelpCircle } from "lucide-react";
 import gavetaLogo from "@/assets/gavettalogo.png";
 import { z } from "zod";
-import { allAvatars } from "@/components/AvatarPickerDialog";
 import { cn } from "@/lib/utils";
 import { checkEmailPolicy } from "@/lib/emailPolicy";
 import { trackEvent } from "@/hooks/useAnalytics";
+import { getPasswordErrorMessage, PASSWORD_HELP } from "@/lib/passwordGuidance";
 
 
 const loginSchema = z.object({
@@ -93,7 +93,6 @@ export default function Auth() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [confirmationEmail, setConfirmationEmail] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
-  const [selectedAvatar, setSelectedAvatar] = useState("");
   const [lastSignupError, setLastSignupError] = useState(false);
   const [handleEdited, setHandleEdited] = useState(!!searchParams.get("handle"));
   const [suggestingHandle, setSuggestingHandle] = useState(false);
@@ -250,15 +249,6 @@ export default function Auth() {
       return;
     }
 
-    if (!selectedAvatar) {
-      toast({
-        variant: "destructive",
-        title: "Escolha um avatar",
-        description: "Selecione um avatar para continuar.",
-      });
-      return;
-    }
-
     setLoading(true);
     const redirectUrl = `${window.location.origin}${nextPath}`;
     
@@ -270,7 +260,6 @@ export default function Auth() {
         data: {
           username: username.trim(),
           handle: handle.trim().toLowerCase(),
-          avatar_url: selectedAvatar,
         },
       },
     });
@@ -289,7 +278,7 @@ export default function Auth() {
       } else if (msg.includes("Invalid avatar_url")) {
         description = "URL do avatar inválida.";
       } else if (msg.toLowerCase().includes("password") && (msg.toLowerCase().includes("weak") || msg.toLowerCase().includes("pwned") || msg.toLowerCase().includes("known"))) {
-        description = "Essa senha é muito comum e já apareceu em vazamentos. Escolha uma senha mais forte (use letras, números e símbolos).";
+        description = getPasswordErrorMessage(msg);
       } else if (msg.includes("Password should be at least")) {
         description = "A senha deve ter pelo menos 6 caracteres.";
       } else if (msg.includes("Email address not allowed")) {
@@ -645,33 +634,6 @@ export default function Auth() {
                     </div>
                   </div>
 
-                  {/* Avatar Picker */}
-                  <div className="space-y-2">
-                    <Label>Escolha seu avatar <span className="text-destructive">*</span></Label>
-                    <div className="grid grid-cols-6 gap-2 max-h-[140px] overflow-y-auto p-1">
-                      {allAvatars.map((avatar) => (
-                        <button
-                          key={avatar.id}
-                          type="button"
-                          onClick={() => setSelectedAvatar(avatar.id)}
-                          disabled={isAnyLoading}
-                          className={cn(
-                            "aspect-square rounded-full overflow-hidden border-2 transition-all duration-150 hover:scale-105",
-                            selectedAvatar === avatar.id
-                              ? "border-primary ring-2 ring-primary/50"
-                              : "border-transparent hover:border-muted-foreground/30"
-                          )}
-                          title={avatar.name}
-                        >
-                          <img src={avatar.src} alt={avatar.name} className="w-full h-full object-cover" />
-                        </button>
-                      ))}
-                    </div>
-                    {!selectedAvatar && (
-                      <p className="text-xs text-muted-foreground">Toque em um personagem para selecioná-lo.</p>
-                    )}
-                  </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="signup-password">Senha</Label>
                     <div className="relative">
@@ -688,6 +650,7 @@ export default function Auth() {
                         minLength={6}
                       />
                     </div>
+                    <p className="text-xs text-muted-foreground">{PASSWORD_HELP}</p>
                   </div>
 
                   <Button type="submit" className="w-full" disabled={isAnyLoading}>

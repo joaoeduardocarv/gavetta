@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { createPortal } from "react-dom";
 import { ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { AVATAR_SETUP_FINISHED_EVENT } from "@/components/FirstAvatarSetup";
 
 
 interface Step {
@@ -96,6 +97,13 @@ export function OnboardingDialog() {
   const { user, loading } = useAuth();
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(0);
+  const [avatarReadyVersion, setAvatarReadyVersion] = useState(0);
+
+  useEffect(() => {
+    const handleAvatarReady = () => setAvatarReadyVersion((version) => version + 1);
+    window.addEventListener(AVATAR_SETUP_FINISHED_EVENT, handleAvatarReady);
+    return () => window.removeEventListener(AVATAR_SETUP_FINISHED_EVENT, handleAvatarReady);
+  }, []);
 
   useEffect(() => {
     if (loading || !user) return;
@@ -104,11 +112,11 @@ export function OnboardingDialog() {
     (async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("onboarded_at")
+        .select("onboarded_at, avatar_selected_at")
         .eq("id", user.id)
         .maybeSingle();
       if (cancelled) return;
-      if (!error && data && !data.onboarded_at) {
+      if (!error && data?.avatar_selected_at && !data.onboarded_at) {
         setOnboardingLock(user.id);
         setOpen(true);
       }
@@ -116,7 +124,7 @@ export function OnboardingDialog() {
     return () => {
       cancelled = true;
     };
-  }, [user, loading]);
+  }, [user, loading, avatarReadyVersion]);
 
   const current = steps[step];
   const rect = useTargetRect(open ? current.target : undefined);
