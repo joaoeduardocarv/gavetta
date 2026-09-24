@@ -6,3 +6,4 @@
 - [x] Destacar e agilizar o acesso pelo Google
 - [x] Salvar as gavettas e a ordem dos títulos no perfil do usuário
 - [x] Unificar o acesso por Google e senha no mesmo perfil com Gavettas
+- [x] Mostrar “Mover para Assistido” apenas no último episódio real da temporada
