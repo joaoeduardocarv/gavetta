@@ -52,6 +52,7 @@ interface DrawerContextType {
   assignments: ContentDrawerAssignment[];
   
   setDefaultDrawer: (content: Content, drawerId: DefaultDrawerId | null) => Promise<void>;
+  quickAddToWatch: (content: Content) => Promise<void>;
   getDefaultDrawer: (contentId: string) => DefaultDrawerId | null;
   
   addToCustomDrawer: (content: Content, drawerId: string) => Promise<void>;
@@ -412,6 +413,70 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
     }
   }, [user, saveToWatchedDrawer, refetchAssignments, deleteDefaultDrawerAssignments]);
 
+  const quickAddToWatch = useCallback(async (content: Content) => {
+    if (!user) throw new Error('Authentication required');
+
+    const normalizedContent = normalizeStoredContent(content, {
+      productionId: content.id,
+      productionType: content.type,
+    });
+    const { productionId, productionType, legacyProductionIds } = getCanonicalContentKey(normalizedContent);
+    const previousAssignments = assignments;
+    const existing = getAssignmentByContentId(normalizedContent.id);
+    const candidateIds = Array.from(new Set([
+      ...legacyProductionIds,
+      existing?.productionId,
+      normalizedContent.id,
+    ].filter(Boolean) as string[]));
+
+    const optimisticAssignment: ContentDrawerAssignment = {
+      contentId: normalizedContent.id,
+      productionId,
+      productionType,
+      content: normalizedContent,
+      defaultDrawer: 'to-watch',
+      customDrawers: existing?.customDrawers ?? [],
+      rating: null,
+      comment: null,
+      rewatchCount: 0,
+    };
+
+    setAssignments((current) => [
+      ...current.filter((assignment) => assignment.contentId !== normalizedContent.id),
+      optimisticAssignment,
+    ]);
+
+    const { error } = await supabase.rpc('quick_add_to_watch', {
+      _candidate_ids: candidateIds,
+      _production_data: normalizedContent as unknown as Record<string, unknown>,
+      _production_id: productionId,
+      _production_type: productionType,
+    });
+
+    if (error) {
+      setAssignments(previousAssignments);
+      throw error;
+    }
+
+    void enrichContent(normalizedContent).then(async (enrichedContent) => {
+      if (enrichedContent === normalizedContent) return;
+      const { error: updateError } = await supabase
+        .from('user_drawer_assignments')
+        .update({ production_data: enrichedContent as unknown as Record<string, unknown> })
+        .eq('user_id', user.id)
+        .eq('drawer_id', 'to-watch')
+        .eq('production_id', productionId);
+
+      if (!updateError) {
+        setAssignments((current) => current.map((assignment) =>
+          assignment.contentId === normalizedContent.id
+            ? { ...assignment, content: enrichedContent }
+            : assignment
+        ));
+      }
+    }).catch((error) => console.error('Error enriching quick-start content:', error));
+  }, [assignments, user]);
+
   const confirmWatchedRating = useCallback((rating: number, comment: string) => {
     if (pendingWatchedAssignment) {
       pendingWatchedAssignment.resolve({ confirmed: true, rating, comment });
@@ -738,6 +803,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
       removeCustomDrawer,
       assignments,
       setDefaultDrawer,
+      quickAddToWatch,
       getDefaultDrawer,
       addToCustomDrawer,
       removeFromCustomDrawer,

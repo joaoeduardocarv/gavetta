@@ -13,6 +13,7 @@ import { normalizeStoredContent } from "@/lib/contentNormalizer";
 import { Content } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { Check, Plus, SkipForward, X, Loader2, Sparkles } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const BATCH_SIZE = 5;
 
@@ -37,8 +38,10 @@ export function QuickStartLibrary() {
   const {
     assignments,
     setDefaultDrawer,
+    quickAddToWatch,
     pendingWatchedAssignment,
   } = useDrawers();
+  const { toast } = useToast();
 
 
   const [open, setOpen] = useState(false);
@@ -46,20 +49,26 @@ export function QuickStartLibrary() {
   const [index, setIndex] = useState(0);
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [preloadRequested, setPreloadRequested] = useState(false);
 
   // Quick-start is part of first-login onboarding: only open when the tour
   // finishes (event below). Persistence lives on profiles.onboarded_at.
   useEffect(() => {
     const handler = () => setOpen(true);
+    const preload = () => setPreloadRequested(true);
     window.addEventListener("gavetta:onboarding-finished", handler);
+    window.addEventListener("gavetta:onboarding-started", preload);
     return () =>
-      window.removeEventListener("gavetta:onboarding-finished", handler);
+      {
+        window.removeEventListener("gavetta:onboarding-finished", handler);
+        window.removeEventListener("gavetta:onboarding-started", preload);
+      };
   }, []);
 
 
   // Fetch trending titles once when opened
   useEffect(() => {
-    if (!open || items !== null) return;
+    if ((!open && !preloadRequested) || items !== null) return;
     let cancelled = false;
     (async () => {
       try {
@@ -96,7 +105,17 @@ export function QuickStartLibrary() {
     return () => {
       cancelled = true;
     };
-  }, [open, items, assignments]);
+  }, [open, preloadRequested, items, assignments]);
+
+  useEffect(() => {
+    if (!items || !open) return;
+    const next = items[index + 1];
+    if (!next?.posterUrl) return;
+    const image = new Image();
+    image.src = next.posterUrl.startsWith("http")
+      ? next.posterUrl
+      : getTMDBImageUrl(next.posterUrl, "w500");
+  }, [index, items, open]);
 
   const finish = () => {
     setOpen(false);
@@ -127,12 +146,22 @@ export function QuickStartLibrary() {
   const handleToWatch = async () => {
     if (!items) return;
     const content = items[index];
+    const savedIndex = index;
     setBusy(true);
+    advance();
     try {
-      await setDefaultDrawer(content, "to-watch");
+      await quickAddToWatch(content);
+    } catch (error) {
+      console.error("Quick-start save failed", error);
+      setOpen(true);
+      setIndex(savedIndex);
+      toast({
+        variant: "destructive",
+        title: "Não foi possível salvar",
+        description: "O título voltou para você tentar novamente.",
+      });
     } finally {
       setBusy(false);
-      advance();
     }
   };
 
