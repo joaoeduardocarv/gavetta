@@ -28,7 +28,7 @@ export interface Content {
 
 export const mockContent: Content[] = [
   {
-    id: '1',
+    id: 'movie-693134',
     type: 'movie',
     title: 'Duna: Parte Dois',
     originalTitle: 'Dune: Part Two',
@@ -48,7 +48,7 @@ export const mockContent: Content[] = [
     drawerComment: 'Obra-prima visual absoluta! Denis Villeneuve é um gênio.',
   },
   {
-    id: '2',
+    id: 'tv-100088',
     type: 'series',
     title: 'The Last of Us',
     releaseDate: '2023-01-15',
@@ -65,7 +65,7 @@ export const mockContent: Content[] = [
     drawerComment: 'Melhor adaptação de jogo que já vi!',
   },
   {
-    id: '3',
+    id: 'movie-872585',
     type: 'movie',
     title: 'Oppenheimer',
     releaseDate: '2023-07-21',
@@ -81,7 +81,7 @@ export const mockContent: Content[] = [
     watchedDate: '2023-08-10',
   },
   {
-    id: '5',
+    id: 'tv-1396',
     type: 'series',
     title: 'Breaking Bad',
     releaseDate: '2008-01-20',
@@ -96,7 +96,7 @@ export const mockContent: Content[] = [
     isInDrawer: true,
   },
   {
-    id: '6',
+    id: 'movie-496243',
     type: 'movie',
     title: 'Parasita',
     originalTitle: 'Gisaengchung',
@@ -114,7 +114,7 @@ export const mockContent: Content[] = [
     drawerComment: 'Cinema coreano no seu melhor. Obra-prima!',
   },
   {
-    id: '7',
+    id: 'movie-157336',
     type: 'movie',
     title: 'Interestelar',
     originalTitle: 'Interstellar',
@@ -131,7 +131,7 @@ export const mockContent: Content[] = [
     isInDrawer: true,
   },
   {
-    id: '8',
+    id: 'tv-67915',
     type: 'series',
     title: 'Succession',
     releaseDate: '2018-06-03',
