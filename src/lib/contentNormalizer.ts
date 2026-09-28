@@ -131,18 +131,8 @@ const normalizeContentId = (
     return `${parsedFromProductionId.mediaType}-${parsedFromProductionId.tmdbId}`;
   }
 
-  if (typeof rawId === "number") {
-    return `${mediaType}-${rawId}`;
-  }
-
-  if (rawString && /^\d+$/.test(rawString)) {
-    return `${mediaType}-${rawString}`;
-  }
-
-  if (productionId && /^\d+$/.test(productionId)) {
-    return `${mediaType}-${productionId}`;
-  }
-
+  // Bare numeric IDs were used by the original local demo catalogue. They
+  // are not guaranteed to be TMDB IDs and must never trigger remote lookups.
   return rawString || productionId || `${mediaType}-${Date.now()}`;
 };
 
