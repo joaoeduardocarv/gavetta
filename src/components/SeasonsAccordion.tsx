@@ -58,6 +58,15 @@ export function isSeasonFinalEpisode(
   return (season?.episode_count ?? 0) > 0 && episodeNumber === season?.episode_count;
 }
 
+export function getCompletedSeriesDrawerRating(
+  totalEpisodes: number,
+  totalWatched: number,
+  effectiveRating: number | null
+): number | null {
+  if (totalEpisodes <= 0 || totalWatched < totalEpisodes || effectiveRating == null) return null;
+  return Math.min(10, Math.max(1, Math.round(effectiveRating)));
+}
+
 export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: SeasonsAccordionProps) {
   const [seriesStatus, setSeriesStatus] = useState<string | undefined>(undefined);
   const [seasons, setSeasons] = useState<TMDBSeason[]>([]);
@@ -105,6 +114,7 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
     setSeasonRating,
     setSeriesRating,
   } = useEpisodeRatings(tmdbTvId);
+  const seriesRating = getEffectiveSeriesRating(seasons.map((s) => s.season_number));
 
   // Load season list
   useEffect(() => {
@@ -233,9 +243,18 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
     setShowMoveToWatchedPrompt(false);
     if (!content) return;
     const previousDrawer = getContentDrawers(content.id).defaultDrawer;
+    const reusableRating = getCompletedSeriesDrawerRating(
+      totalEpisodes,
+      totalWatched,
+      seriesRating.value
+    );
     try {
-      // Triggers the global rating dialog (mandatory 1-10 + optional comment).
-      await setDefaultDrawer(content, "watched");
+      // Completed series reuse the episode-derived rating; all other cases keep the mandatory dialog.
+      await setDefaultDrawer(
+        content,
+        "watched",
+        reusableRating == null ? undefined : { rating: reusableRating }
+      );
       // Confirm the move actually went through (user may have cancelled the rating dialog).
       const nowWatched = getContentDrawers(content.id).defaultDrawer === "watched";
       if (!nowWatched) return;
@@ -339,8 +358,6 @@ export function SeasonsAccordion({ tmdbTvId, content, onProgressChange }: Season
   if (seasons.length === 0) return null;
 
   const overallPercent = totalEpisodes > 0 ? Math.round((totalWatched / totalEpisodes) * 100) : 0;
-  const seriesRating = getEffectiveSeriesRating(seasons.map((s) => s.season_number));
-
   return (
     <div className="space-y-3">
       {/* Persistent warning when series is in "Assistido" but still ongoing */}

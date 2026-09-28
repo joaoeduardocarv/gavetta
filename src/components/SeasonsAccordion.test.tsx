@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import { SeasonsAccordion, isSeasonFinalEpisode } from "./SeasonsAccordion";
+import { SeasonsAccordion, getCompletedSeriesDrawerRating, isSeasonFinalEpisode } from "./SeasonsAccordion";
 
 // --- Mocks for external dependencies ---
 
@@ -142,5 +142,20 @@ describe("SeasonsAccordion — aviso de conclusão", () => {
 
   it("considera somente o episódio final numerado da temporada", () => {
     expect(isSeasonFinalEpisode(seasons, 1, 10)).toBe(true);
+  });
+});
+
+describe("SeasonsAccordion — reaproveitamento da nota", () => {
+  it("reutiliza a média arredondada quando todos os episódios foram vistos", () => {
+    expect(getCompletedSeriesDrawerRating(20, 20, 8.4)).toBe(8);
+    expect(getCompletedSeriesDrawerRating(20, 20, 8.6)).toBe(9);
+  });
+
+  it("mantém o pedido de nota quando a série não está completa", () => {
+    expect(getCompletedSeriesDrawerRating(20, 19, 9)).toBeNull();
+  });
+
+  it("mantém o pedido de nota quando não há avaliação dos episódios", () => {
+    expect(getCompletedSeriesDrawerRating(20, 20, null)).toBeNull();
   });
 });

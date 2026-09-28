@@ -14,6 +14,7 @@ import {
   extractStreamingLogos
 } from "@/lib/tmdb";
 import { extractTmdbInfoFromId, normalizeStoredContent } from "@/lib/contentNormalizer";
+import { getEffectiveSeriesRating, makeKey } from "@/lib/ratingInheritance";
 
 // IDs das gavetas padrão mutuamente exclusivas
 export const DEFAULT_DRAWER_IDS = ['to-watch', 'watching', 'watched'] as const;
@@ -45,6 +46,11 @@ interface PendingWatchedAssignment {
   resolve: (result: { confirmed: boolean; rating?: number; comment?: string }) => void;
 }
 
+interface SetDefaultDrawerOptions {
+  rating?: number;
+  comment?: string;
+}
+
 interface DrawerContextType {
   customDrawers: CustomDrawer[];
   addCustomDrawer: (drawer: Omit<CustomDrawer, 'id'>) => Promise<CustomDrawer>;
@@ -52,7 +58,7 @@ interface DrawerContextType {
   
   assignments: ContentDrawerAssignment[];
   
-  setDefaultDrawer: (content: Content, drawerId: DefaultDrawerId | null) => Promise<void>;
+  setDefaultDrawer: (content: Content, drawerId: DefaultDrawerId | null, options?: SetDefaultDrawerOptions) => Promise<void>;
   quickAddToWatch: (content: Content) => Promise<void>;
   getDefaultDrawer: (contentId: string) => DefaultDrawerId | null;
   
@@ -364,10 +370,59 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
     }
   }, [user, deleteDefaultDrawerAssignments, refetchAssignments]);
 
-  const setDefaultDrawer = useCallback(async (content: Content, drawerId: DefaultDrawerId | null) => {
+  const getReusableCompletedSeriesRating = useCallback(async (content: Content): Promise<number | null> => {
+    if (!user) return null;
+    const parsed = extractTmdbInfoFromId(content.id);
+    if (!parsed || parsed.mediaType !== 'tv') return null;
+
+    try {
+      const [details, watchedResult, ratingsResult] = await Promise.all([
+        getTVDetails(parsed.tmdbId),
+        supabase
+          .from('watched_episodes')
+          .select('episode_number', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('tmdb_tv_id', parsed.tmdbId),
+        supabase
+          .from('episode_ratings')
+          .select('season_number, episode_number, rating')
+          .eq('user_id', user.id)
+          .eq('tmdb_tv_id', parsed.tmdbId),
+      ]);
+
+      if (watchedResult.error || ratingsResult.error) return null;
+      const totalEpisodes = details.number_of_episodes ?? 0;
+      if (totalEpisodes <= 0 || (watchedResult.count ?? 0) < totalEpisodes) return null;
+
+      const ratings = new Map<string, number>();
+      ratingsResult.data?.forEach((row) => {
+        ratings.set(makeKey(row.season_number, row.episode_number), row.rating);
+      });
+      const seasonNumbers = details.seasons
+        .filter((season) => season.season_number > 0)
+        .map((season) => season.season_number);
+      const effective = getEffectiveSeriesRating(ratings, seasonNumbers).value;
+      if (effective == null) return null;
+      return Math.min(10, Math.max(1, Math.round(effective)));
+    } catch (error) {
+      console.error('Error reusing completed series rating:', error);
+      return null;
+    }
+  }, [user]);
+
+  const setDefaultDrawer = useCallback(async (
+    content: Content,
+    drawerId: DefaultDrawerId | null,
+    options?: SetDefaultDrawerOptions
+  ) => {
     if (!user) return;
 
     if (drawerId === 'watched') {
+      const reusableRating = options?.rating ?? await getReusableCompletedSeriesRating(content);
+      if (reusableRating !== null) {
+        await saveToWatchedDrawer(content, reusableRating, options?.comment || '');
+        return;
+      }
       return new Promise<void>((resolve) => {
         setPendingWatchedAssignment({
           content,
@@ -412,7 +467,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
     } finally {
       writeLock.current = false;
     }
-  }, [user, saveToWatchedDrawer, refetchAssignments, deleteDefaultDrawerAssignments]);
+  }, [user, saveToWatchedDrawer, refetchAssignments, deleteDefaultDrawerAssignments, getReusableCompletedSeriesRating]);
 
   const quickAddToWatch = useCallback(async (content: Content) => {
     if (!user) throw new Error('Authentication required');
