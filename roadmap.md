@@ -9,3 +9,4 @@
 - [x] Mostrar “Mover para Assistido” apenas no último episódio real da temporada
 - [x] Colocar a escolha obrigatória de avatar antes do onboarding e melhorar a orientação de senha
 - [x] Acelerar o botão “Quero ver” no onboarding sem perder a gravação
+- [x] Colocar novos filmes e séries no topo das Gavettas sem alterar a ordem existente

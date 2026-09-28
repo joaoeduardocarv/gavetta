@@ -442,10 +442,22 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
       rewatchCount: 0,
     };
 
+    const previousToWatchPositions = drawerPositions['to-watch'];
+    const nextToWatchPositions = Object.fromEntries(
+      Object.entries(previousToWatchPositions || {})
+        .filter(([contentId]) => contentId !== normalizedContent.id)
+        .map(([contentId, position]) => [contentId, position + 1])
+    );
+    nextToWatchPositions[normalizedContent.id] = 0;
+
     setAssignments((current) => [
-      ...current.filter((assignment) => assignment.contentId !== normalizedContent.id),
       optimisticAssignment,
+      ...current.filter((assignment) => assignment.contentId !== normalizedContent.id),
     ]);
+    setDrawerPositions((current) => ({
+      ...current,
+      'to-watch': nextToWatchPositions,
+    }));
 
     const { error } = await supabase.rpc('quick_add_to_watch', {
       _candidate_ids: candidateIds,
@@ -456,6 +468,15 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
 
     if (error) {
       setAssignments(previousAssignments);
+      setDrawerPositions((current) => {
+        const restored = { ...current };
+        if (previousToWatchPositions) {
+          restored['to-watch'] = previousToWatchPositions;
+        } else {
+          delete restored['to-watch'];
+        }
+        return restored;
+      });
       throw error;
     }
 
@@ -476,7 +497,7 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
         ));
       }
     }).catch((error) => console.error('Error enriching quick-start content:', error));
-  }, [assignments, user]);
+  }, [assignments, drawerPositions, user]);
 
   const confirmWatchedRating = useCallback((rating: number, comment: string) => {
     if (pendingWatchedAssignment) {
