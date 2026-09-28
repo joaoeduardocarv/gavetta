@@ -3,7 +3,7 @@ import { useDrawers } from "@/contexts/DrawerContext";
 import { GavetaIcon } from "@/components/GavetaIcon";
 
 export function ProfileStats() {
-  const { assignments, customDrawers, getDrawerContents } = useDrawers();
+  const { customDrawers, getDrawerContents } = useDrawers();
 
   const toWatchCount = getDrawerContents("to-watch").length;
   const watchingCount = getDrawerContents("watching").length;
@@ -16,12 +16,6 @@ export function ProfileStats() {
     { label: "Assistidos", value: watchedCount, icon: CheckCircle, color: "text-green-500" },
     { label: "Personalizadas", value: totalCustom, icon: GavetaIcon, color: "text-primary" },
   ];
-
-  // Calculate average rating
-  const ratedItems = assignments.filter((a) => a.rating !== null && a.rating !== undefined);
-  const avgRating = ratedItems.length > 0
-    ? (ratedItems.reduce((sum, a) => sum + (a.rating || 0), 0) / ratedItems.length).toFixed(1)
-    : "—";
 
   return (
     <div className="bg-card rounded-lg p-6 space-y-4">
@@ -40,13 +34,6 @@ export function ProfileStats() {
             </div>
           );
         })}
-      </div>
-
-      <div className="flex items-center justify-between bg-muted/50 rounded-lg p-3">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">Nota média</span>
-        </div>
-        <span className="text-lg font-bold text-accent">⭐ {avgRating}</span>
       </div>
 
       <div className="flex items-center justify-between bg-muted/50 rounded-lg p-3">

@@ -45,6 +45,11 @@ interface PendingWatchedAssignment {
   resolve: (result: { confirmed: boolean; rating?: number; comment?: string }) => void;
 }
 
+interface SetDefaultDrawerOptions {
+  rating?: number;
+  comment?: string;
+}
+
 interface DrawerContextType {
   customDrawers: CustomDrawer[];
   addCustomDrawer: (drawer: Omit<CustomDrawer, 'id'>) => Promise<CustomDrawer>;
@@ -52,7 +57,7 @@ interface DrawerContextType {
   
   assignments: ContentDrawerAssignment[];
   
-  setDefaultDrawer: (content: Content, drawerId: DefaultDrawerId | null) => Promise<void>;
+  setDefaultDrawer: (content: Content, drawerId: DefaultDrawerId | null, options?: SetDefaultDrawerOptions) => Promise<void>;
   quickAddToWatch: (content: Content) => Promise<void>;
   getDefaultDrawer: (contentId: string) => DefaultDrawerId | null;
   
@@ -364,10 +369,18 @@ export function DrawerProvider({ children }: { children: ReactNode }) {
     }
   }, [user, deleteDefaultDrawerAssignments, refetchAssignments]);
 
-  const setDefaultDrawer = useCallback(async (content: Content, drawerId: DefaultDrawerId | null) => {
+  const setDefaultDrawer = useCallback(async (
+    content: Content,
+    drawerId: DefaultDrawerId | null,
+    options?: SetDefaultDrawerOptions
+  ) => {
     if (!user) return;
 
     if (drawerId === 'watched') {
+      if (options?.rating !== undefined) {
+        await saveToWatchedDrawer(content, options.rating, options.comment || '');
+        return;
+      }
       return new Promise<void>((resolve) => {
         setPendingWatchedAssignment({
           content,
