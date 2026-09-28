@@ -10,4 +10,4 @@
 - [x] Colocar a escolha obrigatória de avatar antes do onboarding e melhorar a orientação de senha
 - [x] Acelerar o botão “Quero ver” no onboarding sem perder a gravação
 - [x] Colocar novos filmes e séries no topo das Gavettas sem alterar a ordem existente
-- [ ] Corrigir IDs antigos de demonstração que causam erro ao abrir títulos
+- [x] Corrigir IDs antigos de demonstração que causam erro ao abrir títulos
