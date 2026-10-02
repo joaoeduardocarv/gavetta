@@ -12,3 +12,4 @@
 - [x] Colocar novos filmes e séries no topo das Gavettas sem alterar a ordem existente
 - [x] Corrigir IDs antigos de demonstração que causam erro ao abrir títulos
 - [x] Remover a nota média do Perfil e reaproveitar a avaliação de episódios em séries concluídas
+- [x] Mostrar a nota selecionada ao passar o mouse pelas estrelas

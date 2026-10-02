@@ -131,6 +131,40 @@ describe("RatingPicker — explicit vs inherited (isAverage)", () => {
   });
 
   describe("Interações no popover (apenas explícito é removível)", () => {
+    it("mostra a nota apontada ao passar o mouse e restaura a nota salva ao sair", () => {
+      render(
+        <RatingPicker
+          value={6}
+          label="Avaliar série"
+          onChange={noop}
+          open
+        />
+      );
+
+      const stars = screen.getByRole("button", { name: "8 de 10" }).parentElement;
+      expect(screen.getByText("6/10")).toBeInTheDocument();
+
+      fireEvent.mouseEnter(screen.getByRole("button", { name: "8 de 10" }));
+      expect(screen.getByText("8/10")).toBeInTheDocument();
+
+      if (stars) fireEvent.mouseLeave(stars);
+      expect(screen.getByText("6/10")).toBeInTheDocument();
+    });
+
+    it("mostra a nota apontada mesmo quando ainda não existe nota salva", () => {
+      render(
+        <RatingPicker
+          value={null}
+          label="Avaliar episódio 1"
+          onChange={noop}
+          open
+        />
+      );
+
+      fireEvent.mouseEnter(screen.getByRole("button", { name: "4 de 10" }));
+      expect(screen.getByText("4/10")).toBeInTheDocument();
+    });
+
     it("popover de valor EXPLÍCITO mostra botão 'Remover nota'", () => {
       render(
         <RatingPicker
