@@ -142,13 +142,13 @@ describe("RatingPicker — explicit vs inherited (isAverage)", () => {
       );
 
       const stars = screen.getByRole("button", { name: "8 de 10" }).parentElement;
-      expect(screen.getByText("6/10")).toBeInTheDocument();
+      expect(screen.getByTitle("Nota salva")).toHaveTextContent("6/10");
 
       fireEvent.mouseEnter(screen.getByRole("button", { name: "8 de 10" }));
-      expect(screen.getByText("8/10")).toBeInTheDocument();
+      expect(screen.getByTitle("Nota selecionada")).toHaveTextContent("8/10");
 
       if (stars) fireEvent.mouseLeave(stars);
-      expect(screen.getByText("6/10")).toBeInTheDocument();
+      expect(screen.getByTitle("Nota salva")).toHaveTextContent("6/10");
     });
 
     it("mostra a nota apontada mesmo quando ainda não existe nota salva", () => {
