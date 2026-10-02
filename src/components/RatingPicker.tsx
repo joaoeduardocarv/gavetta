@@ -48,6 +48,7 @@ export function RatingPicker({
 
   const formattedValue =
     value != null ? value.toFixed(value % 1 === 0 ? 0 : 1) : null;
+  const previewValue = hover != null ? `${hover}/10` : formattedValue != null ? `${formattedValue}/10` : null;
   const triggerLabel = formattedValue != null ? `${formattedValue}/10` : "—";
 
   return (
@@ -88,16 +89,17 @@ export function RatingPicker({
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs font-medium text-muted-foreground">{label}</p>
-            {value != null && (
+            {previewValue != null && (
               <span
                 className={cn(
                   "text-xs font-semibold tabular-nums",
-                  isAverage ? "text-muted-foreground italic" : "text-primary"
+                  hover == null && isAverage ? "text-muted-foreground italic" : "text-primary"
                 )}
-                title={isAverage ? "Média calculada" : "Nota salva no banco"}
+                title={hover != null ? "Nota selecionada" : isAverage ? "Média calculada" : "Nota salva"}
+                aria-live="polite"
               >
-                {formattedValue}/10
-                {isAverage && <span className="ml-1 font-normal">(média)</span>}
+                {previewValue}
+                {hover == null && isAverage && <span className="ml-1 font-normal">(média)</span>}
               </span>
             )}
           </div>
