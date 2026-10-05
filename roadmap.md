@@ -13,4 +13,4 @@
 - [x] Corrigir IDs antigos de demonstração que causam erro ao abrir títulos
 - [x] Remover a nota média do Perfil e reaproveitar a avaliação de episódios em séries concluídas
 - [x] Mostrar a nota selecionada ao passar o mouse pelas estrelas
-- [ ] Permitir curtidas e comentários nas atividades dos amigos, com notificação ao autor
+- [x] Permitir curtidas e comentários nas atividades dos amigos, com notificação ao autor
