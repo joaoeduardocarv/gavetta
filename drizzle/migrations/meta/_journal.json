@@ -8,6 +8,13 @@
       "when": 1791201633684,
       "tag": "0000_add_activity_interactions",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1791201782479,
+      "tag": "0001_allow_activity_interaction_notifications",
+      "breakpoints": true
     }
   ]
 }
