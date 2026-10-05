@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Bell, Check, UserPlus, ThumbsUp, Film, Trash2, Users, CheckCircle, X, Tv, Calendar, RefreshCw, DollarSign } from "lucide-react";
+import { Bell, Check, UserPlus, ThumbsUp, Film, Trash2, Users, CheckCircle, X, Tv, Calendar, RefreshCw, DollarSign, Heart, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -35,6 +35,10 @@ const getNotificationIcon = (type: Notification["type"]) => {
       return <ThumbsUp className="h-4 w-4 text-green-500" />;
     case "recommendation":
       return <Film className="h-4 w-4 text-accent" />;
+    case "activity_like":
+      return <Heart className="h-4 w-4 fill-current text-destructive" />;
+    case "activity_comment":
+      return <MessageCircle className="h-4 w-4 text-primary" />;
     case "shared_drawer_invite":
       return <Users className="h-4 w-4 text-purple-500" />;
     case "streaming_change":
@@ -167,6 +171,12 @@ export function NotificationsPopover() {
       if (!notification.is_read) markAsRead.mutate(notification.id);
       setPopoverOpen(false);
       navigate("/friends");
+      return;
+    }
+    if (notification.type === "activity_like" || notification.type === "activity_comment") {
+      if (!notification.is_read) markAsRead.mutate(notification.id);
+      setPopoverOpen(false);
+      navigate("/friends?tab=activities");
       return;
     }
     if (

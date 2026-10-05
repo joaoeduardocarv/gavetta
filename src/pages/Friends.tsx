@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
@@ -28,6 +29,7 @@ interface UserResult {
 }
 
 export default function Friends() {
+  const [searchParams] = useSearchParams();
   const [selectedContent, setSelectedContent] = useState<Content | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -150,7 +152,7 @@ export default function Friends() {
           </p>
         </div>
 
-        <Tabs defaultValue="activities" className="w-full">
+        <Tabs defaultValue={searchParams.get("tab") === "activities" ? "activities" : "activities"} className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-6">
             <TabsTrigger value="activities" className="text-xs sm:text-sm">
               <Activity className="h-4 w-4 mr-1 hidden sm:inline" />
