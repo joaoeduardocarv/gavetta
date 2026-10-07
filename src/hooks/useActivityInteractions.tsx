@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useEffect } from "react";
 
 export const ACTIVITY_COMMENT_LIMIT = 280;
 
@@ -57,9 +58,17 @@ export function useActivityInteractions(activityIds: string[]) {
       };
     },
     enabled: !!user?.id && stableIds.length > 0,
+    refetchInterval: 30_000,
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["activity-interactions"] });
+  useEffect(() => {
+    if (!user || !stableIds.length) return;
+    const channel = supabase.channel(`activity-comments-${crypto.randomUUID()}`);
+    for (const table of ["activity_likes", "activity_comments"]) channel.on("postgres_changes", { event: "*", schema: "public", table }, () => { void invalidate(); });
+    channel.subscribe();
+    return () => { void supabase.removeChannel(channel); };
+  }, [user?.id, stableIds.join(",")]);
 
   const toggleLike = useMutation({
     mutationFn: async (activityId: string) => {

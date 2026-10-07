@@ -79,6 +79,7 @@ export function NotificationsPopover() {
   const [contentOpen, setContentOpen] = useState(false);
   const [recommendation, setRecommendation] = useState<{ notification: Notification; comment?: string | null } | null>(null);
   const [activity, setActivity] = useState<{ id: string; commentId?: string | null } | null>(null);
+  const [contentFocus, setContentFocus] = useState<"availability" | "episodes" | undefined>();
   const [processing, setProcessing] = useState<string | null>(null);
   const actorIds = [...new Set(inbox.notifications.map(n => n.related_user_id).filter((id): id is string => !!id))].sort();
   const contentIds = [...new Set(inbox.notifications.filter(n => !n.related_user_id && n.related_content_id).map(n => n.related_content_id as string))].sort();
@@ -118,6 +119,7 @@ export function NotificationsPopover() {
     try {
       const resolved = await resolveNotificationContent(n, user.id);
       setSelectedContent(resolved.content); setPopoverOpen(false);
+      setContentFocus(["streaming_change", "rental_arrival", "purchase_arrival"].includes(n.type) ? "availability" : ["new_season", "new_episodes", "upcoming_content"].includes(n.type) && resolved.content.type !== "movie" ? "episodes" : undefined);
       if (n.type === "recommendation") setRecommendation({ notification: n, comment: resolved.comment });
       else setContentOpen(true);
     } catch (error) { toast({ title: "Não foi possível abrir o aviso", description: error instanceof Error ? error.message : "Tente novamente.", variant: "destructive" }); }
@@ -144,6 +146,6 @@ export function NotificationsPopover() {
     </Popover>
     <NotificationSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     <ActivityDetailDialog activityId={activity?.id || null} commentId={activity?.commentId} open={!!activity} onOpenChange={open => { if (!open) setActivity(null); }} />
-    <ContentDetailDialog content={selectedContent} open={contentOpen || !!recommendation} onOpenChange={open => { setContentOpen(open); if (!open) { setRecommendation(null); setSelectedContent(null); } }} notificationComment={recommendation?.comment} />
+    <ContentDetailDialog content={selectedContent} open={contentOpen || !!recommendation} onOpenChange={open => { setContentOpen(open); if (!open) { setRecommendation(null); setSelectedContent(null); } }} notificationComment={recommendation?.comment} notificationFocus={contentFocus} />
   </>;
 }
