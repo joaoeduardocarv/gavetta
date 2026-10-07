@@ -29,6 +29,7 @@ interface ContentDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onContentChange?: (content: Content) => void;
+  notificationComment?: string | null;
 }
 
 const typeLabels: Record<string, string> = {
@@ -55,7 +56,7 @@ interface PersonInfo {
   profile_path: string | null;
 }
 
-export function ContentDetailDialog({ content, open, onOpenChange, onContentChange }: ContentDetailDialogProps) {
+export function ContentDetailDialog({ content, open, onOpenChange, onContentChange, notificationComment }: ContentDetailDialogProps) {
   const { toast } = useToast();
   const { shareToStory, isGenerating: isGeneratingStory } = useStoryShare();
   const { 
@@ -420,6 +421,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
         <DialogDescription className="sr-only">
           Veja informações, elenco e opções para adicionar o conteúdo às suas gavettas.
         </DialogDescription>
+        {notificationComment && <div className="border-b border-border bg-muted/40 px-4 py-3"><p className="text-xs font-semibold text-primary">Mensagem da indicação</p><p className="mt-1 whitespace-pre-wrap break-words text-sm">{notificationComment}</p></div>}
         
         {/* Botão Adicionar à Gavetta - fixo no topo */}
         <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b p-3 flex justify-end">

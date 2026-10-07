@@ -144,7 +144,6 @@ export function NotificationsPopover() {
     </Popover>
     <NotificationSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     <ActivityDetailDialog activityId={activity?.id || null} commentId={activity?.commentId} open={!!activity} onOpenChange={open => { if (!open) setActivity(null); }} />
-    {recommendation && <Popover open onOpenChange={open => { if (!open) setRecommendation(null); }}><PopoverContent className="hidden" /></Popover>}
     <ContentDetailDialog content={selectedContent} open={contentOpen || !!recommendation} onOpenChange={open => { setContentOpen(open); if (!open) { setRecommendation(null); setSelectedContent(null); } }} notificationComment={recommendation?.comment} />
   </>;
 }

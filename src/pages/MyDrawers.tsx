@@ -224,7 +224,7 @@ export default function MyDrawers() {
   useEffect(() => {
     const id = searchParams.get("drawer");
     if (!id) return;
-    if (sharedDrawers.some(d => d.drawerId === id)) void handleSharedDrawerClick(id);
+    if (sharedDrawers.some(d => d.drawerId === id)) void handleSelectSharedDrawer(id);
     else if (customDrawers.some(d => d.id === id) || defaultDrawers.some(d => d.id === id)) { setSelectedDrawer(id); setIsSharedDrawerSelected(false); }
   }, [searchParams, sharedDrawers, customDrawers]);
 
