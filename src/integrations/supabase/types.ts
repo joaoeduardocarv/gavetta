@@ -89,6 +89,33 @@ export type Database = {
           },
         ]
       }
+      content_update_progress: {
+        Row: {
+          last_error: string | null
+          last_success: string | null
+          lease_until: string | null
+          next_attempt: string
+          production_id: string
+          production_type: string
+        }
+        Insert: {
+          last_error?: string | null
+          last_success?: string | null
+          lease_until?: string | null
+          next_attempt?: string
+          production_id: string
+          production_type: string
+        }
+        Update: {
+          last_error?: string | null
+          last_success?: string | null
+          lease_until?: string | null
+          next_attempt?: string
+          production_id?: string
+          production_type?: string
+        }
+        Relationships: []
+      }
       episode_ratings: {
         Row: {
           created_at: string
@@ -253,11 +280,15 @@ export type Database = {
       }
       notification_preferences: {
         Row: {
+          activity_comments: boolean
+          activity_likes: boolean
           created_at: string
+          friendship_updates: boolean
           id: string
           new_episodes: boolean
           new_seasons: boolean
           purchase_arrival: boolean
+          recommendations: boolean
           rental_arrival: boolean
           streaming_changes: boolean
           upcoming_content: boolean
@@ -266,11 +297,15 @@ export type Database = {
           watched_availability: boolean
         }
         Insert: {
+          activity_comments?: boolean
+          activity_likes?: boolean
           created_at?: string
+          friendship_updates?: boolean
           id?: string
           new_episodes?: boolean
           new_seasons?: boolean
           purchase_arrival?: boolean
+          recommendations?: boolean
           rental_arrival?: boolean
           streaming_changes?: boolean
           upcoming_content?: boolean
@@ -279,11 +314,15 @@ export type Database = {
           watched_availability?: boolean
         }
         Update: {
+          activity_comments?: boolean
+          activity_likes?: boolean
           created_at?: string
+          friendship_updates?: boolean
           id?: string
           new_episodes?: boolean
           new_seasons?: boolean
           purchase_arrival?: boolean
+          recommendations?: boolean
           rental_arrival?: boolean
           streaming_changes?: boolean
           upcoming_content?: boolean
@@ -295,7 +334,10 @@ export type Database = {
       }
       notifications: {
         Row: {
+          context: Json
           created_at: string
+          event_id: string | null
+          event_key: string | null
           id: string
           is_read: boolean
           message: string | null
@@ -306,7 +348,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          context?: Json
           created_at?: string
+          event_id?: string | null
+          event_key?: string | null
           id?: string
           is_read?: boolean
           message?: string | null
@@ -317,7 +362,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          context?: Json
           created_at?: string
+          event_id?: string | null
+          event_key?: string | null
           id?: string
           is_read?: boolean
           message?: string | null
@@ -646,6 +694,13 @@ export type Database = {
         Args: { _email?: string; _handle?: string; _username?: string }
         Returns: Json
       }
+      claim_content_update_batch: {
+        Args: { _limit?: number }
+        Returns: {
+          production_id: string
+          production_type: string
+        }[]
+      }
       get_email_by_handle: { Args: { _handle: string }; Returns: string }
       get_pending_friend_profiles: {
         Args: never
@@ -672,6 +727,7 @@ export type Database = {
         Args: { _profile_id: string }
         Returns: boolean
       }
+      notification_pending_items: { Args: never; Returns: Json }
       quick_add_to_watch: {
         Args: {
           _candidate_ids: string[]
@@ -697,6 +753,20 @@ export type Database = {
       suggest_handle_from_username: {
         Args: { _username: string }
         Returns: string
+      }
+      write_event_notification: {
+        Args: {
+          _actor: string
+          _content: string
+          _context: Json
+          _event: string
+          _key: string
+          _message: string
+          _recipient: string
+          _title: string
+          _type: string
+        }
+        Returns: undefined
       }
     }
     Enums: {
