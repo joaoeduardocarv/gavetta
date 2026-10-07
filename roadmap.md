@@ -14,3 +14,6 @@
 - [x] Remover a nota média do Perfil e reaproveitar a avaliação de episódios em séries concluídas
 - [x] Mostrar a nota selecionada ao passar o mouse pelas estrelas
 - [x] Permitir curtidas e comentários nas atividades dos amigos, com notificação ao autor
+- [ ] Entregar caixa de entrada e histórico de notificações com pendências e destinos precisos
+- [ ] Adicionar preferências sociais e geração confiável de avisos vinculados aos eventos
+- [ ] Validar sincronização, deduplicação e verificação paginada do catálogo
