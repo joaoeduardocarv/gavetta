@@ -89,6 +89,24 @@ export type Database = {
           },
         ]
       }
+      content_update_dispatch: {
+        Row: {
+          endpoint: string
+          id: boolean
+          token: string
+        }
+        Insert: {
+          endpoint: string
+          id?: boolean
+          token?: string
+        }
+        Update: {
+          endpoint?: string
+          id?: boolean
+          token?: string
+        }
+        Relationships: []
+      }
       content_update_progress: {
         Row: {
           last_error: string | null
@@ -704,6 +722,7 @@ export type Database = {
           production_type: string
         }[]
       }
+      dispatch_content_update: { Args: never; Returns: undefined }
       get_email_by_handle: { Args: { _handle: string }; Returns: string }
       get_pending_friend_profiles: {
         Args: never
@@ -756,6 +775,10 @@ export type Database = {
       suggest_handle_from_username: {
         Args: { _username: string }
         Returns: string
+      }
+      verify_content_update_token: {
+        Args: { _token: string }
+        Returns: boolean
       }
       write_event_notification: {
         Args: {
