@@ -97,6 +97,7 @@ export type Database = {
           next_attempt: string
           production_id: string
           production_type: string
+          snapshot: Json | null
         }
         Insert: {
           last_error?: string | null
@@ -105,6 +106,7 @@ export type Database = {
           next_attempt?: string
           production_id: string
           production_type: string
+          snapshot?: Json | null
         }
         Update: {
           last_error?: string | null
@@ -113,6 +115,7 @@ export type Database = {
           next_attempt?: string
           production_id?: string
           production_type?: string
+          snapshot?: Json | null
         }
         Relationships: []
       }
