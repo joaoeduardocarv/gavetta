@@ -1,12 +1,8 @@
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { shouldNotify } from './notificationFilters.ts';
 import { brToday, daysUntil } from './dateHelpers.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
-};
 
 const TMDB_TOKEN = Deno.env.get('TMDB_TOKEN');
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
@@ -65,8 +61,8 @@ function getAllProviderNames(providers: WatchProviders | null): string[] {
 }
 
 function providersDiffer(oldProviders: WatchProviders | null, newProviders: WatchProviders | null): { added: string[]; removed: string[] } {
-  const oldNames = getAllProviderNames(oldProviders);
-  const newNames = getAllProviderNames(newProviders);
+  const oldNames = (oldProviders?.flatrate || []).map(p => p.provider_name);
+  const newNames = (newProviders?.flatrate || []).map(p => p.provider_name);
   const added = newNames.filter(n => !oldNames.includes(n));
   const removed = oldNames.filter(n => !newNames.includes(n));
   return { added, removed };
@@ -107,19 +103,27 @@ serve(async (req) => {
     if (!TMDB_TOKEN) throw new Error('Missing TMDB_TOKEN');
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const token = (req.headers.get('Authorization') || '').replace(/^Bearer /, '');
+    const { data: authorized, error: authorizationError } = await supabase.rpc('verify_content_update_token', { _token: token });
+    if (authorizationError || !authorized) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
-    // Fetch assignments from ALL user drawers (default + custom/shared)
-    const { data: assignments, error: fetchError } = await supabase
-      .from('user_drawer_assignments')
-      .select('id, user_id, production_id, production_type, production_data, drawer_id')
-      .limit(1000);
 
-    if (fetchError) throw new Error(`Failed to fetch assignments: ${fetchError.message}`);
-    if (!assignments || assignments.length === 0) {
-      return new Response(JSON.stringify({ message: 'No assignments to check', notifications: 0 }), {
-        status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    // A bounded, leased batch resumes where earlier runs stopped; assignments are paginated.
+    const { data: claimed, error: claimError } = await supabase.rpc('claim_content_update_batch', { _limit: 30 });
+    if (claimError) throw claimError;
+    const assignments: Array<{ id: string; user_id: string; production_id: string; production_type: string; production_data: unknown; drawer_id: string }> = [];
+    for (const title of claimed || []) {
+      for (let offset = 0; ; offset += 500) {
+        const { data, error } = await supabase.from('user_drawer_assignments')
+          .select('id,user_id,production_id,production_type,production_data,drawer_id')
+          .eq('production_id', title.production_id).eq('production_type', title.production_type)
+          .order('id').range(offset, offset + 499);
+        if (error) throw error;
+        assignments.push(...(data || []));
+        if (!data || data.length < 500) break;
+      }
     }
+    if (!assignments.length) return new Response(JSON.stringify({ message: 'No titles due', notifications: 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
 
     // Group by unique production to avoid duplicate TMDB calls
     const productionMap = new Map<string, {
@@ -142,7 +146,8 @@ serve(async (req) => {
           userDrawers: new Map([[a.user_id, new Set([a.drawer_id as string])]]),
         });
       } else {
-        const p = productionMap.get(key)!;
+        const p = productionMap.get(key);
+        if (!p) continue;
         p.userIds.add(a.user_id);
         const set = p.userDrawers.get(a.user_id) ?? new Set<string>();
         set.add(a.drawer_id as string);
@@ -159,10 +164,14 @@ serve(async (req) => {
       for (const uid of prod.userIds) allUserIds.add(uid);
     }
 
-    const { data: prefsData } = await supabase
-      .from('notification_preferences')
-      .select('user_id, streaming_changes, new_seasons, new_episodes, upcoming_content, rental_arrival, purchase_arrival, watched_availability')
-      .in('user_id', [...allUserIds]);
+    const prefsData: Array<Record<string, boolean> & { user_id: string }> = [];
+    const ids = [...allUserIds];
+    for (let offset = 0; offset < ids.length; offset += 300) {
+      const { data, error } = await supabase.from('notification_preferences')
+        .select('user_id, streaming_changes, new_seasons, new_episodes, upcoming_content, rental_arrival, purchase_arrival, watched_availability').in('user_id', ids.slice(offset, offset + 300));
+      if (error) throw error;
+      prefsData.push(...(data || []) as Array<Record<string, boolean> & { user_id: string }>);
+    }
 
     const userPrefs = new Map<string, Record<string, boolean>>();
     for (const p of prefsData || []) {
@@ -180,6 +189,7 @@ serve(async (req) => {
 
 
     let notificationsCreated = 0;
+    const failures: string[] = [];
     const entries = [...productionMap.entries()];
 
     // Process in batches of 5
@@ -192,6 +202,9 @@ serve(async (req) => {
             const mediaType = prod.productionType === 'movie' ? 'movie' : 'tv';
             const numericId = prod.productionId.replace(/^(movie|tv)-/, '');
 
+            const { data: checkpoint, error: checkpointError } = await supabase.from('content_update_progress').select('snapshot').eq('production_id', prod.productionId).eq('production_type', prod.productionType).maybeSingle();
+            if (checkpointError) throw checkpointError;
+            if (checkpoint?.snapshot && typeof checkpoint.snapshot === 'object') prod.oldData = checkpoint.snapshot as Record<string, unknown>;
             // Fetch current TMDB data
             const details = await fetchTMDB(`/${mediaType}/${numericId}?language=pt-BR`) as Record<string, unknown>;
             const providersRes = await fetchTMDB(`/${mediaType}/${numericId}/watch/providers`) as { results?: { BR?: WatchProviders } };
@@ -305,8 +318,9 @@ serve(async (req) => {
                 const air = s.air_date as string | undefined;
                 return n > 0 && n > oldSeasons && air ? daysUntil(air as string) === 0 : false;
               });
-              if (newlyAiredSeason || newSeasons > oldSeasons) {
-                const seasonNum = (newlyAiredSeason?.season_number as number) ?? newSeasons;
+              const airedNewSeason = seasons.find(season => Number(season.season_number) > oldSeasons && typeof season.air_date === "string" && daysUntil(season.air_date) <= 0);
+              if (newlyAiredSeason || airedNewSeason) {
+                const seasonNum = Number(newlyAiredSeason?.season_number ?? airedNewSeason?.season_number);
                 for (const userId of prod.userIds) {
                   if (!userWants(userId, 'new_season')) continue;
                   notifications.push({
@@ -357,6 +371,9 @@ serve(async (req) => {
                   const epName = (lastEpisode.name as string) || '';
                   for (const userId of prod.userIds) {
                     if (!userWants(userId, 'new_episodes')) continue;
+                    const { data: watched, error: watchedError } = await supabase.from('watched_episodes').select('id').eq('user_id', userId).eq('tmdb_tv_id', Number(numericId)).eq('season_number', newSeasonNum).eq('episode_number', newEpNum).limit(1);
+                    if (watchedError) throw watchedError;
+                    if (watched?.length) continue;
                     notifications.push({
                       user_id: userId,
                       type: 'new_episodes',
@@ -392,52 +409,36 @@ serve(async (req) => {
 
 
 
-            // Insert notifications (deduplicate: don't send same notification twice in 24h)
+            // Stable event identity uses structured offer/season/episode/date facts, never the heading.
             for (const notif of notifications) {
-              const { data: existing } = await supabase
-                .from('notifications')
-                .select('id')
-                .eq('user_id', notif.user_id)
-                .eq('type', notif.type)
-                .eq('title', notif.title)
-
-                .eq('related_content_id', notif.related_content_id)
-                .gte('created_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
-                .limit(1);
-
-              if (!existing || existing.length === 0) {
-                const { error: insertError } = await supabase
-                  .from('notifications')
-                  .insert(notif);
-
-                if (insertError) {
-                  console.error(`Failed to insert notification:`, insertError.message);
-                } else {
-                  notificationsCreated++;
-                }
-              }
+              const episodeMatch = notif.message.match(/S(\d+)E(\d+)/);
+              const seasonMatch = notif.message.match(/temporada (\d+)/i);
+              const dateMatch = notif.message.match(/%%(\d{4}-\d{2}-\d{2})%%/);
+              const availability = ['streaming_change', 'rental_arrival', 'purchase_arrival'].includes(notif.type);
+              const offers = (providers: WatchProviders | null) => ({ subscription: (providers?.flatrate || []).map(p => p.provider_id).sort(), rent: (providers?.rent || []).map(p => p.provider_id).sort(), buy: (providers?.buy || []).map(p => p.provider_id).sort() });
+              const identity = availability ? { before: offers(oldProviders), after: offers(newProviders), day: brToday() }
+                : { season: episodeMatch ? Number(episodeMatch[1]) : seasonMatch ? Number(seasonMatch[1]) : null, episode: episodeMatch ? Number(episodeMatch[2]) : null, date: dateMatch?.[1] || (mediaType === 'movie' ? details.release_date : (details.last_episode_to_air as Record<string, unknown> | null)?.air_date) || brToday(), phase: notif.message.includes('%%') ? 'upcoming' : 'available' };
+              const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(identity)));
+              const hash = [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2,'0')).join('');
+              const context = { production_id: prod.productionId, production_title: title, poster_path: details.poster_path, ...identity };
+              const { error: insertError } = await supabase.from('notifications').insert({ ...notif, event_key: `${notif.type}:${prod.productionId}:${hash}`, context });
+              if (insertError && insertError.code !== "23505") throw insertError;
+              if (!insertError) notificationsCreated++;
             }
 
-            // Update production_data with new info for future comparisons
-            await supabase
-              .from('user_drawer_assignments')
-              .update({
-                production_data: {
-                  ...prod.oldData,
-                  watch_providers: newProviders,
-                  number_of_seasons: details.number_of_seasons,
-                  number_of_episodes: details.number_of_episodes,
-                  last_episode_to_air: details.last_episode_to_air,
-                  status: details.status,
-                  next_episode_to_air: details.next_episode_to_air,
-                  _last_update_check: new Date().toISOString(),
-                }
-              })
-              .eq('production_id', prod.productionId)
-              .eq('production_type', prod.productionType);
+            const snapshot = {
+              ...prod.oldData, watch_providers: newProviders, number_of_seasons: details.number_of_seasons,
+              number_of_episodes: details.number_of_episodes, last_episode_to_air: details.last_episode_to_air,
+              status: details.status, next_episode_to_air: details.next_episode_to_air, _last_update_check: new Date().toISOString(),
+            };
+            const { error: progressError } = await supabase.from('content_update_progress').update({ snapshot, last_success: new Date().toISOString(), next_attempt: new Date(Date.now() + 6 * 60 * 60 * 1000).toISOString(), lease_until: null, last_error: null }).eq('production_id', prod.productionId).eq('production_type', prod.productionType);
+            if (progressError) throw progressError;
 
           } catch (error) {
-            console.error(`Error checking ${prod.productionId}:`, error);
+            const message = error instanceof Error ? error.message : 'Update failed';
+            failures.push(prod.productionId);
+            await supabase.from('content_update_progress').update({ lease_until: null, next_attempt: new Date(Date.now() + 15 * 60 * 1000).toISOString(), last_error: message.slice(0,500) }).eq('production_id', prod.productionId).eq('production_type', prod.productionType);
+            console.error(`Error checking ${prod.productionId}:`, message);
           }
         })
       );
@@ -450,10 +451,17 @@ serve(async (req) => {
     const summary = {
       productions_checked: productionMap.size,
       notifications_created: notificationsCreated,
+      failed_productions: failures,
       timestamp: new Date().toISOString(),
     };
 
     console.log('Check complete:', JSON.stringify(summary));
+    // Continue only while the bounded queue has work; no permanent high-frequency polling.
+    if ((claimed || []).length === 30) {
+      const { error: dispatchError } = await supabase.rpc('dispatch_content_update');
+      if (dispatchError) console.error('Unable to continue catalogue batch:', dispatchError.message);
+    }
+
 
     return new Response(JSON.stringify(summary), {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }

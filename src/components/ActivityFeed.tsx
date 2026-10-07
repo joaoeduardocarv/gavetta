@@ -83,14 +83,18 @@ export function ActivityFeed() {
   );
 }
 
-function ActivityCard({
+export function ActivityCard({
   activity,
   onClick,
   interactions,
+  initialCommentsOpen = false,
+  highlightedCommentId,
 }: {
   activity: FriendActivity;
   onClick: () => void;
   interactions: ReturnType<typeof useActivityInteractions>;
+  initialCommentsOpen?: boolean;
+  highlightedCommentId?: string | null;
 }) {
   const content = getActivityContent(activity);
   const title = content.title;
@@ -102,7 +106,7 @@ function ActivityCard({
     locale: ptBR,
   });
   const { toast } = useToast();
-  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(initialCommentsOpen);
   const [comment, setComment] = useState("");
   const likes = interactions.likes.filter((like) => like.activity_id === activity.id);
   const comments = interactions.comments.filter((item) => item.activity_id === activity.id);
@@ -240,12 +244,13 @@ function ActivityCard({
       {commentsOpen && (
         <div className="ml-12 mt-2 space-y-3 border-t border-border/70 pt-3">
           {comments.map((item) => (
+            <div key={item.id} className={item.id === highlightedCommentId ? "rounded-md ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}>
             <CommentRow
-              key={item.id}
               comment={item}
               canDelete={item.user_id === interactions.userId}
               onDelete={() => interactions.deleteComment.mutate(item.id)}
             />
+            </div>
           ))}
           <form onSubmit={handleComment} className="space-y-2">
             <Textarea

@@ -1,0 +1,10 @@
+CREATE TABLE public.content_update_dispatch(id boolean PRIMARY KEY DEFAULT true, endpoint text NOT NULL, token text NOT NULL DEFAULT encode(gen_random_bytes(32),'hex'), CONSTRAINT content_update_dispatch_singleton CHECK(id));
+GRANT ALL ON public.content_update_dispatch TO service_role;
+ALTER TABLE public.content_update_dispatch ENABLE ROW LEVEL SECURITY;
+CREATE OR REPLACE FUNCTION public.verify_content_update_token(_token text) RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path=public AS $$ SELECT EXISTS(SELECT 1 FROM public.content_update_dispatch WHERE token=_token AND length(_token)=64); $$;
+REVOKE ALL ON FUNCTION public.verify_content_update_token(text) FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.verify_content_update_token(text) TO service_role;
+CREATE OR REPLACE FUNCTION public.dispatch_content_update() RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path=public AS $$ DECLARE config public.content_update_dispatch%ROWTYPE; BEGIN SELECT * INTO config FROM public.content_update_dispatch WHERE id=true; IF NOT FOUND THEN RAISE EXCEPTION 'Catalogue dispatch is not configured'; END IF; PERFORM net.http_post(url:=config.endpoint,headers:=jsonb_build_object('Content-Type','application/json','Authorization','Bearer '||config.token),body:='{}'::jsonb,timeout_milliseconds:=60000); END; $$;
+REVOKE ALL ON FUNCTION public.dispatch_content_update() FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.dispatch_content_update() TO service_role;
+COMMENT ON TABLE public.content_update_dispatch IS 'Service-only scheduler credential and endpoint; never returned to clients.';

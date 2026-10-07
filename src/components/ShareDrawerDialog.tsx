@@ -79,20 +79,6 @@ export function ShareDrawerDialog({ open, onOpenChange, drawerId, drawerName, cu
         return;
       }
 
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("username")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      await supabase.from("notifications").insert({
-        user_id: friend.id,
-        type: "shared_drawer_invite",
-        title: "Convite de gaveta compartilhada",
-        message: `${profile?.username || "Alguém"} quer compartilhar a gaveta "${drawerName}" com você!`,
-        related_user_id: user.id,
-        related_content_id: drawerId,
-      });
 
       setSentTo(prev => [...prev, friend.id]);
       toast({ title: "Convite enviado!", description: `${friend.username} receberá o convite.` });

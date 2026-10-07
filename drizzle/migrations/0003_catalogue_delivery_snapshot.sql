@@ -1,0 +1,2 @@
+ALTER TABLE public.content_update_progress ADD COLUMN IF NOT EXISTS snapshot jsonb;
+COMMENT ON COLUMN public.content_update_progress.snapshot IS 'Last successfully delivered catalogue state, independent of assignment enrichment, to retain changes across delivery retries.';

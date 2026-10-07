@@ -1,0 +1,1 @@
+DO $$ DECLARE old_job bigint; BEGIN SELECT jobid INTO old_job FROM cron.job WHERE jobname='content-update-check-6h'; IF old_job IS NOT NULL THEN PERFORM cron.unschedule(old_job); END IF; PERFORM cron.schedule('content-update-check-6h','0 */6 * * *','SELECT public.dispatch_content_update();'); END; $$;

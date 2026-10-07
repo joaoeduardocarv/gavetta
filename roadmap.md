@@ -14,3 +14,8 @@
 - [x] Remover a nota média do Perfil e reaproveitar a avaliação de episódios em séries concluídas
 - [x] Mostrar a nota selecionada ao passar o mouse pelas estrelas
 - [x] Permitir curtidas e comentários nas atividades dos amigos, com notificação ao autor
+- [x] Entregar caixa de entrada e histórico de notificações com pendências e destinos precisos
+- [x] Adicionar preferências sociais e geração confiável de avisos vinculados aos eventos
+- [ ] Concluir validação entre duas contas e acompanhar a primeira execução completa da verificação paginada do catálogo
+
+Validação: 131 testes de interface/lógica e 18 testes do verificador passaram; preview abriu 30 avisos, carregou 60 e salvou/restaurou preferências sem erros. Segunda conta autorizada ainda necessária para validar entrega entre usuários. Catálogo mantém quatro verificações por dia, com continuação limitada aos lotes pendentes, sem checagens permanentes a cada cinco minutos.

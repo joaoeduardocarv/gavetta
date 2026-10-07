@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
@@ -29,6 +29,8 @@ interface ContentDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onContentChange?: (content: Content) => void;
+  notificationComment?: string | null;
+  notificationFocus?: "availability" | "episodes";
 }
 
 const typeLabels: Record<string, string> = {
@@ -55,7 +57,13 @@ interface PersonInfo {
   profile_path: string | null;
 }
 
-export function ContentDetailDialog({ content, open, onOpenChange, onContentChange }: ContentDetailDialogProps) {
+export function ContentDetailDialog({ content, open, onOpenChange, onContentChange, notificationComment, notificationFocus }: ContentDetailDialogProps) {
+  const notificationTarget = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open || !notificationFocus) return;
+    const timer = window.setTimeout(() => notificationTarget.current?.scrollIntoView({ block: "center" }), 400);
+    return () => window.clearTimeout(timer);
+  }, [open, content?.id, notificationFocus]);
   const { toast } = useToast();
   const { shareToStory, isGenerating: isGeneratingStory } = useStoryShare();
   const { 
@@ -420,6 +428,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
         <DialogDescription className="sr-only">
           Veja informações, elenco e opções para adicionar o conteúdo às suas gavettas.
         </DialogDescription>
+        {notificationComment && <div className="border-b border-border bg-muted/40 px-4 py-3"><p className="text-xs font-semibold text-primary">Mensagem da indicação</p><p className="mt-1 whitespace-pre-wrap break-words text-sm">{notificationComment}</p></div>}
         
         {/* Botão Adicionar à Gavetta - fixo no topo */}
         <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b p-3 flex justify-end">
@@ -705,7 +714,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
               )}
 
               {(viewContent.isInTheaters || (viewContent.watchProviderLogos && viewContent.watchProviderLogos.length > 0) || (viewContent.availableOn && viewContent.availableOn.length > 0)) && (
-                <div>
+                <div ref={notificationFocus === "availability" ? notificationTarget : undefined}>
                   <Label className="text-sm font-semibold">Onde assistir</Label>
                   <div className="mt-2 space-y-2">
                     {viewContent.isInTheaters && (
@@ -825,7 +834,7 @@ export function ContentDetailDialog({ content, open, onOpenChange, onContentChan
                 const parsed = extractTmdbInfoFromId(content.id);
                 if (!parsed || parsed.mediaType !== 'tv') return null;
                 return (
-                  <div>
+                  <div ref={notificationFocus === "episodes" ? notificationTarget : undefined}>
                     <Label className="text-sm font-semibold mb-2 block">Temporadas e Episódios</Label>
                     <SeasonsAccordion
                       tmdbTvId={parsed.tmdbId}
