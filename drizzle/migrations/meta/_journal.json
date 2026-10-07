@@ -36,6 +36,13 @@
       "when": 1791373509874,
       "tag": "0004_secure_catalogue_dispatch",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1791373544316,
+      "tag": "0005_secure_catalogue_existing_schedule",
+      "breakpoints": true
     }
   ]
 }

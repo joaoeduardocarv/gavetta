@@ -456,6 +456,12 @@ serve(async (req) => {
     };
 
     console.log('Check complete:', JSON.stringify(summary));
+    // Continue only while the bounded queue has work; no permanent high-frequency polling.
+    if ((claimed || []).length === 30) {
+      const { error: dispatchError } = await supabase.rpc('dispatch_content_update');
+      if (dispatchError) console.error('Unable to continue catalogue batch:', dispatchError.message);
+    }
+
 
     return new Response(JSON.stringify(summary), {
       status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
