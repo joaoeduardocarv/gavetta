@@ -64,22 +64,6 @@ export function RecommendDialog({ content, open, onOpenChange }: RecommendDialog
 
       if (recError) throw recError;
 
-      // Get sender profile for notification message
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("username")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      // Send notification
-      await supabase.from("notifications").insert({
-        user_id: selectedFriend.id,
-        type: "recommendation",
-        title: "Nova indicação!",
-        message: `${profile?.username || "Alguém"} indicou "${content.title}" para você${comment.trim() ? `: "${comment.trim()}"` : ""}`,
-        related_user_id: user.id,
-        related_content_id: content.id,
-      });
 
       toast({
         title: "Indicação enviada!",

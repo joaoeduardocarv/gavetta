@@ -159,20 +159,7 @@ export function useFriendships() {
 
       if (friendshipError) throw friendshipError;
 
-      // Create notification for the addressee
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("username")
-        .eq("id", user.id)
-        .maybeSingle();
 
-      await supabase.from("notifications").insert({
-        user_id: addresseeId,
-        type: "friend_request",
-        title: "Novo pedido de amizade",
-        message: `${profile?.username || "Alguém"} quer ser seu amigo!`,
-        related_user_id: user.id,
-      });
     },
     onSuccess: () => {
       toast({ title: "Pedido enviado!", description: "Aguardando aceitação." });
@@ -206,20 +193,7 @@ export function useFriendships() {
 
       if (error) throw error;
 
-      // Notify the requester
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("username")
-        .eq("id", user.id)
-        .maybeSingle();
 
-      await supabase.from("notifications").insert({
-        user_id: friendship.requester_id,
-        type: "friend_accepted",
-        title: "Pedido aceito!",
-        message: `${profile?.username || "Alguém"} aceitou seu pedido de amizade!`,
-        related_user_id: user.id,
-      });
     },
     onSuccess: () => {
       toast({ title: "Amizade aceita!" });
