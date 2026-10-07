@@ -61,8 +61,8 @@ function getAllProviderNames(providers: WatchProviders | null): string[] {
 }
 
 function providersDiffer(oldProviders: WatchProviders | null, newProviders: WatchProviders | null): { added: string[]; removed: string[] } {
-  const oldNames = getAllProviderNames(oldProviders);
-  const newNames = getAllProviderNames(newProviders);
+  const oldNames = (oldProviders?.flatrate || []).map(p => p.provider_name);
+  const newNames = (newProviders?.flatrate || []).map(p => p.provider_name);
   const added = newNames.filter(n => !oldNames.includes(n));
   const removed = oldNames.filter(n => !newNames.includes(n));
   return { added, removed };
@@ -103,6 +103,10 @@ serve(async (req) => {
     if (!TMDB_TOKEN) throw new Error('Missing TMDB_TOKEN');
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    const token = (req.headers.get('Authorization') || '').replace(/^Bearer /, '');
+    const { data: authorized, error: authorizationError } = await supabase.rpc('verify_content_update_token', { _token: token });
+    if (authorizationError || !authorized) return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
 
     // A bounded, leased batch resumes where earlier runs stopped; assignments are paginated.
     const { data: claimed, error: claimError } = await supabase.rpc('claim_content_update_batch', { _limit: 30 });
@@ -411,7 +415,8 @@ serve(async (req) => {
               const seasonMatch = notif.message.match(/temporada (\d+)/i);
               const dateMatch = notif.message.match(/%%(\d{4}-\d{2}-\d{2})%%/);
               const availability = ['streaming_change', 'rental_arrival', 'purchase_arrival'].includes(notif.type);
-              const identity = availability ? { before: oldProviders, after: newProviders, checkpoint: checkpoint?.snapshot?._last_update_check || 'initial' }
+              const offers = (providers: WatchProviders | null) => ({ subscription: (providers?.flatrate || []).map(p => p.provider_id).sort(), rent: (providers?.rent || []).map(p => p.provider_id).sort(), buy: (providers?.buy || []).map(p => p.provider_id).sort() });
+              const identity = availability ? { before: offers(oldProviders), after: offers(newProviders), day: brToday() }
                 : { season: episodeMatch ? Number(episodeMatch[1]) : seasonMatch ? Number(seasonMatch[1]) : null, episode: episodeMatch ? Number(episodeMatch[2]) : null, date: dateMatch?.[1] || (mediaType === 'movie' ? details.release_date : (details.last_episode_to_air as Record<string, unknown> | null)?.air_date) || brToday(), phase: notif.message.includes('%%') ? 'upcoming' : 'available' };
               const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(identity)));
               const hash = [...new Uint8Array(digest)].map(byte => byte.toString(16).padStart(2,'0')).join('');
