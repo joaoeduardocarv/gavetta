@@ -2,7 +2,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.58.0";
 
 // Temporary admin-only fixture provisioning; removed after the browser check.
 Deno.serve(async (req) => {
-  const respond = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+  const headers = { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
+  if (req.method === "OPTIONS") return new Response("ok", { headers });
+  const respond = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers });
   const url = Deno.env.get("SUPABASE_URL");
   const key = Deno.env.get("SUPABASE_ANON_KEY");
   const service = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
