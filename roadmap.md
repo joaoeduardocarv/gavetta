@@ -16,7 +16,7 @@
 - [x] Permitir curtidas e comentários nas atividades dos amigos, com notificação ao autor
 - [x] Entregar caixa de entrada e histórico de notificações com pendências e destinos precisos
 - [x] Adicionar preferências sociais e geração confiável de avisos vinculados aos eventos
-- [ ] Concluir validação entre duas contas e acompanhar a primeira execução completa da verificação paginada do catálogo
-- [ ] Criar duas contas temporárias e validar entrega de atividade e atualização do sino entre elas
+- [ ] Acompanhar a primeira execução completa da verificação paginada do catálogo
+- [x] Criar duas contas temporárias e validar entrega de atividade e atualização do sino entre elas
 
-Validação: 131 testes de interface/lógica e 18 testes do verificador passaram; preview abriu 30 avisos, carregou 60 e salvou/restaurou preferências sem erros. Segunda conta autorizada ainda necessária para validar entrega entre usuários. Catálogo mantém quatro verificações por dia, com continuação limitada aos lotes pendentes, sem checagens permanentes a cada cinco minutos.
+Validação: 131 testes de interface/lógica e 18 testes do verificador passaram; preview abriu 30 avisos, carregou 60 e salvou/restaurou preferências sem erros. Duas contas temporárias confirmaram curtida e comentário entregues ao autor, sino de 0 para 1 sem recarregar, limpeza ao abrir e comentário no destino correto. Contas e ferramenta temporária removidas. Catálogo mantém quatro verificações por dia, com continuação limitada aos lotes pendentes, sem checagens permanentes a cada cinco minutos; execução completa aguarda o processamento agendado.
