@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Bell, Check, Film, Trash2, Users, X, Calendar, RefreshCw, Heart, MessageCircle, Settings, Loader2, ChevronDown } from "lucide-react";
+import { Bell, Megaphone, Check, Film, Trash2, Users, X, Calendar, RefreshCw, Heart, MessageCircle, Settings, Loader2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -24,7 +24,7 @@ import { groupNotifications, InboxFilter, notificationContext, NotificationGroup
 import { resolveNotificationContent } from "@/lib/notifications/destinations";
 
 function NoticeIcon({ type }: { type: string }) {
-  const Icon = type === "activity_like" ? Heart : type === "activity_comment" ? MessageCircle : type.startsWith("friend") || type === "shared_drawer_invite" ? Users : type === "streaming_change" ? RefreshCw : type === "upcoming_content" ? Calendar : Film;
+  const Icon = type === "admin_notice" ? Megaphone : type === "activity_like" ? Heart : type === "activity_comment" ? MessageCircle : type.startsWith("friend") || type === "shared_drawer_invite" ? Users : type === "streaming_change" ? RefreshCw : type === "upcoming_content" ? Calendar : Film;
   return <Icon className={`h-4 w-4 shrink-0 ${type === "activity_like" ? "text-destructive" : "text-primary"}`} />;
 }
 function NoticeRow({ group, open, remove, busy, seenAt, profiles, posters }: {

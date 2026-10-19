@@ -14,6 +14,35 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_blocks: {
+        Row: {
+          blocked_by: string
+          created_at: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          blocked_by: string
+          created_at?: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          blocked_by?: string
+          created_at?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_blocks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       activity_comments: {
         Row: {
           activity_id: string
@@ -88,6 +117,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      admin_notices: {
+        Row: {
+          audience: string
+          created_at: string
+          id: string
+          message: string | null
+          recipients: number
+          sent_by: string
+          title: string
+        }
+        Insert: {
+          audience: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          recipients?: number
+          sent_by: string
+          title: string
+        }
+        Update: {
+          audience?: string
+          created_at?: string
+          id?: string
+          message?: string | null
+          recipients?: number
+          sent_by?: string
+          title?: string
+        }
+        Relationships: []
       }
       content_update_dispatch: {
         Row: {
@@ -690,6 +749,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_delete_comment: {
+        Args: { _comment_id: string }
+        Returns: undefined
+      }
+      admin_recent_comments: { Args: { _limit?: number }; Returns: Json }
+      admin_send_notice: {
+        Args: { _message: string; _title: string; _user_ids?: string[] }
+        Returns: number
+      }
+      admin_set_block: {
+        Args: { _blocked: boolean; _reason?: string; _user_id: string }
+        Returns: undefined
+      }
       admin_usage_metrics: { Args: never; Returns: Json }
       admin_user_activity: {
         Args: { _days?: number; _user_id: string }
@@ -711,6 +783,7 @@ export type Database = {
           username: string
         }[]
       }
+      admin_user_profile: { Args: { _user_id: string }; Returns: Json }
       check_signup_availability: {
         Args: { _email?: string; _handle?: string; _username?: string }
         Returns: Json
@@ -749,6 +822,7 @@ export type Database = {
         Args: { _profile_id: string }
         Returns: boolean
       }
+      my_block_status: { Args: never; Returns: Json }
       notification_pending_items: { Args: never; Returns: Json }
       quick_add_to_watch: {
         Args: {
