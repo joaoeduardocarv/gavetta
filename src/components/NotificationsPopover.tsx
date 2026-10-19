@@ -1,4 +1,4 @@
-import { Megaphone, useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Bell, Check, Film, Trash2, Users, X, Calendar, RefreshCw, Heart, MessageCircle, Settings, Loader2, ChevronDown } from "lucide-react";
