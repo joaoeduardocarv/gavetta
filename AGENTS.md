@@ -6,3 +6,4 @@
 - Social notifications are created atomically by source-event triggers and carry exact event IDs; client paths write only the source event to avoid spoofing and duplicates.
 - The notification inbox separates paginated history, unread count, pending actions, grouping and destination resolution so reading does not dismiss decisions.
 - Catalogue delivery uses service-only leased batches and a successful-delivery snapshot independent of title enrichment, so retries retain changes and scale beyond assignment query limits.
+- The admin area (/admin/*) is its own sidebar app shell; every admin read/action goes through has_role-checked SECURITY DEFINER RPCs so nothing relies on client-side checks.
