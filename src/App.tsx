@@ -15,6 +15,7 @@ import { GlobalRatingDialog } from "@/components/GlobalRatingDialog";
 import { OnboardingDialog } from "@/components/OnboardingDialog";
 import { QuickStartLibrary } from "@/components/QuickStartLibrary";
 import { FirstAvatarSetup } from "@/components/FirstAvatarSetup";
+import { BlockedAccountGuard } from "@/components/BlockedAccountGuard";
 import { AnalyticsTracker } from "@/hooks/useAnalytics";
 
 // Eager: landing/auth (first paint critical)
@@ -79,6 +80,7 @@ const App = () => (
             <MigrationRunner>
               <Toaster />
               <Sonner />
+              <BlockedAccountGuard />
               <GlobalRatingDialog />
               <FirstAvatarSetup />
               <OnboardingDialog />
@@ -103,8 +105,8 @@ const App = () => (
                     <Route path="/m/:tmdbId" element={<SharePage forcedType="movie" />} />
                     <Route path="/s/:tmdbId" element={<SharePage forcedType="tv" />} />
                     <Route path="/share/:type/:tmdbId" element={<LegacyShareRedirect />} />
-                    <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
                     <Route path="/admin/signup-debug" element={<ProtectedRoute><AdminSignupDebug /></ProtectedRoute>} />
+                    <Route path="/admin/*" element={<AdminRoute><Admin /></AdminRoute>} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />
                   </Routes>
