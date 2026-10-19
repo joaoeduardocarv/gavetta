@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Bell, Check, Film, Trash2, Users, X, Calendar, RefreshCw, Heart, MessageCircle, Settings, Loader2, ChevronDown } from "lucide-react";
+import { Bell, Megaphone, Check, Film, Trash2, Users, X, Calendar, RefreshCw, Heart, MessageCircle, Settings, Loader2, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
