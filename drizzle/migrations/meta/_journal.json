@@ -50,6 +50,13 @@
       "when": 1792411910707,
       "tag": "0006_admin_crm",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792496179821,
+      "tag": "0007_admin_marketing_mix",
+      "breakpoints": true
     }
   ]
 }

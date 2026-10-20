@@ -358,6 +358,42 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_observations: {
+        Row: {
+          channel: string
+          conversions: number
+          created_at: string
+          created_by: string
+          id: string
+          revenue: number
+          spend: number
+          updated_at: string
+          week_start: string
+        }
+        Insert: {
+          channel: string
+          conversions?: number
+          created_at?: string
+          created_by: string
+          id?: string
+          revenue?: number
+          spend?: number
+          updated_at?: string
+          week_start: string
+        }
+        Update: {
+          channel?: string
+          conversions?: number
+          created_at?: string
+          created_by?: string
+          id?: string
+          revenue?: number
+          spend?: number
+          updated_at?: string
+          week_start?: string
+        }
+        Relationships: []
+      }
       notification_preferences: {
         Row: {
           activity_comments: boolean
@@ -752,6 +788,37 @@ export type Database = {
       admin_delete_comment: {
         Args: { _comment_id: string }
         Returns: undefined
+      }
+      admin_marketing_delete: { Args: { _id: string }; Returns: undefined }
+      admin_marketing_list: {
+        Args: { _from: string; _to: string }
+        Returns: {
+          channel: string
+          conversions: number
+          created_at: string
+          created_by: string
+          id: string
+          revenue: number
+          spend: number
+          updated_at: string
+          week_start: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "marketing_observations"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      admin_marketing_save: {
+        Args: {
+          _channel: string
+          _conversions: number
+          _revenue: number
+          _spend: number
+          _week: string
+        }
+        Returns: string
       }
       admin_recent_comments: { Args: { _limit?: number }; Returns: Json }
       admin_send_notice: {
