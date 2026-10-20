@@ -1,5 +1,7 @@
 # Roadmap
 
+- [ ] Adicionar área de marketing com registros por canal, indicadores, evolução e simulação de orçamento inspirada em MMM
+
 - [x] Limitar o onboarding ao primeiro acesso e aos recursos essenciais
 - [x] Reduzir a seleção inicial para cinco títulos
 - [x] Criar recuperação de senha por email com definição de nova senha
