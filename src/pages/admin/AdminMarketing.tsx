@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { mondayOf, projectConversions, summarizeMarketing, validMarketingInput, type MarketingObservation } from "@/lib/marketingMix";
+import SignupAttribution from "@/components/admin/SignupAttribution";
 
 const currency = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const integer = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
@@ -106,7 +107,8 @@ export default function AdminMarketing() {
           ].map((s) => <div key={s.label} className="rounded-lg border border-border bg-card p-4 min-w-0"><p className="text-xs text-muted-foreground">{s.label}</p><p className="text-xl font-bold mt-2 break-words tabular-nums">{s.value}</p></div>)}
         </div>
         <Tabs defaultValue="performance" className="space-y-5">
-          <TabsList className="max-w-full"><TabsTrigger value="performance">Desempenho</TabsTrigger><TabsTrigger value="scenario">Simulador</TabsTrigger><TabsTrigger value="records">Registros</TabsTrigger></TabsList>
+          <TabsList className="max-w-full"><TabsTrigger value="performance">Desempenho</TabsTrigger><TabsTrigger value="scenario">Simulador</TabsTrigger><TabsTrigger value="records">Registros</TabsTrigger><TabsTrigger value="signups">Origem dos cadastros</TabsTrigger></TabsList>
+          <TabsContent value="signups"><SignupAttribution from={from} to={format(new Date(), "yyyy-MM-dd")} /></TabsContent>
           <TabsContent value="performance" className="space-y-6">
             {!rows.length ? <div className="py-14 text-center border-y border-border space-y-3"><TrendingUp className="h-8 w-8 text-muted-foreground mx-auto" /><h3 className="font-semibold">Nenhum registro neste período</h3><Button variant="outline" onClick={() => setOpen(true)}><Plus className="h-4 w-4 mr-2" />Adicionar investimento</Button></div> : <>
               <section className="space-y-3"><h3 className="font-semibold">Evolução semanal</h3><ChartContainer config={chartConfig} className="h-64 w-full aspect-auto"><BarChart data={weekly}><CartesianGrid vertical={false} stroke="hsl(var(--border))" /><XAxis dataKey="week" tickFormatter={(d: string) => d.slice(5).split("-").reverse().join("/")} tickLine={false} axisLine={false} minTickGap={24} /><YAxis yAxisId="spend" tickLine={false} axisLine={false} width={65} /><YAxis yAxisId="conversions" orientation="right" tickLine={false} axisLine={false} allowDecimals={false} width={45} /><ChartTooltip content={<ChartTooltipContent labelFormatter={(v) => `Semana de ${String(v).split("-").reverse().join("/")}`} />} /><Bar yAxisId="spend" dataKey="spend" fill="var(--color-spend)" radius={[3, 3, 0, 0]} /><Bar yAxisId="conversions" dataKey="conversions" fill="var(--color-conversions)" radius={[3, 3, 0, 0]} /></BarChart></ChartContainer><div className="flex flex-wrap gap-5 text-xs text-muted-foreground"><span className="flex gap-2 items-center"><span className="h-2 w-2 bg-primary" />Investimento (eixo esquerdo, R$)</span><span className="flex gap-2 items-center"><span className="h-2 w-2 bg-accent" />Conversões (eixo direito)</span></div></section>
