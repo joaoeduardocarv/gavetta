@@ -663,6 +663,53 @@ export type Database = {
         }
         Relationships: []
       }
+      user_attribution: {
+        Row: {
+          created_at: string
+          first_seen_at: string | null
+          landing_path: string | null
+          referrer: string | null
+          user_id: string
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+        }
+        Insert: {
+          created_at?: string
+          first_seen_at?: string | null
+          landing_path?: string | null
+          referrer?: string | null
+          user_id: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Update: {
+          created_at?: string
+          first_seen_at?: string | null
+          landing_path?: string | null
+          referrer?: string | null
+          user_id?: string
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_attribution_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_custom_drawers: {
         Row: {
           created_at: string
@@ -785,6 +832,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_attribution_list: {
+        Args: { _from: string; _to: string }
+        Returns: {
+          handle: string
+          landing_path: string
+          signed_up_at: string
+          user_id: string
+          username: string
+          utm_campaign: string
+          utm_content: string
+          utm_medium: string
+          utm_source: string
+        }[]
+      }
       admin_delete_comment: {
         Args: { _comment_id: string }
         Returns: undefined
@@ -900,6 +961,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      record_signup_attribution: { Args: { _data: Json }; Returns: boolean }
       reorder_user_drawer: {
         Args: { _drawer_id: string; _production_ids: string[] }
         Returns: undefined
