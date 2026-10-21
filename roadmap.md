@@ -1,6 +1,6 @@
 # Roadmap
 
-- [ ] Adicionar área de marketing com registros por canal, indicadores, evolução e simulação de orçamento inspirada em MMM
+- [x] Adicionar área de marketing com registros por canal, indicadores, evolução e simulação de orçamento inspirada em MMM; gravação, edição, exclusão e simulação verificadas no preview autenticado, com sete testes de cálculo aprovados
 
 - [x] Limitar o onboarding ao primeiro acesso e aos recursos essenciais
 - [x] Reduzir a seleção inicial para cinco títulos
