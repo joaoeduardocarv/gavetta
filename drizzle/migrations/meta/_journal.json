@@ -57,6 +57,13 @@
       "when": 1792496179821,
       "tag": "0007_admin_marketing_mix",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792585305748,
+      "tag": "0008_user_signup_attribution",
+      "breakpoints": true
     }
   ]
 }

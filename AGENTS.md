@@ -8,3 +8,4 @@
 - Catalogue delivery uses service-only leased batches and a successful-delivery snapshot independent of title enrichment, so retries retain changes and scale beyond assignment query limits.
 - The admin area (/admin/*) is its own sidebar app shell; every admin read/action goes through has_role-checked SECURITY DEFINER RPCs so nothing relies on client-side checks.
 - Marketing observations are unique per channel and week; budget scenarios use explicit historical ratios, never causal attribution or fitted MMM claims, so missing evidence is not presented as model output.
+- Signup UTM attribution is first-touch (30 days) and stored server-side only for accounts created in the last 48h, so existing users are never credited to later campaigns.

@@ -2,6 +2,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from "react
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { markSessionVisited } from "@/lib/sessionVisit";
+import { captureAttribution, flushAttribution } from "@/lib/attribution";
 
 interface AuthContextType {
   user: User | null;
@@ -18,10 +19,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    captureAttribution();
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      if (session?.user && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
+        setTimeout(() => { void flushAttribution(); }, 0);
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
