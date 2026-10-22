@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Transformar registros de marketing em campanhas com período, objetivo, resultados identificados, observações e métricas opcionais; validar gravação e cálculos.
 
 - [x] Adicionar área de marketing com registros por canal, indicadores, evolução e simulação de orçamento inspirada em MMM; gravação, edição, exclusão e simulação verificadas no preview autenticado, com sete testes de cálculo aprovados
 
