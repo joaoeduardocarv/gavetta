@@ -64,6 +64,13 @@
       "when": 1792585305748,
       "tag": "0008_user_signup_attribution",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792669811272,
+      "tag": "0009_marketing_campaign_records",
+      "breakpoints": true
     }
   ]
 }
