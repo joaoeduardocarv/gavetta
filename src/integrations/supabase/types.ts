@@ -358,6 +358,71 @@ export type Database = {
         }
         Relationships: []
       }
+      marketing_campaigns: {
+        Row: {
+          channel: string
+          clicks: number | null
+          created_at: string
+          created_by: string
+          end_date: string | null
+          id: string
+          impressions: number | null
+          name: string
+          notes: string | null
+          objective: string
+          result_metric: string
+          results: number | null
+          revenue: number | null
+          spend: number | null
+          start_date: string
+          updated_at: string
+        }
+        Insert: {
+          channel: string
+          clicks?: number | null
+          created_at?: string
+          created_by: string
+          end_date?: string | null
+          id?: string
+          impressions?: number | null
+          name: string
+          notes?: string | null
+          objective: string
+          result_metric: string
+          results?: number | null
+          revenue?: number | null
+          spend?: number | null
+          start_date: string
+          updated_at?: string
+        }
+        Update: {
+          channel?: string
+          clicks?: number | null
+          created_at?: string
+          created_by?: string
+          end_date?: string | null
+          id?: string
+          impressions?: number | null
+          name?: string
+          notes?: string | null
+          objective?: string
+          result_metric?: string
+          results?: number | null
+          revenue?: number | null
+          spend?: number | null
+          start_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_campaigns_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       marketing_observations: {
         Row: {
           channel: string
@@ -845,6 +910,52 @@ export type Database = {
           utm_medium: string
           utm_source: string
         }[]
+      }
+      admin_campaign_delete: { Args: { _id: string }; Returns: undefined }
+      admin_campaign_list: {
+        Args: { _from: string; _to: string }
+        Returns: {
+          channel: string
+          clicks: number | null
+          created_at: string
+          created_by: string
+          end_date: string | null
+          id: string
+          impressions: number | null
+          name: string
+          notes: string | null
+          objective: string
+          result_metric: string
+          results: number | null
+          revenue: number | null
+          spend: number | null
+          start_date: string
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "marketing_campaigns"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      admin_campaign_save: {
+        Args: {
+          _channel: string
+          _clicks: number
+          _end: string
+          _id: string
+          _impressions: number
+          _metric: string
+          _name: string
+          _notes: string
+          _objective: string
+          _results: number
+          _revenue: number
+          _spend: number
+          _start: string
+        }
+        Returns: string
       }
       admin_delete_comment: {
         Args: { _comment_id: string }
