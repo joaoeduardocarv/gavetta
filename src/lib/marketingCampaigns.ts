@@ -35,7 +35,7 @@ export interface MarketingCampaign {
 
   id: string; name: string; start_date: string; end_date: string | null; channel: string;
   objective: string; result_metric: string; spend: number | null; results: number | null;
-  revenue: number | null; impressions: number | null; clicks: number | null; notes: string | null;
+  revenue: number | null; reach: number | null; impressions: number | null; clicks: number | null; notes: string | null;
 }
 export const objectiveLabel = (value: string) => campaignObjectives.find(o => o.value === value)?.label ?? value;
 export function optionalMetric(value: string): number | null { return value.trim() === '' ? null : Number(value); }
