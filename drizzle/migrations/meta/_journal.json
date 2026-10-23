@@ -71,6 +71,13 @@
       "when": 1792669811272,
       "tag": "0009_marketing_campaign_records",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792776810342,
+      "tag": "0010_campaign_profile_visit_and_reach",
+      "breakpoints": true
     }
   ]
 }

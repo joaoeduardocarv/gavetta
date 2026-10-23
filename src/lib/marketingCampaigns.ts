@@ -2,6 +2,7 @@ export const campaignChannels = ['Meta Ads', 'Google Ads', 'Orgânico', 'TikTok 
 export const campaignObjectives = [
   { value: 'awareness', label: 'Reconhecimento', metrics: ['Pessoas alcançadas', 'Impressões'] },
   { value: 'traffic', label: 'Tráfego', metrics: ['Cliques', 'Visitas à página'] },
+  { value: 'profile_visit', label: 'Visitar ao Perfil', metrics: ['Visitas ao perfil'] },
   { value: 'engagement', label: 'Engajamento', metrics: ['Interações', 'Curtidas', 'Comentários', 'Compartilhamentos'] },
   { value: 'leads', label: 'Leads', metrics: ['Leads'] },
   { value: 'signups', label: 'Cadastros', metrics: ['Cadastros concluídos'] },
@@ -14,6 +15,7 @@ export const commonResultMetrics = [
   'Cadastros',
   'Engajamento',
   'Visitas à página',
+  'Visitas ao perfil',
   'Cliques',
   'Compras',
   'Seguidores',
@@ -33,7 +35,7 @@ export interface MarketingCampaign {
 
   id: string; name: string; start_date: string; end_date: string | null; channel: string;
   objective: string; result_metric: string; spend: number | null; results: number | null;
-  revenue: number | null; impressions: number | null; clicks: number | null; notes: string | null;
+  revenue: number | null; reach: number | null; impressions: number | null; clicks: number | null; notes: string | null;
 }
 export const objectiveLabel = (value: string) => campaignObjectives.find(o => o.value === value)?.label ?? value;
 export function optionalMetric(value: string): number | null { return value.trim() === '' ? null : Number(value); }

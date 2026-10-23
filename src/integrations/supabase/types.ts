@@ -370,6 +370,7 @@ export type Database = {
           name: string
           notes: string | null
           objective: string
+          reach: number | null
           result_metric: string
           results: number | null
           revenue: number | null
@@ -388,6 +389,7 @@ export type Database = {
           name: string
           notes?: string | null
           objective: string
+          reach?: number | null
           result_metric: string
           results?: number | null
           revenue?: number | null
@@ -406,6 +408,7 @@ export type Database = {
           name?: string
           notes?: string | null
           objective?: string
+          reach?: number | null
           result_metric?: string
           results?: number | null
           revenue?: number | null
@@ -925,6 +928,7 @@ export type Database = {
           name: string
           notes: string | null
           objective: string
+          reach: number | null
           result_metric: string
           results: number | null
           revenue: number | null
@@ -950,6 +954,7 @@ export type Database = {
           _name: string
           _notes: string
           _objective: string
+          _reach: number
           _results: number
           _revenue: number
           _spend: number
