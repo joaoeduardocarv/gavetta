@@ -1,4 +1,6 @@
 # Roadmap
+- [x] Deixar a edição de campanhas salvas evidente: botão Editar e Excluir dentro da linha, nome clicável e atalho "Ver e editar campanhas" no Desempenho; edição e gravação verificadas no preview autenticado
+
 - [x] Ampliar as opções de resultado mensurado com leads, cadastros, engajamento e outros, separados das sugestões do objetivo; lista verificada no preview autenticado, com três testes aprovados
 
 - [x] Transformar registros de marketing em campanhas com período, objetivo, resultados identificados, observações e métricas opcionais; criação, edição, leitura após recarregar, CPA, CTR, simulador e exclusão verificados no preview autenticado, com 15 testes de regras aprovados.
