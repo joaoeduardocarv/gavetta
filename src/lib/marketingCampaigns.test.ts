@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { optionalMetric, costPerResult, clickThroughRate, campaignPeriodValid, metricValid, sumKnown, summarizeCampaigns, type MarketingCampaign } from './marketingCampaigns';
+import { optionalMetric, costPerResult, clickThroughRate, campaignPeriodValid, metricValid, sumKnown, summarizeCampaigns, resultMetricsFor, type MarketingCampaign } from './marketingCampaigns';
 const row: MarketingCampaign = { id:'1', name:'Campanha', start_date:'2026-10-01', end_date:null, channel:'Meta Ads', objective:'signups', result_metric:'Cadastros concluídos', spend:200, results:10, revenue:null, impressions:1000, clicks:20, notes:null };
 describe('campaign metrics and periods', () => {
   it('stores omitted numbers as null, not zero', () => { expect(optionalMetric('')).toBeNull(); expect(optionalMetric('0')).toBe(0); });
@@ -17,4 +17,11 @@ describe('campaign metrics and periods', () => {
   it('excludes unpaired investment from CPA', () => { const g = summarizeCampaigns([row,{...row,id:'2',spend:800,results:null}])[0]; expect(g.cpa).toBe(20); expect(g.partial).toBe(true); });
   it('allows blank optional metrics', () => expect(metricValid('',true)).toBe(true));
   it('rejects fractional result counts', () => expect(metricValid('2.5',true)).toBe(false));
+  it('offers leads, signups and engagement for any objective', () => {
+    const m = resultMetricsFor('awareness');
+    expect(m[0]).toBe('Pessoas alcançadas');
+    ['Leads','Cadastros','Engajamento','Seguidores'].forEach(x => expect(m).toContain(x));
+  });
+  it('keeps a previously saved result selectable', () => expect(resultMetricsFor('traffic','Seguidores')).toContain('Seguidores'));
+  it('lists each result option once', () => { const m = resultMetricsFor('engagement'); expect(m).toHaveLength(new Set(m).size); });
 });

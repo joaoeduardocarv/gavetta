@@ -9,7 +9,28 @@ export const campaignObjectives = [
   { value: 'video', label: 'Visualizações de vídeo', metrics: ['Visualizações de vídeo', 'Vídeos completos'] },
   { value: 'other', label: 'Outro', metrics: ['Conversões'] },
 ];
+export const commonResultMetrics = [
+  'Leads',
+  'Cadastros',
+  'Engajamento',
+  'Visitas à página',
+  'Cliques',
+  'Compras',
+  'Seguidores',
+  'Mensagens recebidas',
+  'Ligações',
+  'Orçamentos solicitados',
+  'Instalações do app',
+  'Inscrições em newsletter',
+  'Downloads',
+  'Respostas a pesquisa',
+];
+export function resultMetricsFor(objective: string, saved?: string | null): string[] {
+  const objectiveMetrics = campaignObjectives.find(o => o.value === objective)?.metrics ?? [];
+  return [...new Set([...objectiveMetrics, ...commonResultMetrics, ...(saved ? [saved] : [])])];
+}
 export interface MarketingCampaign {
+
   id: string; name: string; start_date: string; end_date: string | null; channel: string;
   objective: string; result_metric: string; spend: number | null; results: number | null;
   revenue: number | null; impressions: number | null; clicks: number | null; notes: string | null;
