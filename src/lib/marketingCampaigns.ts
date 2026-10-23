@@ -2,6 +2,7 @@ export const campaignChannels = ['Meta Ads', 'Google Ads', 'Orgânico', 'TikTok 
 export const campaignObjectives = [
   { value: 'awareness', label: 'Reconhecimento', metrics: ['Pessoas alcançadas', 'Impressões'] },
   { value: 'traffic', label: 'Tráfego', metrics: ['Cliques', 'Visitas à página'] },
+  { value: 'profile_visit', label: 'Visitar ao Perfil', metrics: ['Visitas ao perfil'] },
   { value: 'engagement', label: 'Engajamento', metrics: ['Interações', 'Curtidas', 'Comentários', 'Compartilhamentos'] },
   { value: 'leads', label: 'Leads', metrics: ['Leads'] },
   { value: 'signups', label: 'Cadastros', metrics: ['Cadastros concluídos'] },
@@ -14,6 +15,7 @@ export const commonResultMetrics = [
   'Cadastros',
   'Engajamento',
   'Visitas à página',
+  'Visitas ao perfil',
   'Cliques',
   'Compras',
   'Seguidores',
