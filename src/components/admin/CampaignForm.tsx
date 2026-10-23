@@ -6,10 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { campaignChannels, campaignObjectives, campaignPeriodValid, metricValid, optionalMetric, costPerResult, clickThroughRate, type MarketingCampaign } from '@/lib/marketingCampaigns';
+import { campaignChannels, campaignObjectives, campaignPeriodValid, metricValid, optionalMetric, costPerResult, clickThroughRate, resultMetricsFor, type MarketingCampaign } from '@/lib/marketingCampaigns';
 
 export interface CampaignInput {
   id: string | null; name: string; start: string; end: string | null; channel: string; objective: string; metric: string;
@@ -25,7 +25,10 @@ export default function CampaignForm({ campaign, pending, onSave, onCancel }: { 
   const [form, setForm] = useState(() => ({ name:campaign?.name ?? '', start:campaign?.start_date ?? format(new Date(),'yyyy-MM-dd'), end:campaign?.end_date ?? '', ongoing:campaign ? campaign.end_date === null : true, channel:campaign?.channel ?? '', objective:campaign?.objective ?? '', metric:campaign?.result_metric ?? '', spend:campaign?.spend?.toString() ?? '', results:campaign?.results?.toString() ?? '', revenue:campaign?.revenue?.toString() ?? '', impressions:campaign?.impressions?.toString() ?? '', clicks:campaign?.clicks?.toString() ?? '', notes:campaign?.notes ?? '' }));
   const update = (key: string, value: string) => setForm(f => ({...f,[key]:value}));
   const objective = campaignObjectives.find(o => o.value === form.objective);
-  const metrics = [...new Set([...(objective?.metrics ?? []), ...(campaign?.objective === form.objective ? [campaign.result_metric] : [])])];
+  const metrics = resultMetricsFor(form.objective, campaign?.objective === form.objective ? campaign.result_metric : null);
+  const suggested = objective?.metrics ?? [];
+  const extraMetrics = metrics.filter(m => !suggested.includes(m));
+
   const channels = [...new Set([...campaignChannels, ...(campaign ? [campaign.channel] : [])])];
   const valid = !!form.name.trim() && !!form.channel && !!objective && !!form.metric.trim() && campaignPeriodValid(form.start,form.end,form.ongoing) && ['spend','revenue'].every(k => metricValid(form[k as 'spend' | 'revenue'])) && ['results','impressions','clicks'].every(k => metricValid(form[k as 'results' | 'impressions' | 'clicks'],true));
   const cpa = costPerResult(optionalMetric(form.spend),optionalMetric(form.results));
