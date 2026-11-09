@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { optionalMetric, costPerResult, clickThroughRate, campaignPeriodValid, metricValid, sumKnown, summarizeCampaigns, resultMetricsFor, type MarketingCampaign } from './marketingCampaigns';
+import { optionalMetric, costPerResult, clickThroughRate, campaignPeriodValid, metricValid, sumKnown, summarizeCampaigns, resultMetricsFor, campaignObjectives, type MarketingCampaign } from './marketingCampaigns';
 const row: MarketingCampaign = { id:'1', name:'Campanha', start_date:'2026-10-01', end_date:null, channel:'Meta Ads', objective:'signups', result_metric:'Cadastros concluídos', spend:200, results:10, revenue:null, reach:null, impressions:1000, clicks:20, notes:null };
 describe('campaign metrics and periods', () => {
   it('stores omitted numbers as null, not zero', () => { expect(optionalMetric('')).toBeNull(); expect(optionalMetric('0')).toBe(0); });
