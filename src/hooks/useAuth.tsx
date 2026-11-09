@@ -3,6 +3,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { markSessionVisited } from "@/lib/sessionVisit";
 import { captureAttribution, flushAttribution } from "@/lib/attribution";
+import { trackChatGptSignup } from "@/lib/chatgptAdsPixel";
 
 interface AuthContextType {
   user: User | null;
@@ -25,7 +26,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       setLoading(false);
       if (session?.user && (event === "SIGNED_IN" || event === "INITIAL_SESSION")) {
-        setTimeout(() => { void flushAttribution(); }, 0);
+        const u = session.user;
+        setTimeout(() => { void flushAttribution(); trackChatGptSignup(u); }, 0);
       }
     });
 
