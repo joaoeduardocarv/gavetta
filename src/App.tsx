@@ -10,6 +10,7 @@ import { DrawerProvider } from "@/contexts/DrawerContext";
 import { AuthProvider } from "@/hooks/useAuth";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
+import MeuOscar from "@/pages/MeuOscar";
 import { useMigrateIncompleteContent } from "@/hooks/useMigrateIncompleteContent";
 import { GlobalRatingDialog } from "@/components/GlobalRatingDialog";
 import { OnboardingDialog } from "@/components/OnboardingDialog";
@@ -106,6 +107,7 @@ const App = () => (
                     <Route path="/s/:tmdbId" element={<SharePage forcedType="tv" />} />
                     <Route path="/share/:type/:tmdbId" element={<LegacyShareRedirect />} />
                     <Route path="/admin/signup-debug" element={<ProtectedRoute><AdminSignupDebug /></ProtectedRoute>} />
+                    <Route path="/meu-oscar-2027" element={<AdminRoute><MeuOscar /></AdminRoute>} />
                     <Route path="/admin/*" element={<AdminRoute><Admin /></AdminRoute>} />
                     {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                     <Route path="*" element={<NotFound />} />

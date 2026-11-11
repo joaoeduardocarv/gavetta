@@ -8,6 +8,7 @@ import { Search as SearchIcon, Film, Tv, Loader2, X, User } from "lucide-react";
 import { ContentCard } from "@/components/ContentCard";
 import { ContentDetailDialog } from "@/components/ContentDetailDialog";
 import { DestinyDrawerCard } from "@/components/DestinyDrawerCard";
+import { OscarEntryButton } from "@/components/oscar/OscarEntryButton";
 import { DestinyDrawerDialog } from "@/components/DestinyDrawerDialog";
 import { Content } from "@/lib/mockData";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -427,6 +428,7 @@ export default function Search() {
 
         {/* Gavetta Mágica */}
         <DestinyDrawerCard onClick={() => setDestinyOpen(true)} />
+        <OscarEntryButton />
 
         {/* Person suggestions — shown inline above results */}
         {!selectedPerson && personSuggestions.length > 0 && !isLoading && (
