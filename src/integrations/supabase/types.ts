@@ -561,6 +561,213 @@ export type Database = {
         }
         Relationships: []
       }
+      oscar_ballots: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          edition_id: string
+          id: string
+          is_public: boolean
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          edition_id: string
+          id?: string
+          is_public?: boolean
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          edition_id?: string
+          id?: string
+          is_public?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oscar_ballots_edition_id_fkey"
+            columns: ["edition_id"]
+            isOneToOne: false
+            referencedRelation: "oscar_editions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oscar_ballots_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oscar_categories: {
+        Row: {
+          created_at: string
+          edition_id: string
+          id: string
+          is_major: boolean
+          name: string
+          nominee_type: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          edition_id: string
+          id?: string
+          is_major?: boolean
+          name: string
+          nominee_type?: string
+          sort_order: number
+        }
+        Update: {
+          created_at?: string
+          edition_id?: string
+          id?: string
+          is_major?: boolean
+          name?: string
+          nominee_type?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oscar_categories_edition_id_fkey"
+            columns: ["edition_id"]
+            isOneToOne: false
+            referencedRelation: "oscar_editions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oscar_editions: {
+        Row: {
+          ceremony_date: string | null
+          created_at: string
+          id: string
+          mode: string
+          year: number
+        }
+        Insert: {
+          ceremony_date?: string | null
+          created_at?: string
+          id?: string
+          mode?: string
+          year: number
+        }
+        Update: {
+          ceremony_date?: string | null
+          created_at?: string
+          id?: string
+          mode?: string
+          year?: number
+        }
+        Relationships: []
+      }
+      oscar_nominees: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          image_url: string | null
+          is_winner: boolean
+          person_name: string | null
+          title: string | null
+          tmdb_id: number | null
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_winner?: boolean
+          person_name?: string | null
+          title?: string | null
+          tmdb_id?: number | null
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_winner?: boolean
+          person_name?: string | null
+          title?: string | null
+          tmdb_id?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oscar_nominees_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "oscar_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      oscar_picks: {
+        Row: {
+          ballot_id: string
+          category_id: string
+          free_pick: Json | null
+          id: string
+          should_win_nominee_id: string | null
+          snub: Json | null
+          updated_at: string
+          will_win_nominee_id: string | null
+        }
+        Insert: {
+          ballot_id: string
+          category_id: string
+          free_pick?: Json | null
+          id?: string
+          should_win_nominee_id?: string | null
+          snub?: Json | null
+          updated_at?: string
+          will_win_nominee_id?: string | null
+        }
+        Update: {
+          ballot_id?: string
+          category_id?: string
+          free_pick?: Json | null
+          id?: string
+          should_win_nominee_id?: string | null
+          snub?: Json | null
+          updated_at?: string
+          will_win_nominee_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "oscar_picks_ballot_id_fkey"
+            columns: ["ballot_id"]
+            isOneToOne: false
+            referencedRelation: "oscar_ballots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oscar_picks_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "oscar_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oscar_picks_should_win_nominee_id_fkey"
+            columns: ["should_win_nominee_id"]
+            isOneToOne: false
+            referencedRelation: "oscar_nominees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "oscar_picks_will_win_nominee_id_fkey"
+            columns: ["will_win_nominee_id"]
+            isOneToOne: false
+            referencedRelation: "oscar_nominees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_selected_at: string | null
