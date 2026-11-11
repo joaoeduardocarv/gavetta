@@ -5,10 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { searchMovies, searchPerson, getTMDBImageUrl, getTMDBProfileUrl } from "@/lib/tmdb";
 import { toast } from "sonner";
+import { SKIPPED_PICK, isSkipped, type OscarPick } from "@/lib/oscarBallot";
 import hero from "@/assets/oscar-gala-hero.jpg";
 
 type Category = { id: string; name: string; sort_order: number; is_major: boolean; nominee_type: string };
-type FreePick = { kind: "film" | "person"; tmdb_id: number; title: string; image: string | null };
+type FreePick = OscarPick;
 type Option = FreePick & { sub?: string };
 
 const YEAR = "2026";
@@ -70,7 +71,7 @@ export default function MeuOscar() {
 
   const choose = async (cat: Category, opt: Option) => {
     if (!ballotId) return;
-    const pick: FreePick = { kind: opt.kind, tmdb_id: opt.tmdb_id, title: opt.title, image: opt.image };
+    const pick: FreePick = isSkipped(opt) ? SKIPPED_PICK : { kind: opt.kind, tmdb_id: opt.tmdb_id, title: opt.title, image: opt.image };
     const prev = picks[cat.id];
     setPicks((p) => ({ ...p, [cat.id]: pick }));
     const { error } = await supabase.from("oscar_picks").upsert(
@@ -86,6 +87,7 @@ export default function MeuOscar() {
   };
 
   const done = Object.keys(picks).length;
+  const skippedCount = Object.values(picks).filter(isSkipped).length;
   const next = () => setStep((s) => { if (s >= cats.length - 1) { finish(); return s; } return s + 1; });
   const finish = async () => {
     if (ballotId && done >= cats.length) await supabase.from("oscar_ballots").update({ completed_at: new Date().toISOString() }).eq("id", ballotId);
@@ -125,11 +127,11 @@ export default function MeuOscar() {
             {cats.map((c, i) => {
               const p = picks[c.id];
               return (
-                <button key={c.id} onClick={() => { setStep(i); setView("wizard"); }} className={`gala-card flex items-center gap-3 rounded-lg p-3 text-left ${c.is_major ? "sm:col-span-2" : ""} ${p ? "gala-selected" : ""}`}>
+                <button key={c.id} onClick={() => { setStep(i); setView("wizard"); }} className={`gala-card flex items-center gap-3 rounded-lg p-3 text-left ${c.is_major ? "sm:col-span-2" : ""} ${p && !isSkipped(p) ? "gala-selected" : ""}`}>
                   <Thumb src={p?.image ?? null} kind={p?.kind ?? "film"} size={c.is_major ? "lg" : "sm"} />
                   <div className="min-w-0">
                     <p className={`gala-serif ${c.is_major ? "text-base text-[hsl(var(--gala-gold-soft))]" : "text-sm"}`}>{c.name}</p>
-                    <p className={`truncate text-sm ${p ? "" : "gala-muted italic"}`}>{p?.title ?? "Ainda sem escolha"}</p>
+                    <p className={`truncate text-sm ${p && !isSkipped(p) ? "" : "gala-muted italic"}`}>{p ? (isSkipped(p) ? "Não vi · fica fora da imagem" : p.title) : "Ainda sem escolha"}</p>
                   </div>
                 </button>
               );
@@ -143,7 +145,7 @@ export default function MeuOscar() {
         <section className="relative mx-auto flex max-w-md flex-col items-center px-6 pt-16 text-center">
           <Sparkles className="h-10 w-10 text-[hsl(var(--gala-gold))]" />
           <h2 className="gala-serif gala-gold-text mt-4 text-3xl font-semibold">{done >= cats.length ? "Sua cédula está pronta" : "Cédula salva"}</h2>
-          <p className="gala-muted mt-3 text-sm">{done} de {cats.length} categorias escolhidas. Em breve você poderá gerar imagens para compartilhar.</p>
+          <p className="gala-muted mt-3 text-sm">{done - skippedCount} de {cats.length} categorias escolhidas{skippedCount > 0 ? ` · ${skippedCount} marcadas como "Não vi" ficarão fora da imagem` : ""}. Em breve você poderá gerar imagens para compartilhar.</p>
           <button onClick={() => setView("grid")} className="gala-gold-btn mt-8 w-full rounded-full py-3 font-semibold">Revisar cédula</button>
         </section>
       )}
@@ -221,7 +223,13 @@ function Wizard({ cat, index, total, pick, watched, onChoose, onPrev, onSkip, on
       </div>
       <p className="gala-muted mt-3 text-xs uppercase tracking-[0.3em]">Categoria {index + 1} de {total}{cat.is_major ? " · principal" : ""}</p>
       <h2 className={`gala-serif mt-1 ${cat.is_major ? "gala-gold-text text-3xl font-semibold" : "text-2xl"}`}>{cat.name}</h2>
-      {pick && <p className="mt-2 text-sm">Sua escolha: <span className="text-[hsl(var(--gala-gold))]">{pick.title}</span></p>}
+      {pick && (isSkipped(pick)
+        ? <p className="gala-muted mt-2 text-sm italic">Marcada como "Não vi" — não vai aparecer na imagem de compartilhamento.</p>
+        : <p className="mt-2 text-sm">Sua escolha: <span className="text-[hsl(var(--gala-gold))]">{pick.title}</span></p>)}
+      <button onClick={() => onChoose(SKIPPED_PICK)} aria-pressed={isSkipped(pick)}
+        className={`gala-card mt-4 rounded-full px-4 py-1.5 text-xs ${isSkipped(pick) ? "gala-selected text-[hsl(var(--gala-gold))]" : "gala-muted"}`}>
+        Não vi / pular esta categoria
+      </button>
 
       <label className="gala-card mt-5 flex items-center gap-2 rounded-full px-4 py-2.5">
         <SearchIcon className="gala-muted h-4 w-4" />
