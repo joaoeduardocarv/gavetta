@@ -9,3 +9,4 @@
 - The admin area (/admin/*) is its own sidebar app shell; every admin read/action goes through has_role-checked SECURITY DEFINER RPCs so nothing relies on client-side checks.
 - Marketing campaigns store nullable metrics and overlapping date ranges; historical scenarios group by channel, objective and measured result, using only paired spend/results, never causal MMM claims or allocation of lifetime totals to individual weeks.
 - Signup UTM attribution is first-touch (30 days) and stored server-side only for accounts created in the last 48h, so existing users are never credited to later campaigns.
+- Meu Oscar 2027 is in private development: its tables allow only admins (RLS via has_role) and its UI lives under /admin/oscar, so nothing leaks to regular users before launch.

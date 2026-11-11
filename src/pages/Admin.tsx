@@ -1,5 +1,5 @@
 import { NavLink, Route, Routes, useLocation, Link } from "react-router-dom";
-import { LayoutDashboard, Users, Megaphone, ShieldAlert, ArrowLeft, BarChart3 } from "lucide-react";
+import { LayoutDashboard, Users, Megaphone, ShieldAlert, ArrowLeft, BarChart3, Trophy } from "lucide-react";
 import {
   Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger, useSidebar,
@@ -10,11 +10,13 @@ import AdminUserDetail from "./admin/AdminUserDetail";
 import AdminNotices from "./admin/AdminNotices";
 import AdminModeration from "./admin/AdminModeration";
 import AdminMarketing from "./admin/AdminMarketing";
+import AdminOscar from "./admin/AdminOscar";
 
 const items = [
   { title: "Visão geral", url: "/admin", icon: LayoutDashboard, exact: true },
   { title: "Usuários", url: "/admin/usuarios", icon: Users },
   { title: "Marketing", url: "/admin/marketing", icon: BarChart3 },
+  { title: "Meu Oscar 2027", url: "/admin/oscar", icon: Trophy },
   { title: "Avisos", url: "/admin/avisos", icon: Megaphone },
   { title: "Moderação", url: "/admin/moderacao", icon: ShieldAlert },
 ];
@@ -77,6 +79,7 @@ export default function Admin() {
               <Route path="usuarios" element={<AdminUsers />} />
               <Route path="usuarios/:id" element={<AdminUserDetail />} />
               <Route path="marketing" element={<AdminMarketing />} />
+              <Route path="oscar" element={<AdminOscar />} />
               <Route path="avisos" element={<AdminNotices />} />
               <Route path="moderacao" element={<AdminModeration />} />
             </Routes>
