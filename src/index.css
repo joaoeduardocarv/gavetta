@@ -115,3 +115,34 @@ All colors MUST be HSL.
     font-feature-settings: "rlig" 1, "calt" 1;
   }
 }
+
+/* Meu Oscar 2027 — gala branding (own identity, always dark) */
+.gala {
+  --gala-bg: 30 10% 4%;
+  --gala-surface: 35 12% 8%;
+  --gala-line: 42 45% 30%;
+  --gala-gold: 43 78% 56%;
+  --gala-gold-soft: 44 70% 74%;
+  --gala-text: 40 30% 92%;
+  --gala-muted: 38 12% 62%;
+  background: hsl(var(--gala-bg));
+  color: hsl(var(--gala-text));
+}
+.gala-serif { font-family: "Playfair Display", Georgia, serif; }
+.gala-gold-text {
+  background: linear-gradient(100deg, hsl(var(--gala-gold)) 0%, hsl(var(--gala-gold-soft)) 45%, hsl(var(--gala-gold)) 60%, hsl(38 70% 40%) 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: gala-sheen 4s linear infinite;
+}
+.gala-gold-btn {
+  background: linear-gradient(135deg, hsl(38 70% 42%), hsl(var(--gala-gold)) 45%, hsl(var(--gala-gold-soft)) 55%, hsl(38 70% 42%));
+  color: hsl(var(--gala-bg));
+  box-shadow: 0 0 24px -4px hsl(var(--gala-gold) / 0.55);
+}
+.gala-card { background: hsl(var(--gala-surface)); border: 1px solid hsl(var(--gala-line) / 0.6); }
+.gala-selected { border-color: hsl(var(--gala-gold)); box-shadow: 0 0 0 1px hsl(var(--gala-gold)), 0 0 28px -6px hsl(var(--gala-gold) / 0.8); }
+.gala-muted { color: hsl(var(--gala-muted)); }
+.gala-frame { border: 1px solid hsl(var(--gala-gold) / 0.5); outline: 1px solid hsl(var(--gala-gold) / 0.2); outline-offset: 4px; }
+@keyframes gala-sheen { to { background-position: 200% center; } }
+@media (prefers-reduced-motion: reduce) { .gala-gold-text { animation: none; } }
