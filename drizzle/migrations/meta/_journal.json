@@ -78,6 +78,13 @@
       "when": 1792776810342,
       "tag": "0010_campaign_profile_visit_and_reach",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1794399045618,
+      "tag": "0011_oscar_2027_private",
+      "breakpoints": true
     }
   ]
 }
