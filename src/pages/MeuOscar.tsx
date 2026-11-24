@@ -5,12 +5,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { searchMovies, searchPerson, getTMDBImageUrl, getTMDBProfileUrl } from "@/lib/tmdb";
 import { toast } from "sonner";
-import { SKIPPED_PICK, isSkipped, type OscarPick } from "@/lib/oscarBallot";
+import { SKIPPED_PICK, isOptionSelected, isSkipped, type OscarPick } from "@/lib/oscarBallot";
 import hero from "@/assets/oscar-gala-hero.jpg";
 
 type Category = { id: string; name: string; sort_order: number; is_major: boolean; nominee_type: string };
 type FreePick = OscarPick;
-type Option = FreePick & { sub?: string };
+type Option = FreePick;
+type NomineeRow = { id: string; category_id: string; tmdb_id: number | null; title: string | null; person_name: string | null; image_url: string | null };
 
 const YEAR = "2026";
 
@@ -31,6 +32,7 @@ export default function MeuOscar() {
   const [cats, setCats] = useState<Category[]>([]);
   const [ballotId, setBallotId] = useState<string | null>(null);
   const [picks, setPicks] = useState<Record<string, FreePick>>({});
+  const [nomineesByCat, setNomineesByCat] = useState<Record<string, Option[]>>({});
   const [watched, setWatched] = useState<Option[]>([]);
   const [view, setView] = useState<"intro" | "wizard" | "grid" | "done">("intro");
   const [step, setStep] = useState(0);
@@ -43,7 +45,30 @@ export default function MeuOscar() {
         if (e1) throw e1;
         setCeremony(ed.ceremony_date);
         const { data: cs } = await supabase.from("oscar_categories").select("id,name,sort_order,is_major,nominee_type").eq("edition_id", ed.id).order("sort_order");
-        setCats((cs ?? []) as Category[]);
+        const catList = (cs ?? []) as Category[];
+        setCats(catList);
+        if (catList.length > 0) {
+          const { data: noms } = await supabase
+            .from("oscar_nominees")
+            .select("id,category_id,tmdb_id,title,person_name,image_url")
+            .in("category_id", catList.map((c) => c.id))
+            .order("created_at");
+          const typeByCat = Object.fromEntries(catList.map((c) => [c.id, c.nominee_type]));
+          const grouped: Record<string, Option[]> = {};
+          ((noms ?? []) as NomineeRow[]).forEach((n) => {
+            const isPerson = typeByCat[n.category_id] === "person";
+            const opt: Option = {
+              kind: isPerson ? "person" : "film",
+              tmdb_id: n.tmdb_id ?? 0,
+              nominee_id: n.id,
+              title: isPerson ? (n.person_name || n.title || "") : (n.title || n.person_name || ""),
+              sub: isPerson ? (n.title || null) : (n.person_name || null),
+              image: n.image_url,
+            };
+            (grouped[n.category_id] ??= []).push(opt);
+          });
+          setNomineesByCat(grouped);
+        }
         let { data: b } = await supabase.from("oscar_ballots").select("id").eq("edition_id", ed.id).eq("user_id", user.id).maybeSingle();
         if (!b) {
           const r = await supabase.from("oscar_ballots").insert({ edition_id: ed.id, user_id: user.id }).select("id").single();
@@ -71,11 +96,13 @@ export default function MeuOscar() {
 
   const choose = async (cat: Category, opt: Option) => {
     if (!ballotId) return;
-    const pick: FreePick = isSkipped(opt) ? SKIPPED_PICK : { kind: opt.kind, tmdb_id: opt.tmdb_id, title: opt.title, image: opt.image };
+    const pick: FreePick = isSkipped(opt)
+      ? SKIPPED_PICK
+      : { kind: opt.kind, tmdb_id: opt.tmdb_id, title: opt.title, image: opt.image, nominee_id: opt.nominee_id ?? null, sub: opt.sub ?? null };
     const prev = picks[cat.id];
     setPicks((p) => ({ ...p, [cat.id]: pick }));
     const { error } = await supabase.from("oscar_picks").upsert(
-      { ballot_id: ballotId, category_id: cat.id, free_pick: pick as any, updated_at: new Date().toISOString() },
+      { ballot_id: ballotId, category_id: cat.id, will_win_nominee_id: isSkipped(opt) ? null : (opt.nominee_id ?? null), free_pick: pick as any, updated_at: new Date().toISOString() },
       { onConflict: "ballot_id,category_id" },
     );
     if (error) {
@@ -115,7 +142,7 @@ export default function MeuOscar() {
       {view === "intro" && <Intro ceremony={ceremony} done={done} total={cats.length} onStart={() => { setStep(Math.min(done, cats.length - 1)); setView("wizard"); }} onGrid={() => setView("grid")} />}
 
       {view === "wizard" && cats[step] && (
-        <Wizard key={cats[step].id} cat={cats[step]} index={step} total={cats.length} pick={picks[cats[step].id]} watched={watched}
+        <Wizard key={cats[step].id} cat={cats[step]} index={step} total={cats.length} pick={picks[cats[step].id]} nominees={nomineesByCat[cats[step].id] ?? []} watched={watched}
           onChoose={(o) => choose(cats[step], o)} onPrev={() => setStep((s) => Math.max(0, s - 1))} onSkip={next} onGrid={() => setView("grid")} />
       )}
 
@@ -131,7 +158,7 @@ export default function MeuOscar() {
                   <Thumb src={p?.image ?? null} kind={p?.kind ?? "film"} size={c.is_major ? "lg" : "sm"} />
                   <div className="min-w-0">
                     <p className={`gala-serif ${c.is_major ? "text-base text-[hsl(var(--gala-gold-soft))]" : "text-sm"}`}>{c.name}</p>
-                    <p className={`truncate text-sm ${p && !isSkipped(p) ? "" : "gala-muted italic"}`}>{p ? (isSkipped(p) ? "Não vi · fica fora da imagem" : p.title) : "Ainda sem escolha"}</p>
+                    <p className={`truncate text-sm ${p && !isSkipped(p) ? "" : "gala-muted italic"}`}>{p ? (isSkipped(p) ? "Não vi · fica fora da imagem" : (p.kind === "person" && p.sub ? `${p.title} · ${p.sub}` : p.title)) : "Ainda sem escolha"}</p>
                   </div>
                 </button>
               );
@@ -184,8 +211,8 @@ function Intro({ ceremony, done, total, onStart, onGrid }: { ceremony: string | 
   );
 }
 
-function Wizard({ cat, index, total, pick, watched, onChoose, onPrev, onSkip, onGrid }: {
-  cat: Category; index: number; total: number; pick?: FreePick; watched: Option[];
+function Wizard({ cat, index, total, pick, nominees, watched, onChoose, onPrev, onSkip, onGrid }: {
+  cat: Category; index: number; total: number; pick?: FreePick; nominees: Option[]; watched: Option[];
   onChoose: (o: Option) => void; onPrev: () => void; onSkip: () => void; onGrid: () => void;
 }) {
   const isPerson = cat.nominee_type === "person";
@@ -213,7 +240,12 @@ function Wizard({ cat, index, total, pick, watched, onChoose, onPrev, onSkip, on
     return () => window.clearTimeout(timer.current);
   }, [q, isPerson]);
 
-  const list = results ?? (isPerson ? [] : watched);
+  const extraWatched = useMemo(() => {
+    if (isPerson) return [];
+    const seen = new Set(nominees.map((n) => n.tmdb_id).filter(Boolean));
+    return watched.filter((w) => !seen.has(w.tmdb_id));
+  }, [isPerson, nominees, watched]);
+  const list = results ?? nominees;
   const pct = useMemo(() => ((index + 1) / total) * 100, [index, total]);
 
   return (
@@ -225,7 +257,7 @@ function Wizard({ cat, index, total, pick, watched, onChoose, onPrev, onSkip, on
       <h2 className={`gala-serif mt-1 ${cat.is_major ? "gala-gold-text text-3xl font-semibold" : "text-2xl"}`}>{cat.name}</h2>
       {pick && (isSkipped(pick)
         ? <p className="gala-muted mt-2 text-sm italic">Marcada como "Não vi" — não vai aparecer na imagem de compartilhamento.</p>
-        : <p className="mt-2 text-sm">Sua escolha: <span className="text-[hsl(var(--gala-gold))]">{pick.title}</span></p>)}
+        : <p className="mt-2 text-sm">Sua escolha: <span className="text-[hsl(var(--gala-gold))]">{pick.title}{pick.kind === "person" && pick.sub ? ` (${pick.sub})` : ""}</span></p>)}
       <button onClick={() => onChoose(SKIPPED_PICK)} aria-pressed={isSkipped(pick)}
         className={`gala-card mt-4 rounded-full px-4 py-1.5 text-xs ${isSkipped(pick) ? "gala-selected text-[hsl(var(--gala-gold))]" : "gala-muted"}`}>
         Não vi / pular esta categoria
@@ -237,27 +269,51 @@ function Wizard({ cat, index, total, pick, watched, onChoose, onPrev, onSkip, on
         {searching && <Loader2 className="h-4 w-4 animate-spin text-[hsl(var(--gala-gold))]" />}
       </label>
 
-      {!results && !isPerson && watched.length > 0 && <p className="gala-muted mt-5 text-xs">Filmes de {YEAR} que você já assistiu</p>}
-      {list.length === 0 ? (
+      {!results && nominees.length > 0 && <p className="gala-muted mt-5 text-xs">Principais cotados ({nominees.length})</p>}
+      {list.length === 0 && extraWatched.length === 0 ? (
         <p className="gala-muted mt-8 text-center text-sm">
           {results ? "Nada encontrado. Tente outro nome." : isPerson ? "Digite um nome para buscar." : `Busque um filme lançado em ${YEAR}.`}
         </p>
       ) : (
-        <div className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4">
-          {list.map((o) => {
-            const sel = pick?.tmdb_id === o.tmdb_id && pick.kind === o.kind;
-            return (
-              <button key={`${o.kind}-${o.tmdb_id}`} onClick={() => onChoose(o)} aria-pressed={sel}
-                className={`gala-card overflow-hidden rounded-lg text-left transition-transform active:scale-95 ${sel ? "gala-selected" : ""}`}>
-                <Thumb src={o.image} kind={o.kind} size="fill" />
-                <div className="p-2">
-                  <p className="line-clamp-2 text-xs">{o.title}</p>
-                  {o.sub && <p className="gala-muted text-[10px]">{o.sub}</p>}
-                </div>
-              </button>
-            );
-          })}
-        </div>
+        <>
+          {list.length > 0 && (
+            <div className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4">
+              {list.map((o) => {
+                const sel = isOptionSelected(pick, o);
+                return (
+                  <button key={o.nominee_id ?? `${o.kind}-${o.tmdb_id}-${o.title}`} onClick={() => onChoose(o)} aria-pressed={sel}
+                    className={`gala-card overflow-hidden rounded-lg text-left transition-transform active:scale-95 ${sel ? "gala-selected" : ""}`}>
+                    <Thumb src={o.image} kind={o.kind} size="fill" />
+                    <div className="p-2">
+                      <p className="line-clamp-2 text-xs">{o.title}</p>
+                      {o.sub && <p className="gala-muted line-clamp-1 text-[10px]">{o.sub}</p>}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          {!results && extraWatched.length > 0 && (
+            <>
+              <p className="gala-muted mt-6 text-xs">Filmes de {YEAR} que você já assistiu</p>
+              <div className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4">
+                {extraWatched.map((o) => {
+                  const sel = isOptionSelected(pick, o);
+                  return (
+                    <button key={`${o.kind}-${o.tmdb_id}`} onClick={() => onChoose(o)} aria-pressed={sel}
+                      className={`gala-card overflow-hidden rounded-lg text-left transition-transform active:scale-95 ${sel ? "gala-selected" : ""}`}>
+                      <Thumb src={o.image} kind={o.kind} size="fill" />
+                      <div className="p-2">
+                        <p className="line-clamp-2 text-xs">{o.title}</p>
+                        {o.sub && <p className="gala-muted line-clamp-1 text-[10px]">{o.sub}</p>}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </>
       )}
 
       <div className="mt-8 flex items-center justify-between gap-2">
