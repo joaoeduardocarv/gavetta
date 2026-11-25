@@ -92,6 +92,20 @@
       "when": 1794486903076,
       "tag": "0012_restrict_episode_transcripts",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1795626064733,
+      "tag": "0013_gavetta_plus_billing_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1795626087888,
+      "tag": "0014_revoke_anon_is_premium",
+      "breakpoints": true
     }
   ]
 }
