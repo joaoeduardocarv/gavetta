@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { trackEvent } from "@/hooks/useAnalytics";
 import type { Tables } from "@/integrations/supabase/types";
 
 export type Subscription = Tables<"subscriptions">;
@@ -45,7 +46,16 @@ export function useIsPremium() {
   useEffect(() => {
     if (!userId) return;
 
-    const invalidate = () => {
+    const handleChange = (payload: {
+      new?: Partial<Subscription>;
+      old?: Partial<Subscription>;
+    }) => {
+      if (payload.new?.status === "active" && payload.old?.status !== "active") {
+        trackEvent("checkout_success", {
+          plan: payload.new.plan ?? "unknown",
+          method: payload.new.payment_method ?? "unknown",
+        });
+      }
       queryClient.invalidateQueries({ queryKey: ["premium-status", userId] });
     };
 
@@ -59,7 +69,7 @@ export function useIsPremium() {
           table: "subscriptions",
           filter: `user_id=eq.${userId}`,
         },
-        invalidate,
+        handleChange,
       )
       .on(
         "postgres_changes",
@@ -69,7 +79,7 @@ export function useIsPremium() {
           table: "subscriptions",
           filter: `user_id=eq.${userId}`,
         },
-        invalidate,
+        handleChange,
       )
       .subscribe();
 

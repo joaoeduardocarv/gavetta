@@ -11,3 +11,4 @@
 - Signup UTM attribution is first-touch (30 days) and stored server-side only for accounts created in the last 48h, so existing users are never credited to later campaigns.
 - Meu Oscar 2027 is in private development: its tables allow only admins (RLS via has_role) and its UI lives under /admin/oscar, so nothing leaks to regular users before launch.
 - Status do Gavetta+ só é alterado por edge functions com service role a partir de webhooks do gateway; o cliente apenas lê, e toda checagem de acesso usa is_premium().
+- Asaas billing webhooks validate `asaas-access-token` against `ASAAS_WEBHOOK_TOKEN`, deduplicate by `provider_event_id` in `billing_events`, always respond 200 while logging errors, and are backed by the daily `billing-reconcile` cron job.
