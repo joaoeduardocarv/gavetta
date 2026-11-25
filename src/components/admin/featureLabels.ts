@@ -9,6 +9,8 @@ export const FEATURE_LABELS: Record<string, string> = {
   recommendation: "Recomendação enviada",
   import: "Importar de link",
   magic_drawer: "Gavetta Mágica",
+  premium_grant_granted: "Cortesia Gavetta+ concedida",
+  premium_grant_revoked: "Cortesia Gavetta+ revogada",
 };
 
 export const DRAWER_LABELS: Record<string, string> = {

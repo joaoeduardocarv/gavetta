@@ -106,6 +106,13 @@
       "when": 1795626087888,
       "tag": "0014_revoke_anon_is_premium",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1795626553148,
+      "tag": "0015_admin_gavetta_plus_rpcs",
+      "breakpoints": true
     }
   ]
 }

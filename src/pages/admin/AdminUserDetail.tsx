@@ -12,12 +12,14 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { toast } from "sonner";
 import { UserActivityDialog } from "@/components/admin/UserActivityDialog";
 import { DRAWER_LABELS } from "@/components/admin/featureLabels";
+import { AdminPremiumSection, type AdminPremiumInfo } from "@/components/admin/AdminPremiumSection";
 
 interface Detail {
   profile: { id: string; username: string | null; handle: string | null; avatar_url: string | null; created_at: string; is_public: boolean; onboarded_at: string | null } | null;
   account: { email: string | null; last_sign_in_at: string | null; email_confirmed_at: string | null; providers: string[] } | null;
   block: { reason: string | null; at: string } | null;
   is_admin: boolean;
+  premium?: AdminPremiumInfo | null;
   counts: Record<string, number | null>;
   drawers: { drawer_id: string; name: string; total: number }[];
   top_rated: { title: string | null; rating: number; type: string; at: string }[];
@@ -116,6 +118,8 @@ export default function AdminUserDetail() {
           ))}
         </div>
       </div>
+
+      <AdminPremiumSection userId={p.id} premium={data.premium} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
         {COUNT_LABELS.map(([k, l]) => (

@@ -1310,6 +1310,10 @@ export type Database = {
         Args: { _comment_id: string }
         Returns: undefined
       }
+      admin_grant_premium: {
+        Args: { _duration: string; _reason: string; _user_id: string }
+        Returns: string
+      }
       admin_marketing_delete: { Args: { _id: string }; Returns: undefined }
       admin_marketing_list: {
         Args: { _from: string; _to: string }
@@ -1342,6 +1346,10 @@ export type Database = {
         Returns: string
       }
       admin_recent_comments: { Args: { _limit?: number }; Returns: Json }
+      admin_revoke_premium: {
+        Args: { _reason?: string; _user_id: string }
+        Returns: number
+      }
       admin_send_notice: {
         Args: { _message: string; _title: string; _user_ids?: string[] }
         Returns: number
