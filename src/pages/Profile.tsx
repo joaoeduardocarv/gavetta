@@ -8,14 +8,17 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
-import { User, Mail, Calendar, Globe, Lock, Bell, Camera, LogOut, ChevronRight, Shield, Share2, Eye, EyeOff } from "lucide-react";
+import { User, Mail, Calendar, Globe, Lock, Bell, Camera, LogOut, ChevronRight, Shield, Share2, Eye, EyeOff, Sparkles } from "lucide-react";
 import { AvatarPickerDialog, getAvatarById } from "@/components/AvatarPickerDialog";
 import { EditProfileDialog } from "@/components/EditProfileDialog";
 import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
 import { ProfileStats } from "@/components/ProfileStats";
 import { NotificationSettingsDialog } from "@/components/NotificationSettingsDialog";
+import { PremiumBadge } from "@/components/premium/PremiumBadge";
 import { useAuth } from "@/hooks/useAuth";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { useIsPremium } from "@/hooks/useIsPremium";
+import { useGavettaPlusEnabled } from "@/lib/gavettaPlus";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -31,8 +34,16 @@ export default function Profile() {
   const [isPublicProfile, setIsPublicProfile] = useState(false);
   const { user, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
+  const { enabled: gavettaPlusEnabled } = useGavettaPlusEnabled();
+  const { isPremium } = useIsPremium();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (window.location.hash === "#estatisticas") {
+      document.getElementById("estatisticas")?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, []);
 
   useEffect(() => {
     async function loadProfile() {
@@ -139,7 +150,9 @@ export default function Profile() {
           <Separator />
 
           {/* Estatísticas */}
-          <ProfileStats />
+          <div id="estatisticas">
+            <ProfileStats />
+          </div>
 
           <Separator />
 
@@ -188,6 +201,27 @@ export default function Profile() {
           {/* Configurações */}
           <div className="bg-card rounded-lg p-6 space-y-1">
             <h3 className="font-heading font-bold text-foreground mb-4">Configurações</h3>
+
+            {gavettaPlusEnabled && (
+              <button
+                onClick={() => navigate("/gavetta-plus")}
+                className="w-full flex items-center justify-between py-3 px-1 rounded-md hover:bg-muted/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <Sparkles className="h-4 w-4 text-accent" />
+                  <div className="text-left">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-foreground">Gavetta+</p>
+                      {isPremium && <PremiumBadge showIcon={false} />}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {isPremium ? "Gerenciar sua assinatura" : "Mais do seu cinema, sem anúncios"}
+                    </p>
+                  </div>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+            )}
 
             <button
               onClick={() => setIsChangePasswordOpen(true)}

@@ -103,6 +103,16 @@ All colors MUST be HSL.
   .animate-drawer-open { animation: drawer-open 0.9s ease-out; }
   .animate-gold-shimmer { animation: gold-shimmer 1.6s ease-in-out infinite; }
   .animate-gold-pulse-glow { animation: gold-pulse-glow 2.4s ease-in-out infinite; }
+
+  @keyframes confetti-fall {
+    0% { transform: translateY(-12px) rotate(0deg); opacity: 0; }
+    15% { opacity: 0.9; }
+    100% { transform: translateY(110px) rotate(220deg); opacity: 0; }
+  }
+  .animate-confetti-fall { animation: confetti-fall 2.2s ease-out forwards; }
+  @media (prefers-reduced-motion: reduce) {
+    .animate-confetti-fall { animation: none; opacity: 0; }
+  }
 }
 
 @layer base {

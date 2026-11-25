@@ -38,6 +38,7 @@ const SharePage = lazy(() => import("./pages/SharePage"));
 const ImportPage = lazy(() => import("./pages/ImportPage"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const GavettaPlus = lazy(() => import("./pages/GavettaPlus"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -102,6 +103,7 @@ const App = () => (
                     <Route path="/import" element={<AdminRoute><ImportPage /></AdminRoute>} />
                     <Route path="/trending" element={<ProtectedRoute><Trending /></ProtectedRoute>} />
                     <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+                    <Route path="/gavetta-plus" element={<ProtectedRoute><GavettaPlus /></ProtectedRoute>} />
                     <Route path="/u/:username" element={<PublicProfile />} />
                     <Route path="/m/:tmdbId" element={<SharePage forcedType="movie" />} />
                     <Route path="/s/:tmdbId" element={<SharePage forcedType="tv" />} />

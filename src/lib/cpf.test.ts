@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { isValidCpf, stripCpf } from "../../supabase/functions/billing-checkout/cpf";
+import { formatCpf, isValidCpf as isValidClientCpf } from "./cpf";
 
 describe("validação de CPF do billing-checkout", () => {
   it("aceita CPFs válidos com ou sem pontuação", () => {
@@ -19,5 +20,13 @@ describe("validação de CPF do billing-checkout", () => {
     expect(isValidCpf("111.111.111-11")).toBe(false);
     expect(isValidCpf("123456789")).toBe(false);
     expect(isValidCpf("")).toBe(false);
+  });
+
+  it("formata a máscara de CPF progressivamente e valida no cliente", () => {
+    expect(formatCpf("52998224725")).toBe("529.982.247-25");
+    expect(formatCpf("529982")).toBe("529.982");
+    expect(formatCpf("52998224725999")).toBe("529.982.247-25");
+    expect(isValidClientCpf("529.982.247-25")).toBe(true);
+    expect(isValidClientCpf("529.982.247-26")).toBe(false);
   });
 });

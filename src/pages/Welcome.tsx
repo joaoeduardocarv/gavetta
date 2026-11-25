@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { LandingTryIt } from "@/components/landing/LandingTryIt";
 import { trackEvent } from "@/hooks/useAnalytics";
+import { GAVETTA_PLUS_ENABLED } from "@/lib/gavettaPlus";
 
 import {
   Accordion,
@@ -106,7 +107,9 @@ const stats = [
 const faqs = [
   {
     q: "O Gavetta é grátis mesmo?",
-    a: "Sim. 100% grátis e sem cartão de crédito. Crie sua conta, organize filmes e séries e use todos os recursos sem pagar nada.",
+    a: GAVETTA_PLUS_ENABLED
+      ? "O essencial é grátis para sempre. O Gavetta+ é opcional."
+      : "Sim. 100% grátis e sem cartão de crédito. Crie sua conta, organize filmes e séries e use todos os recursos sem pagar nada.",
   },
   {
     q: "Qual a diferença entre o Gavetta e o Letterboxd?",
