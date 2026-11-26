@@ -1,6 +1,48 @@
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { Content } from "@/lib/mockData";
 import { getTMDBImageUrl, mapGenreIdsToNames } from "@/lib/tmdb";
+
+export const FREE_MONTHLY_IMPORT_LIMIT = 5;
+
+export class ImportQuotaError extends Error {
+  readonly code = "IMPORT_QUOTA" as const;
+  readonly used: number;
+  readonly limit: number;
+  readonly resetsAt: string;
+
+  constructor(params: { used: number; limit: number; resetsAt: string }) {
+    super("Você atingiu o limite mensal de importações grátis.");
+    this.name = "ImportQuotaError";
+    this.used = params.used;
+    this.limit = params.limit;
+    this.resetsAt = params.resetsAt;
+  }
+}
+
+export class PodcastPremiumError extends Error {
+  readonly code = "PODCAST_PREMIUM_ONLY" as const;
+
+  constructor(message = "A transcrição de podcasts é exclusiva do Gavetta+.") {
+    super(message);
+    this.name = "PodcastPremiumError";
+  }
+}
+
+export function getCurrentMonthStartIso(now: Date = new Date()): string {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 0, 0, 0, 0)).toISOString();
+}
+
+export async function fetchMonthlyImportUsageCount(userId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from("import_usage")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .gte("created_at", getCurrentMonthStartIso());
+
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
 
 export interface TmdbMatch {
   tmdbId: number;
@@ -34,6 +76,11 @@ export interface ExtractResponse {
   items: ExtractedItem[];
   unmatched?: string[];
   message?: string;
+  quota?: {
+    used: number;
+    limit: number;
+    resets_at: string;
+  };
 }
 
 export type ImportJobStatus =
@@ -88,6 +135,21 @@ export async function extractTitlesFromSource(input: {
   );
 
   if (error) {
+    if (error instanceof FunctionsHttpError) {
+      const parsed = await error.context.json().catch(() => null);
+      if (parsed?.code === "IMPORT_QUOTA") {
+        throw new ImportQuotaError({
+          used: typeof parsed.used === "number" ? parsed.used : FREE_MONTHLY_IMPORT_LIMIT,
+          limit: typeof parsed.limit === "number" ? parsed.limit : FREE_MONTHLY_IMPORT_LIMIT,
+          resetsAt: typeof parsed.resets_at === "string" ? parsed.resets_at : "",
+        });
+      }
+      if (parsed?.code === "PODCAST_PREMIUM_ONLY") {
+        throw new PodcastPremiumError(
+          typeof parsed.error === "string" ? parsed.error : undefined,
+        );
+      }
+    }
     throw new Error(
       error.message?.includes("429")
         ? "Muitas requisições seguidas. Tente de novo em instantes."

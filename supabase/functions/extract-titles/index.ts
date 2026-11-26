@@ -6,9 +6,21 @@ import {
   extractTitles,
   resolveSource,
 } from "../_shared/importCore.ts";
+import {
+  FREE_MONTHLY_IMPORT_LIMIT,
+  evaluateImportQuota,
+  getCurrentMonthWindow,
+  shouldEnforceGavettaPlus,
+} from "../_shared/importQuota.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+const adminClient = () =>
+  createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false },
+  });
 
 const BodySchema = z.object({
   url: z.string().trim().url().max(2000).optional(),
@@ -62,8 +74,64 @@ Deno.serve(async (req) => {
       sourceText = [source.text, text ?? ""].filter(Boolean).join("\n").trim();
     }
 
+    const service = adminClient();
+    const { monthStartIso, resetsAtIso } = getCurrentMonthWindow();
+    const [premiumRes, adminRes, usageRes] = await Promise.all([
+      service.rpc("is_premium", { _user_id: userId }),
+      service.rpc("has_role", { _user_id: userId, _role: "admin" }),
+      service
+        .from("import_usage")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", userId)
+        .gte("created_at", monthStartIso),
+    ]);
+
+    if (premiumRes.error) {
+      console.error("is_premium rpc error", premiumRes.error);
+      return json({ error: "Erro ao verificar assinatura." }, 500);
+    }
+    if (adminRes.error) {
+      console.error("has_role rpc error", adminRes.error);
+      return json({ error: "Erro ao verificar permissões." }, 500);
+    }
+    if (usageRes.error) {
+      console.error("import_usage count error", usageRes.error);
+      return json({ error: "Erro ao verificar cota mensal." }, 500);
+    }
+
+    const isPremium = Boolean(premiumRes.data);
+    const isAdmin = Boolean(adminRes.data);
+    const enforce = shouldEnforceGavettaPlus(isAdmin);
+    const used = usageRes.count ?? 0;
+
     // Podcast com áudio localizado: cria um job e transcreve o episódio inteiro.
     if (audio?.audioUrl) {
+      const podcastDecision = evaluateImportQuota({
+        used,
+        isPremium,
+        enforce,
+        kind: "podcast",
+        resetsAtIso,
+      });
+      if (!podcastDecision.allowed) {
+        return json(
+          {
+            code: podcastDecision.code,
+            error: "A transcrição de podcasts é exclusiva do Gavetta+.",
+          },
+          402,
+        );
+      }
+
+      const { error: usageInsertErr } = await service.from("import_usage").insert({
+        user_id: userId,
+        source_url: url ?? null,
+        kind: "podcast",
+      });
+      if (usageInsertErr) {
+        console.error("import_usage podcast insert error", usageInsertErr);
+      }
+
       const { data: job, error: jobError } = await supabase
         .from("import_jobs")
         .insert({
@@ -102,6 +170,25 @@ Deno.serve(async (req) => {
       console.error("import_jobs insert error", jobError);
     }
 
+    const textDecision = evaluateImportQuota({
+      used,
+      isPremium,
+      enforce,
+      kind: "text",
+      resetsAtIso,
+    });
+    if (!textDecision.allowed && textDecision.code === "IMPORT_QUOTA") {
+      return json(
+        {
+          code: "IMPORT_QUOTA",
+          used: textDecision.used,
+          limit: textDecision.limit,
+          resets_at: textDecision.resets_at,
+        },
+        402,
+      );
+    }
+
     if (sourceText.replace(/\s/g, "").length < 12) {
       return json({
         mode: "text",
@@ -112,6 +199,19 @@ Deno.serve(async (req) => {
         message:
           "Não consegui ler o conteúdo desse link (pode ser privado ou sem legenda). Cole a legenda/descrição do post.",
       });
+    }
+
+    // Registra o uso antes de chamar o modelo de IA (inclui plano B de legenda colada).
+    const { error: usageInsertErr } = await service.from("import_usage").insert({
+      user_id: userId,
+      source_url: url ?? null,
+      kind: "text",
+    });
+    if (usageInsertErr) {
+      console.error("import_usage text insert error", usageInsertErr);
+      if (enforce && !isPremium) {
+        return json({ error: "Não foi possível registrar o uso da cota." }, 500);
+      }
     }
 
     const { titles: rawTitles, error } = await extractTitles(sourceText);
@@ -135,6 +235,11 @@ Deno.serve(async (req) => {
       sourceProvider,
       items,
       unmatched,
+      quota: {
+        used: used + 1,
+        limit: FREE_MONTHLY_IMPORT_LIMIT,
+        resets_at: resetsAtIso,
+      },
     });
   } catch (e) {
     console.error("extract-titles error", e);

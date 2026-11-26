@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { useSearchParams } from "react-router-dom";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
@@ -10,13 +11,21 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ContentCard } from "@/components/ContentCard";
 import { ImportQueueDialog } from "@/components/ImportQueueDialog";
+import { PremiumGate } from "@/components/premium/PremiumGate";
 import { Link2, Sparkles, ListChecks, AlertCircle, Headphones } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
+import { useIsPremium } from "@/hooks/useIsPremium";
+import { useGavettaPlusEnabled } from "@/lib/gavettaPlus";
 import {
   ExtractedItem,
+  FREE_MONTHLY_IMPORT_LIMIT,
   ImportJob,
+  ImportQuotaError,
+  PodcastPremiumError,
   extractTitlesFromSource,
   fetchImportJob,
+  fetchMonthlyImportUsageCount,
   fetchRunningImportJob,
   firstUrlFrom,
   matchToContent,
@@ -25,8 +34,19 @@ import {
 
 const STALL_MS = 60_000;
 
+function formatResetDate(iso: string): string | null {
+  if (!iso) return null;
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+}
+
 export default function ImportPage() {
   const [params] = useSearchParams();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const { enabled: gavettaPlusEnabled } = useGavettaPlusEnabled();
+  const { isPremium, isLoading: isPremiumLoading } = useIsPremium();
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<ExtractedItem[] | null>(null);
@@ -36,7 +56,21 @@ export default function ImportPage() {
   const [queueOpen, setQueueOpen] = useState(false);
   const [queueStart, setQueueStart] = useState(0);
   const [job, setJob] = useState<ImportJob | null>(null);
+  const [quotaReached, setQuotaReached] = useState<{
+    used: number;
+    limit: number;
+    resetsAt: string;
+  } | null>(null);
   const jobIdRef = useRef<string | null>(null);
+
+  const showFreeQuota = gavettaPlusEnabled && !isPremiumLoading && !isPremium;
+
+  const { data: monthlyUsed } = useQuery<number>({
+    queryKey: ["import-usage", user?.id],
+    enabled: showFreeQuota && !!user?.id,
+    staleTime: 30_000,
+    queryFn: () => fetchMonthlyImportUsageCount(user!.id),
+  });
 
   const contents = useMemo(
     () => (items ?? []).map((i) => matchToContent(i.match)),
@@ -102,6 +136,7 @@ export default function ImportPage() {
       setUnmatched([]);
       setNeedsText(false);
       setJob(null);
+      setQuotaReached(null);
       try {
         const url = firstUrlFrom(value);
         const isOnlyUrl = url && value.replace(url, "").trim().length < 8;
@@ -109,6 +144,9 @@ export default function ImportPage() {
           isOnlyUrl ? { url } : { url: url ?? undefined, text: value },
         );
         setSourceTitle(res.sourceTitle || "");
+        if (user?.id) {
+          void queryClient.invalidateQueries({ queryKey: ["import-usage", user.id] });
+        }
 
         if (res.mode === "audio" && res.jobId) {
           jobIdRef.current = res.jobId;
@@ -128,11 +166,20 @@ export default function ImportPage() {
         }
         setLoading(false);
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Erro ao processar.");
+        if (e instanceof ImportQuotaError) {
+          setQuotaReached({ used: e.used, limit: e.limit, resetsAt: e.resetsAt });
+          if (user?.id) {
+            queryClient.setQueryData(["import-usage", user.id], e.used);
+          }
+        } else if (e instanceof PodcastPremiumError) {
+          toast.info("A transcrição de áudio de podcasts é exclusiva do Gavetta+. Você pode colar a descrição do episódio acima.");
+        } else {
+          toast.error(e instanceof Error ? e.message : "Erro ao processar.");
+        }
         setLoading(false);
       }
     },
-    [applyJob],
+    [applyJob, queryClient, user?.id],
   );
 
   // Web Share Target (Android): /import?url=...&text=...&title=...
@@ -218,10 +265,35 @@ export default function ImportPage() {
           )}
         </Button>
 
-        <p className="mt-2 text-xs text-muted-foreground">
-          Episódios longos podem levar alguns minutos — você pode sair da tela que o
-          Gavetta continua ouvindo.
-        </p>
+        {showFreeQuota && typeof monthlyUsed === "number" && (
+          <p className="mt-2 text-xs text-muted-foreground" data-testid="import-quota-counter">
+            {monthlyUsed} de {FREE_MONTHLY_IMPORT_LIMIT} importações usadas este mês
+          </p>
+        )}
+
+        {quotaReached && (
+          <div className="mt-5 space-y-2" data-testid="import-quota-paywall">
+            <p className="text-center text-xs text-muted-foreground">
+              Você usou {quotaReached.used} de {quotaReached.limit} importações grátis este mês
+              {formatResetDate(quotaReached.resetsAt)
+                ? ` · renova em ${formatResetDate(quotaReached.resetsAt)}`
+                : ""}
+              .
+            </p>
+            <PremiumGate feature="import">{null}</PremiumGate>
+          </div>
+        )}
+
+        {!quotaReached && (
+          <div className="mt-3" data-testid="import-podcast-section">
+            <PremiumGate feature="import_podcast">
+              <p className="text-xs text-muted-foreground">
+                Episódios longos podem levar alguns minutos — você pode sair da tela que o
+                Gavetta continua ouvindo.
+              </p>
+            </PremiumGate>
+          </div>
+        )}
 
         {listening && (
           <div className="mt-5 rounded-lg border border-border bg-card p-4">

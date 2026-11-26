@@ -2,6 +2,7 @@ import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { z } from "npm:zod@3.23.8";
 import { buildItems, extractTitles, UA } from "../_shared/importCore.ts";
+import { shouldEnforceGavettaPlus } from "../_shared/importQuota.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -342,6 +343,27 @@ Deno.serve(async (req) => {
     });
     const { data: userData, error: userError } = await userClient.auth.getUser();
     if (userError || !userData?.user) return json({ error: "Não autenticado" }, 401);
+    const userId = userData.user.id;
+
+    const service = admin();
+    const [premiumRes, adminRes] = await Promise.all([
+      service.rpc("is_premium", { _user_id: userId }),
+      service.rpc("has_role", { _user_id: userId, _role: "admin" }),
+    ]);
+    if (premiumRes.error || adminRes.error) {
+      console.error("transcribe-episode permission check error", premiumRes.error ?? adminRes.error);
+      return json({ error: "Erro ao verificar assinatura." }, 500);
+    }
+    const enforce = shouldEnforceGavettaPlus(Boolean(adminRes.data));
+    if (enforce && !premiumRes.data) {
+      return json(
+        {
+          code: "PODCAST_PREMIUM_ONLY",
+          error: "A transcrição de podcasts é exclusiva do Gavetta+.",
+        },
+        402,
+      );
+    }
 
     const parsed = BodySchema.safeParse(await req.json().catch(() => ({})));
     if (!parsed.success) return json({ error: parsed.error.flatten().fieldErrors }, 400);
