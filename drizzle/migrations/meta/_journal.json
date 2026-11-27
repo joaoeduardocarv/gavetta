@@ -127,6 +127,13 @@
       "when": 1795696950528,
       "tag": "0017_create_import_usage",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1795786311688,
+      "tag": "0018_create_get_user_stats_rpc",
+      "breakpoints": true
     }
   ]
 }

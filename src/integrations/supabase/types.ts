@@ -1453,6 +1453,7 @@ export type Database = {
           username: string
         }[]
       }
+      get_user_stats: { Args: { _year?: number }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
